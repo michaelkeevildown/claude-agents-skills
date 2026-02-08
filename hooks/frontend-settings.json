@@ -1,12 +1,43 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "npx tsc --noEmit 2>&1 | tail -20"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/guard-bash.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r fp; if echo \"$fp\" | grep -qE '(\\.env$|\\.env\\.|package-lock\\.json|yarn\\.lock|pnpm-lock\\.yaml|bun\\.lockb|\\.git/)'; then echo \"Blocked: protected file: $fp\" >&2; exit 2; fi; }"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r fp; if echo \"$fp\" | grep -qE '\\.(ts|tsx|js|jsx|json|css|md|html)$'; then npx prettier --write \"$fp\" 2>/dev/null; fi; }"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.stop_hook_active' | { read -r active; [ \"$active\" = \"true\" ] && exit 0; OUT=$(\"$CLAUDE_PROJECT_DIR\"/scripts/verify.sh 2>&1); RC=$?; echo \"$OUT\" | tail -30 >&2; exit $RC; }"
           }
         ]
       }

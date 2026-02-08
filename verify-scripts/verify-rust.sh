@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
-echo "==> Running Rust verification"
+echo "==> Running Rust verification" >&2
 
-echo "--- Cargo check ---"
-cargo check
+echo "--- Cargo check ---" >&2
+cargo check 2>&1 || { echo "FAIL: cargo check failed" >&2; exit 2; }
 
-echo "--- Clippy ---"
-cargo clippy -- -D warnings
+echo "--- Clippy ---" >&2
+cargo clippy -- -D warnings 2>&1 || { echo "FAIL: clippy errors" >&2; exit 2; }
 
-echo "--- Tests ---"
-cargo test
+echo "--- Tests ---" >&2
+cargo test 2>&1 || { echo "FAIL: cargo test failed" >&2; exit 2; }
 
-echo ""
-echo "All checks passed."
+echo "" >&2
+echo "All checks passed." >&2

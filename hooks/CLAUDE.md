@@ -16,29 +16,34 @@ Matches the stack name used in `setup.sh`: `frontend`, `python`, `rust`.
 
 ```json
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "npx tsc --noEmit 2>&1 | tail -20" }
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/guard-bash.sh" }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "<protected-files guard>" }
         ]
       }
     ],
-    "PreToolUse": [
+    "PostToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "<guard command>" }
+          { "type": "command", "command": "<formatter command>" }
         ]
       }
     ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
-          { "type": "command", "command": "scripts/verify.sh 2>&1 | tail -30" },
-          { "type": "prompt", "prompt": "Self-review checklist text here" }
+          { "type": "command", "command": "<stop_hook_active guard + verify.sh>" }
         ]
       }
     ]
@@ -48,42 +53,75 @@ Matches the stack name used in `setup.sh`: `frontend`, `python`, `rust`.
 
 ## Hook Types
 
-**PostToolUse** — Runs after Claude uses a tool
-- `matcher`: pipe-separated tool names (e.g., `"Write|Edit"`)
-- Use for: auto-formatting, type checking, syntax validation
-- Must be fast (<5 seconds) — runs on every matching tool use
-
 **PreToolUse** — Runs before Claude uses a tool
-- Use for: branch guards, blocking edits to protected files
-- Exit code 2 blocks the tool use
+- `matcher`: regex pattern against tool name (e.g., `"Bash"`, `"Edit|Write"`)
+- Use for: blocking dangerous commands, protecting lock files and `.env`
+- Exit code 2 blocks the tool use; stderr shown to Claude
+
+**PostToolUse** — Runs after Claude uses a tool
+- `matcher`: regex pattern against tool name
+- Use for: auto-formatting every file Claude touches
+- Must be fast (<5 seconds) — runs on every matching tool use
+- Exit code 2 sends stderr to Claude (tool already ran, can't block)
 
 **Stop** — Runs when Claude completes a response
-- `matcher`: empty string `""` matches all completions
-- Use for: running the full verify script, self-review prompt
-- Can be slower since it runs once at the end
+- No matcher needed — fires on every completion
+- Use for: running the full verify script as a quality gate
+- **Must check `stop_hook_active`** to prevent infinite retry loops
 
-## Hook Subtypes
+## Exit Codes
 
-**Command hooks** (`"type": "command"`):
-- `command` field contains a shell command
-- Pipe output through `tail -N` to limit context window consumption
-- Include `2>&1` to capture stderr
+| Code | Meaning |
+|---|---|
+| `0` | Success — continue normally |
+| `2` | Block — PreToolUse blocks the tool; Stop forces Claude to fix issues |
+| Other | Non-blocking error — logged in verbose mode, no effect |
 
-**Prompt hooks** (`"type": "prompt"`):
-- `prompt` field contains text sent to Claude as a self-review checklist
-- Use for convention checks that require judgment, not just pass/fail
+## Critical Patterns
+
+### Stop Hook Guard (prevents infinite loops)
+
+```
+jq -r '.stop_hook_active' | { read -r active; [ "$active" = "true" ] && exit 0; ... }
+```
+
+When `stop_hook_active` is `true`, Claude is already retrying after a previous failure. Exit 0 to let Claude stop (one retry cycle maximum).
+
+### Stderr Routing for Stop Hooks
+
+```
+OUT=$("$CLAUDE_PROJECT_DIR"/scripts/verify.sh 2>&1); RC=$?; echo "$OUT" | tail -30 >&2; exit $RC;
+```
+
+Captures verify.sh output, truncates to 30 lines, sends to stderr (which Claude sees on exit 2).
+
+### Protected File Guard
+
+```
+jq -r '.tool_input.file_path' | { read -r fp; if echo "$fp" | grep -qE '<pattern>'; then echo "Blocked: ..." >&2; exit 2; fi; }
+```
+
+Always use `read -r` (not `read`) to prevent backslash interpretation.
+
+## Valid Matcher Tool Names
+
+`Bash`, `Edit`, `Write`, `Read`, `Glob`, `Grep`, `WebFetch`, `WebSearch`, `Task`, `mcp__<server>__<tool>`
+
+Note: `MultiEdit` does not exist. Use `Edit|Write` for file modification hooks.
 
 ## Guidelines
 
+- Always use `"$CLAUDE_PROJECT_DIR"` for paths — working directory varies between invocations
 - Commands must be non-interactive (no prompts, no editors)
-- Use relative paths (`scripts/verify.sh`) so hooks work from any project root
 - PostToolUse commands should complete in under 5 seconds
-- Always pipe through `tail` to avoid flooding Claude's context with long output
+- Pipe long output through `tail` to avoid flooding Claude's context
+- All hook scripts require `jq` — ensure it is installed in target environments
+- Add `$schema` field for IDE validation
 
 ## Current Templates
 
-| File | PostToolUse | Stop | Status |
+| File | PreToolUse | PostToolUse | Stop |
 |---|---|---|---|
-| `frontend-settings.json` | `npx tsc --noEmit` on Write\|Edit | — | Has PostToolUse |
-| `python-settings.json` | — | — | Empty `{}` |
-| `rust-settings.json` | — | — | Empty `{}` |
+| `frontend-settings.json` | guard-bash.sh + protect .env/locks | prettier | verify.sh |
+| `python-settings.json` | guard-bash.sh + protect .env/locks | black + isort | verify.sh |
+| `rust-settings.json` | guard-bash.sh + protect .env/Cargo.lock | rustfmt | verify.sh |

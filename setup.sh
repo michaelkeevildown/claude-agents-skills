@@ -142,6 +142,15 @@ setup_project() {
     echo "    Copied verify-${stack}.sh -> scripts/verify.sh"
   fi
 
+  # Copy guard script if it exists
+  local guard_file="${REPO_DIR}/verify-scripts/guard-bash.sh"
+  if [ -f "${guard_file}" ]; then
+    mkdir -p "${project_dir}/scripts"
+    cp "${guard_file}" "${project_dir}/scripts/guard-bash.sh"
+    chmod +x "${project_dir}/scripts/guard-bash.sh"
+    echo "    Copied guard-bash.sh -> scripts/guard-bash.sh"
+  fi
+
   echo ""
   echo "Done. Project skills installed:"
   echo "  Skills: $(ls "${project_dir}/.claude/skills/" 2>/dev/null | tr '\n' ' ')"
