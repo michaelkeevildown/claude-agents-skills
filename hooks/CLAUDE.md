@@ -24,12 +24,6 @@ Matches the stack name used in `setup.sh`: `frontend`, `python`, `rust`.
         "hooks": [
           { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/guard-bash.sh" }
         ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          { "type": "command", "command": "<protected-files guard>" }
-        ]
       }
     ],
     "PostToolUse": [
@@ -54,9 +48,10 @@ Matches the stack name used in `setup.sh`: `frontend`, `python`, `rust`.
 ## Hook Types
 
 **PreToolUse** — Runs before Claude uses a tool
-- `matcher`: regex pattern against tool name (e.g., `"Bash"`, `"Edit|Write"`)
-- Use for: blocking dangerous commands, protecting lock files and `.env`
+- `matcher`: regex pattern against tool name (e.g., `"Bash"`)
+- Use for: blocking dangerous Bash commands (rm -rf, force push, DROP)
 - Exit code 2 blocks the tool use; stderr shown to Claude
+- Avoid PreToolUse hooks on `Edit|Write` — they can interfere with the user's permission mode and cause repeated prompts. Protect sensitive files via project CLAUDE.md instructions instead
 
 **PostToolUse** — Runs after Claude uses a tool
 - `matcher`: regex pattern against tool name
@@ -95,14 +90,6 @@ OUT=$("$CLAUDE_PROJECT_DIR"/scripts/verify.sh 2>&1); RC=$?; echo "$OUT" | tail -
 
 Captures verify.sh output, truncates to 30 lines, sends to stderr (which Claude sees on exit 2).
 
-### Protected File Guard
-
-```
-jq -r '.tool_input.file_path' | { read -r fp; if echo "$fp" | grep -qE '<pattern>'; then echo "Blocked: ..." >&2; exit 2; fi; }
-```
-
-Always use `read -r` (not `read`) to prevent backslash interpretation.
-
 ## Valid Matcher Tool Names
 
 `Bash`, `Edit`, `Write`, `Read`, `Glob`, `Grep`, `WebFetch`, `WebSearch`, `Task`, `mcp__<server>__<tool>`
@@ -122,6 +109,6 @@ Note: `MultiEdit` does not exist. Use `Edit|Write` for file modification hooks.
 
 | File | PreToolUse | PostToolUse | Stop |
 |---|---|---|---|
-| `frontend-settings.json` | guard-bash.sh + protect .env/locks | prettier | verify.sh |
-| `python-settings.json` | guard-bash.sh + protect .env/locks | black + isort | verify.sh |
-| `rust-settings.json` | guard-bash.sh + protect .env/Cargo.lock | rustfmt | verify.sh |
+| `frontend-settings.json` | guard-bash.sh | prettier | verify.sh |
+| `python-settings.json` | guard-bash.sh | black + isort | verify.sh |
+| `rust-settings.json` | guard-bash.sh | rustfmt | verify.sh |
