@@ -359,9 +359,16 @@ skill conventions).
 
 ## 6. Coordination Protocol
 
-### Sequential Workflow (Single Feature)
+### Automated Kickoff
 
-For one feature at a time, the user drives each handoff:
+Source `feature-docs/implement-feature.md` to scan `ready/` for available
+features, run pre-flight checks (section completeness, file ownership conflicts),
+and kick off the test-writer. The `TeammateIdle` hook handles all subsequent
+handoffs automatically. This is the recommended way to start implementation.
+
+### Manual Workflow (Single Feature)
+
+For one feature at a time, the user drives each handoff manually:
 
 ```
 # Step 1: Human creates feature doc

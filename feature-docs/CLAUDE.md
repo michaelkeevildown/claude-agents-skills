@@ -7,7 +7,8 @@ This directory manages the Agent Teams workflow — a parallel multi-agent devel
 ```
 feature-docs/
   CLAUDE.md             This file — auto-discovered by Claude
-  new-feature.md        Source this to start or resume feature ideation
+  new-feature.md        Source this to create a new feature (ideation or direct)
+  implement-feature.md  Source this to implement an existing feature doc
   ideation/             Explore and shape feature ideas (one subfolder per feature)
     CLAUDE.md           Ideation process guide + README template
   ready/                Distilled feature docs waiting for a test-writer
@@ -19,9 +20,11 @@ feature-docs/
 
 ## Getting Started
 
-**Source `feature-docs/new-feature.md`** to start the feature workflow. It handles both paths:
+**Source `feature-docs/new-feature.md`** to create a new feature. It handles both paths:
 - **Ideation first**: Walk through exploring, validating, and designing the feature with artifacts saved to `ideation/<feature-name>/`
 - **Skip to ready**: If you already know what you want, go straight to creating a feature doc
+
+**Source `feature-docs/implement-feature.md`** to implement an existing feature. It scans `ready/` for available work, runs pre-flight checks (completeness, file ownership conflicts), and kicks off the test-writer to start the pipeline.
 
 ## Lifecycle
 

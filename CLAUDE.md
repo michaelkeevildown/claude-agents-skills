@@ -23,10 +23,11 @@ skills/           Technology skill documentation (SKILL.md files)
   python/         Python skills (3 stubs)
   rust/           Rust skills (2 stubs)
 feature-docs/     Mirrors downstream project structure (copied as-is by setup.sh)
-  CLAUDE.md       Lifecycle guide + feature doc format, auto-discovered by Claude
-  new-feature.md  Sourceable prompt for ideation and direct feature creation
-  ideation/       CLAUDE.md (with README template) + feature exploration folders
-  ready/          Example feature doc
+  CLAUDE.md            Lifecycle guide + feature doc format, auto-discovered by Claude
+  new-feature.md       Sourceable prompt for ideation and direct feature creation
+  implement-feature.md Sourceable prompt to implement an existing feature doc
+  ideation/            CLAUDE.md (with README template) + feature exploration folders
+  ready/               Example feature doc
 hooks/            .claude/settings.json templates per stack
 verify-scripts/   Stack-specific verify scripts (type-check → lint → test)
 setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
