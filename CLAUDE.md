@@ -15,13 +15,18 @@ Reusable Claude Code agent definitions and technology skill documentation, insta
 agents/           Agent definitions (Markdown with YAML frontmatter)
   universal/      Stack-independent agents (installed via --global)
   frontend/       Frontend-specific agents
-  python/         Python-specific agents (empty — needs contributors)
-  rust/           Rust-specific agents (empty — needs contributors)
+  python/         Python-specific agents
+  rust/           Rust-specific agents
 skills/           Technology skill documentation (SKILL.md files)
   global/         Stack-independent skills (symlinked to ~/.claude/skills/)
   frontend/       Frontend skills (8 skills)
   python/         Python skills (3 stubs)
   rust/           Rust skills (2 stubs)
+feature-docs/     Mirrors downstream project structure (copied as-is by setup.sh)
+  CLAUDE.md       Lifecycle guide + feature doc format, auto-discovered by Claude
+  new-feature.md  Sourceable prompt for ideation and direct feature creation
+  ideation/       CLAUDE.md (with README template) + feature exploration folders
+  ready/          Example feature doc
 hooks/            .claude/settings.json templates per stack
 verify-scripts/   Stack-specific verify scripts (type-check → lint → test)
 setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
@@ -45,6 +50,12 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 | planner | universal | sonnet | 88 | Implementation planning before coding |
 | frontend-engineer | frontend | opus | 157 | UI review, React optimization, component scaffolding (3 workflows) |
 | component-builder | frontend | sonnet | 146 | Investigation workspace components with Zustand/NVL integration |
+| test-writer | frontend | sonnet | 137 | Write failing Vitest/Playwright tests from feature docs |
+| builder | frontend | opus | 136 | Implement code to make failing tests pass (React/Zustand) |
+| test-writer | python | sonnet | 153 | Write failing pytest tests from feature docs |
+| builder | python | opus | 133 | Implement code to make failing pytest tests pass |
+| test-writer | rust | sonnet | 145 | Write failing cargo tests from feature docs |
+| builder | rust | opus | 133 | Implement code to make failing cargo tests pass |
 
 ### Skills — Complete
 
@@ -55,6 +66,7 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 | shadcn-ui | frontend | 733 | Component library, composition, theming, forms |
 | nvl | frontend | 685 | Neo4j Visualization Library, graph rendering, styling, layout |
 | tailwind | frontend | 659 | Tailwind v4 CSS-first config, responsive, animations |
+| agent-teams | global | 616 | Agent Teams workflow, ideation phase, feature doc lifecycle, test-first coordination |
 | git-workflow | global | 579 | Branching, commits, PR workflow, rebase vs merge |
 | zustand-state | frontend | 521 | Stores, selectors, middleware, multi-view sync |
 | react-patterns | frontend | 472 | React 19 patterns, TypeScript strict, architecture |

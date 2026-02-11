@@ -2,7 +2,6 @@
 name: component-builder
 description: Build investigation workspace components that integrate with Zustand stores, NVL graph visualization, and multi-view synchronization. Use when creating components that display or modify investigation state (graph panels, data tables, timeline views, toolbars, detail panels). Triggers on build component, new panel, new view, investigation component, graph component, table component, timeline component.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: sonnet
 memory: user
 ---
 

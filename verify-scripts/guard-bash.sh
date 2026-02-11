@@ -31,4 +31,13 @@ if echo "$CMD" | grep -qEi 'DROP\s+(DATABASE|TABLE)'; then
   exit 2
 fi
 
+# Block direct commits on main/master when agent teams is active (feature-docs/ exists)
+if [ -d "feature-docs" ] && echo "$CMD" | grep -qE 'git\s+commit'; then
+  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+  if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    echo "Blocked: direct commit on $BRANCH — create a feature branch first" >&2
+    exit 2
+  fi
+fi
+
 exit 0

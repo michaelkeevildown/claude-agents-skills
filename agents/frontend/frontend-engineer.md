@@ -2,7 +2,6 @@
 name: frontend-engineer
 description: Frontend specialist with three workflows — UI Reviewer (a11y, responsive, visual consistency), React Optimizer (re-renders, memoization, bundle size), and Component Scaffolder (convention-aware creation). Triggers on review UI, accessibility, a11y, optimize, performance audit, scaffold component, create component, new component.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: opus
 memory: user
 ---
 

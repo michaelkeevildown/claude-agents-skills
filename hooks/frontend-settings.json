@@ -28,7 +28,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.stop_hook_active' | { read -r active; [ \"$active\" = \"true\" ] && exit 0; OUT=$(\"$CLAUDE_PROJECT_DIR\"/scripts/verify.sh 2>&1); RC=$?; echo \"$OUT\" | tail -30 >&2; exit $RC; }"
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/stop-hook.sh"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/task-completed.sh"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/teammate-idle.sh"
           }
         ]
       }

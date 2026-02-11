@@ -86,3 +86,9 @@ Keep entries concise — one line per pattern, deduplicate with existing entries
 | `universal/planner.md` | sonnet | Read, Grep, Glob, Bash | 1 (structured plan) |
 | `frontend/frontend-engineer.md` | opus | Read, Grep, Glob, Bash, Write, Edit | 3 (UI review, optimize, scaffold) |
 | `frontend/component-builder.md` | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (investigation components) |
+| `frontend/test-writer.md` | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs) |
+| `frontend/builder.md` | opus | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass) |
+| `python/test-writer.md` | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs) |
+| `python/builder.md` | opus | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass) |
+| `rust/test-writer.md` | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs) |
+| `rust/builder.md` | opus | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass) |

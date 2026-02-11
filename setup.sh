@@ -151,6 +151,41 @@ setup_project() {
     echo "    Copied guard-bash.sh -> scripts/guard-bash.sh"
   fi
 
+  # Copy agent teams hook scripts if they exist
+  for hook_script in task-completed.sh teammate-idle.sh stop-hook.sh; do
+    local hook_file="${REPO_DIR}/verify-scripts/${hook_script}"
+    if [ -f "${hook_file}" ]; then
+      mkdir -p "${project_dir}/scripts"
+      cp "${hook_file}" "${project_dir}/scripts/${hook_script}"
+      chmod +x "${project_dir}/scripts/${hook_script}"
+      echo "    Copied ${hook_script} -> scripts/${hook_script}"
+    fi
+  done
+
+  # Copy feature-docs/ tree (mirrors repo structure into downstream project)
+  local feature_docs_src="${REPO_DIR}/feature-docs"
+  if [ -d "${feature_docs_src}" ]; then
+    # Create lifecycle directories
+    for status_dir in ideation ready testing building review completed; do
+      mkdir -p "${project_dir}/feature-docs/${status_dir}"
+    done
+
+    # Copy files from repo's feature-docs/ tree (skip if already exists)
+    while IFS= read -r src_file; do
+      local rel_path="${src_file#"${feature_docs_src}"/}"
+      local dest="${project_dir}/feature-docs/${rel_path}"
+      local dest_dir
+      dest_dir="$(dirname "${dest}")"
+      mkdir -p "${dest_dir}"
+      if [ ! -f "${dest}" ]; then
+        cp "${src_file}" "${dest}"
+        echo "    Added feature-docs/${rel_path}"
+      fi
+    done < <(find "${feature_docs_src}" -type f)
+
+    echo "    Created feature-docs/ lifecycle directories"
+  fi
+
   echo ""
   echo "Done. Project skills installed:"
   echo "  Skills: $(ls "${project_dir}/.claude/skills/" 2>/dev/null | tr '\n' ' ')"
