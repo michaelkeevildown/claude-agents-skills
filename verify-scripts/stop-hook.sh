@@ -8,9 +8,10 @@ INPUT=$(cat)
 ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null)
 [ "$ACTIVE" = "true" ] && exit 0
 
-# Skip verification if no files have been modified.
-# Prevents loops on pre-existing failures during conversations
-# where Claude hasn't changed any code.
+# Skip verification if no files have been modified or created.
+# Checks both tracked modifications and new untracked files.
+# After setup.sh, commit everything so the working tree is clean —
+# then this check correctly skips verify during conversations.
 if git diff --quiet HEAD -- . 2>/dev/null && \
    [ -z "$(git ls-files --others --exclude-standard 2>/dev/null)" ]; then
   exit 0
