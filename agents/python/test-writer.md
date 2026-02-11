@@ -93,7 +93,7 @@ Import from the implementation path even though the module may not exist yet. Te
 Run the test suite and confirm every new test fails:
 
 ```bash
-pytest tests/ -v --tb=short 2>&1 | tail -30
+pytest tests/ --tb=short --no-header -q 2>&1 | tail -20
 ```
 
 If any new test passes without implementation, the test is too weak — rewrite it.
@@ -107,7 +107,20 @@ sed -i '' 's/status: ready/status: testing/' feature-docs/ready/<name>.md
 mv feature-docs/ready/<name>.md feature-docs/testing/
 ```
 
-### 7. Commit
+### 7. Update Progress Dashboard
+
+Update `feature-docs/STATUS.md` (create if missing) with current status:
+
+```markdown
+## <feature-name> — testing
+- **Agent**: test-writer
+- **Tests**: <N> tests written, all failing (expected)
+- **Criteria covered**: <N>/<total> acceptance, <N>/<total> edge cases
+```
+
+Remove any prior entry for this feature. Keep entries for other in-progress features.
+
+### 8. Commit
 
 Commit the test files and the moved feature doc:
 

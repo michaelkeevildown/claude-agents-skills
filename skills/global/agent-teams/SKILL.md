@@ -13,7 +13,10 @@ in parallel using the Agent Teams feature. Covers:
 - Feature doc format and lifecycle (ready → testing → building → review → done)
 - Three-role separation: test-writer, builder, reviewer
 - File ownership rules to prevent conflicts
-- Hook-based quality gates (TaskCompleted, TeammateIdle)
+- Hook-based quality gates (TaskCompleted, TeammateIdle, Stop)
+- Fast verification for rapid feedback, full verification for completion gates
+- Progress dashboard (`feature-docs/STATUS.md`) for zero-context recovery
+- Stuck detection and time blindness mitigation
 - Coordination protocol with kickoff prompts
 - Bootstrap and retrofit prompts for new and existing projects
 
@@ -49,7 +52,30 @@ instruction is designed to produce minimal, structured output:
 - Test results print summary lines only, not full stack traces
 - Errors use a consistent format: `ERROR [CATEGORY]: one-line description`
 - Verbose output goes to `agent_logs/`, never to stdout
-- The `scripts/verify.sh` script captures output and pipes through `tail -30`
+- `scripts/verify.sh` logs full output to `agent_logs/` and pipes through `tail -10`
+- Agent test commands use quiet reporters (`-q`, no `--reporter=verbose`)
+- Stop hook truncates output to 20 lines
+
+### Fast Verification
+
+The Stop hook runs `scripts/fast-verify.sh` (type check only) on every response
+where files changed. This catches type errors quickly without running the full
+suite. The full verify pipeline (`scripts/verify.sh`) runs only on TaskCompleted.
+
+This mirrors Carlini's `--fast` mode: quick smoke checks during work,
+comprehensive validation only at completion gates.
+
+### Time Blindness Mitigation
+
+LLMs cannot self-regulate time. The `TeammateIdle` hook detects features stuck
+in `building/` for over 30 minutes (using file modification time) and warns the
+user. This prevents agents from spinning indefinitely on hard problems.
+
+### Progress Dashboard
+
+Agents start each session with zero context. `feature-docs/STATUS.md` is updated
+by every agent after each stage transition. It shows what's in flight, what's
+blocked, and what's done — enabling any agent to orient quickly.
 
 ### File Ownership
 
@@ -509,8 +535,9 @@ Blocks task completion until the full verify pipeline passes.
 }
 ```
 
-The script runs `scripts/verify.sh` and blocks (exit 2) on any failure. Output
-is truncated to 30 lines to avoid context pollution.
+The script runs `scripts/verify.sh` (full pipeline) and blocks (exit 2) on any
+failure. Output is truncated to 30 lines to avoid context pollution. Verbose logs
+are available in `agent_logs/` for debugging.
 
 ### TeammateIdle
 
@@ -523,15 +550,16 @@ Redirects idle teammates to pending feature docs.
 }
 ```
 
-The script scans `feature-docs/` directories and outputs a directive if work is
-found (exit 2 to keep the teammate working). If no work is found, exits 0 to
-let the teammate go idle.
+The script first checks for stuck features (in `building/` for over 30 minutes)
+and warns if found. Then it scans `feature-docs/` directories and outputs a
+directive if work is found (exit 2 to keep the teammate working). If no work is
+found, exits 0 to let the teammate go idle.
 
-### Stop (Verify on Change)
+### Stop (Fast Verify on Change)
 
-Runs the verify pipeline after each Claude response, but only when files have
-actually changed. This prevents infinite loops on pre-existing failures during
-conversational workflows (e.g. ideation via `feature-docs/new-feature.md`).
+Runs fast verification (type check only) after each Claude response when files
+have changed. Full verification is deferred to TaskCompleted to avoid spending
+agent time on the full suite during iterative development.
 
 ```json
 {
@@ -542,8 +570,9 @@ conversational workflows (e.g. ideation via `feature-docs/new-feature.md`).
 
 The script checks `git diff` and `git ls-files` for modifications. If the working
 tree is clean, it exits 0 (skips verify). If files have changed, it runs
-`scripts/verify.sh` and returns its exit code. It also reads `stop_hook_active`
-from stdin to prevent recursive loops.
+`scripts/fast-verify.sh` (type check only) for quick feedback. If no fast-verify
+script exists, it falls back to `scripts/verify.sh`. It reads `stop_hook_active`
+from stdin to prevent recursive loops. Output is truncated to 20 lines.
 
 ### Branch Protection
 
@@ -563,19 +592,21 @@ Set up the agent teams workflow for this project:
    feature-docs/building/, feature-docs/review/, feature-docs/completed/
 
 2. Create an agent_logs/ directory for verbose output
+   Add agent_logs/ to .gitignore
 
-3. Verify that scripts/verify.sh exists and runs clean:
-   - Type checking passes
-   - Linting passes with zero warnings
-   - All existing tests pass
+3. Verify that scripts/verify.sh and scripts/fast-verify.sh both exist:
+   - verify.sh: full pipeline (type check + lint + tests) with output to agent_logs/
+   - fast-verify.sh: type check only for quick feedback
 
-4. Verify that .claude/settings.json includes TaskCompleted and
-   TeammateIdle hooks
+4. Verify that .claude/settings.json includes TaskCompleted,
+   TeammateIdle, and Stop hooks
 
 5. Create a sample feature doc in feature-docs/ready/ based on the
    Feature Doc Format section in feature-docs/CLAUDE.md
 
-6. Run the full verify pipeline once to confirm everything works
+6. Create an empty feature-docs/STATUS.md for the progress dashboard
+
+7. Run the full verify pipeline once to confirm everything works
 
 Report what you created and any issues found.
 ```
@@ -641,3 +672,7 @@ components, services, and tests.
 | Feature doc without testable criteria | Test-writer cannot produce meaningful tests; builder has no target | Every acceptance criterion must use GIVEN/WHEN/THEN format |
 | Skipping the reviewer step | Qualitative issues (conventions, duplication, design) go undetected | Reviewer validates what tests cannot catch |
 | Using agent teams for trivial changes | 15x token cost for a one-line fix is wasteful | Single session for changes touching fewer than 3 files |
+| Running full test suite on every save | Agent wastes time waiting for slow tests during iteration | Use fast-verify.sh (type check only) on Stop; full suite on TaskCompleted |
+| Tests that check truthiness not values | Wrong implementation passes — `toBeTruthy()` accepts any non-null | Assert specific return values, error types, and state changes |
+| No progress dashboard | Agents start with zero context and waste time re-discovering state | Update `feature-docs/STATUS.md` after every stage transition |
+| Ignoring stuck features | Agent spins for hours on a hard problem without human awareness | TeammateIdle warns after 30 minutes in building/; check agent_logs/ |

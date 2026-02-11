@@ -29,7 +29,7 @@ feature-docs/     Mirrors downstream project structure (copied as-is by setup.sh
   ideation/            CLAUDE.md (with README template) + feature exploration folders
   ready/               Example feature doc
 hooks/            .claude/settings.json templates per stack
-verify-scripts/   Stack-specific verify scripts (type-check → lint → test)
+verify-scripts/   Stack-specific verify + fast-verify scripts, hook scripts
 setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 ```
 
@@ -51,12 +51,12 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 | planner | universal | sonnet | 88 | Implementation planning before coding |
 | frontend-engineer | frontend | opus | 157 | UI review, React optimization, component scaffolding (3 workflows) |
 | component-builder | frontend | sonnet | 146 | Investigation workspace components with Zustand/NVL integration |
-| test-writer | frontend | sonnet | 137 | Write failing Vitest/Playwright tests from feature docs |
-| builder | frontend | opus | 136 | Implement code to make failing tests pass (React/Zustand) |
-| test-writer | python | sonnet | 153 | Write failing pytest tests from feature docs |
-| builder | python | opus | 133 | Implement code to make failing pytest tests pass |
-| test-writer | rust | sonnet | 145 | Write failing cargo tests from feature docs |
-| builder | rust | opus | 133 | Implement code to make failing cargo tests pass |
+| test-writer | frontend | sonnet | 147 | Write failing Vitest/Playwright tests from feature docs |
+| builder | frontend | opus | 146 | Implement code to make failing tests pass (React/Zustand) |
+| test-writer | python | sonnet | 163 | Write failing pytest tests from feature docs |
+| builder | python | opus | 143 | Implement code to make failing pytest tests pass |
+| test-writer | rust | sonnet | 155 | Write failing cargo tests from feature docs |
+| builder | rust | opus | 143 | Implement code to make failing cargo tests pass |
 
 ### Skills — Complete
 

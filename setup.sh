@@ -133,13 +133,22 @@ setup_project() {
     fi
   fi
 
-  # Copy verify script if it exists
+  # Copy verify scripts if they exist
   local verify_file="${REPO_DIR}/verify-scripts/verify-${stack}.sh"
   if [ -f "${verify_file}" ]; then
     mkdir -p "${project_dir}/scripts"
     cp "${verify_file}" "${project_dir}/scripts/verify.sh"
     chmod +x "${project_dir}/scripts/verify.sh"
     echo "    Copied verify-${stack}.sh -> scripts/verify.sh"
+  fi
+
+  # Copy fast-verify script if it exists
+  local fast_verify_file="${REPO_DIR}/verify-scripts/fast-verify-${stack}.sh"
+  if [ -f "${fast_verify_file}" ]; then
+    mkdir -p "${project_dir}/scripts"
+    cp "${fast_verify_file}" "${project_dir}/scripts/fast-verify.sh"
+    chmod +x "${project_dir}/scripts/fast-verify.sh"
+    echo "    Copied fast-verify-${stack}.sh -> scripts/fast-verify.sh"
   fi
 
   # Copy guard script if it exists
@@ -185,6 +194,17 @@ setup_project() {
         echo "    Added feature-docs/${rel_path}"
       fi
     done < <(find "${feature_docs_src}" -type f)
+
+    # Create agent_logs/ directory for verbose output
+    mkdir -p "${project_dir}/agent_logs"
+    echo "    Created agent_logs/ directory"
+
+    # Create empty STATUS.md for progress dashboard
+    if [ ! -f "${project_dir}/feature-docs/STATUS.md" ]; then
+      printf "# Feature Status Dashboard\n\nUpdated by agents after each stage transition.\n" \
+        > "${project_dir}/feature-docs/STATUS.md"
+      echo "    Created feature-docs/STATUS.md"
+    fi
 
     echo "    Created feature-docs/ lifecycle directories"
   fi

@@ -50,7 +50,7 @@ Work through the failing tests methodically:
 
 1. Run the test suite to see all failures:
    ```bash
-   pytest tests/ -v --tb=short 2>&1 | tail -30
+   pytest tests/ --tb=short --no-header -q 2>&1 | tail -20
    ```
 2. Pick the simplest failing test
 3. Write the minimum implementation to make it pass
@@ -78,7 +78,20 @@ sed -i '' 's/status: building/status: review/' feature-docs/building/<name>.md
 mv feature-docs/building/<name>.md feature-docs/review/
 ```
 
-### 7. Commit
+### 7. Update Progress Dashboard
+
+Update `feature-docs/STATUS.md` with current status:
+
+```markdown
+## <feature-name> — review
+- **Agent**: builder (done)
+- **Tests**: <N>/<N> passing
+- **Verify**: type check PASS, lint PASS, tests PASS
+```
+
+Remove any prior entry for this feature. Keep entries for other in-progress features.
+
+### 8. Commit
 
 Commit the implementation files and the moved feature doc:
 
