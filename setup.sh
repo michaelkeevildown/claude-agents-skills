@@ -170,14 +170,17 @@ setup_project() {
       mkdir -p "${project_dir}/feature-docs/${status_dir}"
     done
 
-    # Copy files from repo's feature-docs/ tree (skip if already exists)
+    # Copy files from repo's feature-docs/ tree (overwrites existing)
     while IFS= read -r src_file; do
       local rel_path="${src_file#"${feature_docs_src}"/}"
       local dest="${project_dir}/feature-docs/${rel_path}"
       local dest_dir
       dest_dir="$(dirname "${dest}")"
       mkdir -p "${dest_dir}"
-      if [ ! -f "${dest}" ]; then
+      if [ -f "${dest}" ]; then
+        cp "${src_file}" "${dest}"
+        echo "    Updated feature-docs/${rel_path}"
+      else
         cp "${src_file}" "${dest}"
         echo "    Added feature-docs/${rel_path}"
       fi
