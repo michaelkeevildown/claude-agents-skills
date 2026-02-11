@@ -193,7 +193,7 @@ title: User Authentication
 status: ready
 priority: high
 affected-files:
-  - src/auth/login.ts
+  - src/auth/authenticate.ts
   - src/auth/session.ts
   - src/stores/auth-store.ts
   - src/components/login-form.tsx
@@ -208,38 +208,35 @@ authenticated across page reloads, and log out.
 
 ## Acceptance Criteria
 
-1. GIVEN a valid email and password WHEN the user submits the login form
-   THEN a session token is stored and the user is redirected to the dashboard
-2. GIVEN an invalid email or password WHEN the user submits the login form
-   THEN an error message is displayed and the form is not cleared
-3. GIVEN a logged-in user WHEN they reload the page
-   THEN they remain authenticated (session persists)
-4. GIVEN a logged-in user WHEN they click logout
-   THEN the session is cleared and they are redirected to the login page
-5. GIVEN an expired session token WHEN any authenticated request is made
-   THEN the user is redirected to the login page with an expiry message
+1. GIVEN a valid email and password WHEN `authenticate(email, password)` is called
+   THEN it returns a `Session` with a non-null `token` and `expiresAt` > now
+2. GIVEN an email with no matching user WHEN `authenticate(email, password)` is
+   called THEN it throws `AuthenticationError` with code `"INVALID_CREDENTIALS"`
+3. GIVEN `authStore.getState().isAuthenticated` is `true` WHEN `logout()` is called
+   THEN `authStore.getState().session` is `null` and the session cookie is cleared
+4. GIVEN a session cookie with a valid token WHEN `restoreSession()` is called
+   THEN `authStore.getState().isAuthenticated` is `true`
+5. GIVEN a session cookie with an expired token WHEN `restoreSession()` is called
+   THEN `authStore.getState().session` is `null` and the cookie is cleared
 
 ## Edge Cases
 
-- Empty email or password fields — show validation errors before submission
-- Network failure during login — show a connection error, allow retry
-- Multiple rapid login attempts — debounce to prevent duplicate requests
+- Empty email or password to `authenticate()` — throws `ValidationError` with
+  code `"EMPTY_FIELD"` before any network request
+- Session cookie with malformed JSON — `restoreSession()` clears the cookie
+  silently without throwing
 
 ## Out of Scope
 
-- OAuth/social login (separate feature)
-- Password reset flow (separate feature)
-- Rate limiting (backend concern)
+- OAuth/social login (separate feature) — do NOT add OAuth types to `Session`
+- Do NOT touch `src/api/client.ts` interceptor (has a `TODO: add auth` comment;
+  leave as-is to avoid breaking existing API calls)
 
 ## Technical Notes
 
-- Follow the existing store pattern in `src/stores/` for the auth store
-- Session token goes in httpOnly cookie (not localStorage)
-
-## Style Requirements (frontend only)
-
-- Login form matches existing shadcn Card + Form patterns
-- Error messages use destructive variant of Alert component
+- Session token uses httpOnly cookie, not localStorage
+- **Rejected**: localStorage with encryption wrapper — XSS-accessible, no real
+  protection. httpOnly cookies are invisible to JS entirely.
 ```
 
 ### Acceptance Criteria Rules
@@ -247,13 +244,18 @@ authenticated across page reloads, and log out.
 Every acceptance criterion must be:
 
 1. **Testable** — can be verified by an automated test
-2. **Specific** — uses GIVEN/WHEN/THEN format with concrete values
+2. **Specific** — names exact functions, fields, error types, and return values
 3. **Independent** — does not depend on other criteria passing first
 4. **Complete** — covers the happy path, error cases, and edge cases
 
-Vague criteria produce vague tests produce wrong implementations. "The login
-should work" is not an acceptance criterion. "GIVEN valid credentials WHEN the
-user submits THEN a session token is stored" is.
+Vague criteria produce vague tests produce wrong implementations.
+
+| Vague (agent has to guess) | Precise (agent can write a test) |
+|---|---|
+| THEN the login works | THEN `authenticate()` returns a `Session` with non-null `token` |
+| THEN an error is shown | THEN it throws `AuthenticationError` with code `"INVALID_CREDENTIALS"` |
+| THEN the data is saved | THEN `authStore.getState().session` contains the `Session` |
+| THEN the field is removed | THEN the returned object does NOT include a `legacyField` key |
 
 ## 4. Agent Roles
 
