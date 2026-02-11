@@ -1,54 +1,53 @@
 # claude-agents-skills
 
-Reusable skills and agents for Claude Code. Install once, get consistent AI-assisted development across every project.
+Reusable skills, agents, and quality gates for Claude Code. Install once, get consistent AI-assisted development across every project.
 
-## Why This Exists
+## The Problem
 
-Every time you start a new project with Claude Code, you re-teach it the same things — your React patterns, your testing conventions, your Neo4j query style. It forgets between sessions. You paste the same context over and over.
+Every time you start a new project with Claude Code, you re-teach it the same things. Your React patterns. Your testing conventions. Your Neo4j query style. It forgets between sessions. You paste the same context again. And again.
 
-This repo fixes that. It packages technology knowledge as **skills** and development workflows as **agents** that you install globally or per-project with a single command.
+This repo fixes that.
 
 ## How It Works
 
-**Skills** are deep reference docs for specific technologies (React 19, Tailwind v4, Neo4j Cypher, etc.). Claude reads them automatically and writes code that follows your patterns instead of generic ones.
+**Skills** are deep reference docs for specific technologies — React 19, Tailwind v4, Neo4j Cypher, Playwright, and more. Over 7,500 lines of patterns and examples that Claude reads automatically so it writes code your way instead of generic StackOverflow way.
 
-**Agents** are specialized workflows — a code reviewer that checks security and conventions, a planner that designs before coding, a test-writer and builder that coordinate via feature docs.
+**Agents** are specialized workflows with distinct roles. A code reviewer that checks security and conventions. A planner that designs before coding. A test-writer and builder that coordinate through feature docs using test-first development.
 
-**Agent Teams** enables parallel multi-agent development. A test-writer writes failing tests from feature docs, a builder implements until tests pass, and a reviewer validates quality. Hook-based quality gates prevent broken code from shipping.
+**Hooks** are machine-enforced quality gates. Not suggestions — enforcement. They block `git push --force`, catch type errors on every save, and prevent task completion until the full test suite passes. Conventions you don't have to remember because the system remembers for you.
 
-**One command** installs everything. Global content is symlinked (updates propagate). Project content is copied (customizable per-project).
+One command installs everything.
 
 ## Quick Start
 
 ```bash
-# Global — installs universal agents + cross-stack skills to ~/.claude/
+# Global — symlinks universal agents + cross-stack skills to ~/.claude/
 ./setup.sh --global
 
-# Per-project — installs stack-specific skills, agents, hooks, and verify script
+# Per-project — copies stack-specific skills, agents, hooks, and verify scripts
 cd ~/your-project
 ~/path/to/claude-agents-skills/setup.sh frontend
 
-# Extras — add cross-stack skills (e.g., Neo4j for a Python project)
+# Extras — pull in cross-stack skills (e.g., Neo4j for a Python project)
 ~/path/to/claude-agents-skills/setup.sh python neo4j
 ```
 
 After setup, your project gets:
-- `.claude/skills/` — technology reference docs
-- `.claude/agents/` — agent definitions (test-writer, builder, etc.)
-- `.claude/settings.json` — hooks for formatting, verification, and agent teams
-- `scripts/` — verify, guard, and agent teams hook scripts
-- `feature-docs/` — lifecycle directories with CLAUDE.md guides, `new-feature.md` entry point, and example feature doc
 
-## What's Included
+```
+.claude/skills/       Technology reference docs Claude reads automatically
+.claude/agents/       Agent definitions (test-writer, builder, reviewer, etc.)
+.claude/settings.json Hooks for formatting, verification, and agent coordination
+scripts/              Verify, guard, and agent teams hook scripts
+feature-docs/         Lifecycle directories, CLAUDE.md guides, and example feature doc
+```
 
-### Skills
+## Skills
+
+12 complete skills across frontend and global stacks, plus 5 stubs waiting for content.
 
 | Skill | Stack | Description |
 |---|---|---|
-| agent-teams | global | Agent Teams workflow, feature doc lifecycle, test-first coordination |
-| git-workflow | global | Branching, commits, PR workflow, rebase vs merge |
-| neo4j-cypher | global | Cypher query patterns, performance, fraud-domain |
-| neo4j-data-models | global | Graph modeling, fraud detection schemas |
 | react | frontend | Components, hooks, TypeScript, state, performance |
 | testing-playwright | frontend | E2E testing, page objects, fixtures, ARIA snapshots |
 | shadcn-ui | frontend | Component library, composition, theming, forms |
@@ -57,8 +56,14 @@ After setup, your project gets:
 | zustand-state | frontend | Stores, selectors, middleware, multi-view sync |
 | react-patterns | frontend | React 19 patterns, TypeScript strict, architecture |
 | neo4j-driver-js | frontend | Neo4j JS driver, sessions, transactions |
+| agent-teams | global | Agent Teams workflow, feature doc lifecycle, test-first coordination |
+| git-workflow | global | Branching, commits, PR workflow, rebase vs merge |
+| neo4j-cypher | global | Cypher query patterns, performance, fraud-domain |
+| neo4j-data-models | global | Graph modeling, fraud detection schemas |
 
-### Agents
+## Agents
+
+10 agents spanning universal, frontend, Python, and Rust stacks.
 
 | Agent | Stack | Model | Description |
 |---|---|---|---|
@@ -75,13 +80,19 @@ After setup, your project gets:
 
 ## Agent Teams
 
-A parallel multi-agent workflow adapted from Anthropic's ["Building a C compiler with a team of parallel Claudes"](https://www.anthropic.com/engineering/building-c-compiler). Three roles coordinate via feature docs:
+This is the interesting part. Directly inspired by Nicholas Carlini's ["Building a C compiler with a team of parallel Claudes"](https://www.anthropic.com/engineering/building-c-compiler), Agent Teams enables parallel multi-agent development with the same core insight: **the quality of your test harness determines the quality of your output.**
 
-1. **Test Writer** (sonnet) — reads feature doc acceptance criteria, writes failing tests
-2. **Builder** (opus) — implements code until all tests pass, never modifies tests
-3. **Reviewer** (code-reviewer) — validates code quality, conventions, and completeness
+Three agents coordinate through feature docs. Each has a strict role:
+
+- **Test Writer** (sonnet) reads acceptance criteria and writes failing tests. Never touches implementation.
+- **Builder** (opus) implements code until tests pass. Never modifies tests.
+- **Reviewer** (code-reviewer) validates quality and conventions after all tests are green.
+
+The separation is deliberate. When the same agent writes both tests and implementation, it writes tests its own code trivially satisfies. Splitting the roles creates genuine verification — the tests become an oracle, not a rubber stamp.
 
 ### Feature Doc Lifecycle
+
+Features move through directories. The directory *is* the status.
 
 ```
 Human explores idea      →  feature-docs/ideation/<name>/   (research, code reviews, notes)
@@ -92,22 +103,27 @@ Builder finishes         →  feature-docs/review/            (all tests pass)
 Reviewer validates       →  feature-docs/completed/         (PR ready)
 ```
 
-Source `feature-docs/new-feature.md` to start — it walks you through the full flow, tracks progress, and can resume where you left off. If you already know what you want, choose "skip to feature doc" when prompted to go straight to `ready/`.
+Source `feature-docs/new-feature.md` to start. It walks you through the full flow and can resume where you left off.
 
-### Hooks
+### Quality Gates
 
-| Hook | Event | Purpose |
+Hooks enforce conventions that humans forget. Each one maps to a lesson from autonomous agent development:
+
+| Hook | Carlini Principle | What It Does |
 |---|---|---|
-| guard-bash.sh | PreToolUse | Block dangerous commands + branch protection on main |
-| prettier/black/rustfmt | PostToolUse | Auto-format after every edit |
-| verify.sh | Stop | Type-check + lint + test after every response |
-| task-completed.sh | TaskCompleted | Block task completion until verify passes |
-| teammate-idle.sh | TeammateIdle | Redirect idle agents to pending feature docs |
+| `task-completed.sh` | Testing as oracle | Blocks task completion until full verify passes (type check + lint + test) |
+| `stop-hook.sh` | Fast feedback (`--fast` mode) | Runs type-check only after each response — fast iteration without waiting for full suite |
+| `teammate-idle.sh` | Time blindness mitigation | Detects features stuck in `building/` for >30 min and warns you. Redirects idle agents to pending work |
+| `guard-bash.sh` | Task isolation | Blocks `rm -rf /`, `git push --force`, `DROP DATABASE`. When feature-docs exist, blocks commits to main |
 
-See the [agent-teams skill](skills/global/agent-teams/SKILL.md) for the full workflow documentation, coordination protocol, and anti-patterns.
+File ownership prevents conflicts: features declare their `affected-files`, and no agent touches files owned by another in-progress feature. Same idea as Carlini's file-locking for parallel Docker containers, applied to feature branches.
+
+Progress lives in `feature-docs/STATUS.md`, updated by every agent after each stage. When an agent starts a new session with zero context, it reads STATUS.md and knows exactly where things stand.
 
 ## Contributing
 
-Python and Rust skill stubs exist in `skills/python/` and `skills/rust/` and need real content. The format is documented in [skills/CLAUDE.md](skills/CLAUDE.md) — each skill is a `SKILL.md` with YAML frontmatter, numbered pattern sections, and an anti-patterns table.
+Python and Rust skill stubs need real content. Five stubs (`fastapi`, `testing-pytest`, `neo4j-driver-python`, `testing-rust`, `neo4j-driver-rust`) are waiting in `skills/python/` and `skills/rust/`.
 
-Agent definitions follow the format in [agents/CLAUDE.md](agents/CLAUDE.md) — YAML frontmatter with name, description, tools, and model, followed by role statement, process, output format, and memory updates.
+Skill format: [skills/CLAUDE.md](skills/CLAUDE.md) — YAML frontmatter, numbered pattern sections, anti-patterns table, copy-pasteable code examples.
+
+Agent format: [agents/CLAUDE.md](agents/CLAUDE.md) — YAML frontmatter, role statement, process, output format, memory updates.
