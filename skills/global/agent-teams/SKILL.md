@@ -441,13 +441,20 @@ is pending, the teammate goes idle.
 ### TaskCompleted Hook
 
 When any teammate tries to mark a task as done, the `TaskCompleted` hook runs
-the full verify pipeline:
+two checks:
 
-1. Type checking (tsc / mypy / cargo check)
-2. Linting (eslint / ruff / clippy)
-3. Tests (vitest / pytest / cargo test)
+**1. Lifecycle compliance** — Scans all feature docs in `ready/`, `testing/`,
+`building/`, `review/`, and `completed/`. For each doc with a `status:` field,
+verifies the value matches the directory name. If any feature doc is in the wrong
+directory (e.g., still in `ready/` when it should be in `testing/`), the task is
+blocked. This prevents agents from skipping the doc-move step.
 
-If any step fails, the task cannot be marked done. The agent sees the error
+**2. Full verify pipeline**:
+- Type checking (tsc / mypy / cargo check)
+- Linting (eslint / ruff / clippy)
+- Tests (vitest / pytest / cargo test)
+
+If either check fails, the task cannot be marked done. The agent sees the error
 output and must fix the issue before trying again.
 
 ## 7. File Ownership Rules
@@ -526,7 +533,7 @@ from the approved design without failing a visual regression test.
 
 ### TaskCompleted
 
-Blocks task completion until the full verify pipeline passes.
+Blocks task completion until lifecycle compliance and the full verify pipeline pass.
 
 ```json
 {
@@ -535,9 +542,11 @@ Blocks task completion until the full verify pipeline passes.
 }
 ```
 
-The script runs `scripts/verify.sh` (full pipeline) and blocks (exit 2) on any
-failure. Output is truncated to 30 lines to avoid context pollution. Verbose logs
-are available in `agent_logs/` for debugging.
+The script runs two checks. First, it scans feature docs for status/directory
+mismatches (e.g., a doc in `ready/` with `status: testing`) and blocks if any are
+found. Second, it runs `scripts/verify.sh` (full pipeline) and blocks (exit 2) on
+any failure. Output is truncated to 30 lines to avoid context pollution. Verbose
+logs are available in `agent_logs/` for debugging.
 
 ### TeammateIdle
 
@@ -676,3 +685,4 @@ components, services, and tests.
 | Tests that check truthiness not values | Wrong implementation passes — `toBeTruthy()` accepts any non-null | Assert specific return values, error types, and state changes |
 | No progress dashboard | Agents start with zero context and waste time re-discovering state | Update `feature-docs/STATUS.md` after every stage transition |
 | Ignoring stuck features | Agent spins for hours on a hard problem without human awareness | TeammateIdle warns after 30 minutes in building/; check agent_logs/ |
+| Skipping feature doc lifecycle steps | Next agent never finds the feature doc; pipeline stalls indefinitely | `task-completed.sh` enforces status/directory sync; Completion Gate checklist in agent definitions |
