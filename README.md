@@ -1,129 +1,131 @@
 # claude-agents-skills
 
-Reusable skills, agents, and quality gates for Claude Code. Install once, get consistent AI-assisted development across every project.
+You know how every new project with Claude Code starts the same way? You re-explain your React patterns. Re-paste your testing conventions. Re-describe how you like your Neo4j queries. Session after session, project after project.
 
-## The Problem
+This repo is a portable brain for Claude Code. Install it once and Claude already knows your stack, follows your conventions, and coordinates multi-agent workflows — across every project.
 
-Every time you start a new project with Claude Code, you re-teach it the same things. Your React patterns. Your testing conventions. Your Neo4j query style. It forgets between sessions. You paste the same context again. And again.
+## Setup (2 minutes)
 
-This repo fixes that.
-
-## How It Works
-
-**Skills** are deep reference docs for specific technologies — React 19, Tailwind v4, Neo4j Cypher, Playwright, and more. Over 7,500 lines of patterns and examples that Claude reads automatically so it writes code your way instead of generic StackOverflow way.
-
-**Agents** are specialized workflows with distinct roles. A code reviewer that checks security and conventions. A planner that designs before coding. A test-writer and builder that coordinate through feature docs using test-first development.
-
-**Hooks** are machine-enforced quality gates. Not suggestions — enforcement. They block `git push --force`, catch type errors on every save, and prevent task completion until the full test suite passes. Conventions you don't have to remember because the system remembers for you.
-
-One command installs everything.
-
-## Quick Start
+**Step 1: Install the global stuff.** Universal agents (code-reviewer, planner) and cross-stack skills (git workflow, Neo4j, agent teams) get symlinked to `~/.claude/` so they're available everywhere and stay in sync with this repo.
 
 ```bash
-# Global — symlinks universal agents + cross-stack skills to ~/.claude/
 ./setup.sh --global
+```
 
-# Per-project — copies stack-specific skills, agents, hooks, and verify scripts
+**Step 2: Set up a project.** Stack-specific skills, agents, hooks, and verify scripts get copied into your project (so you can customize them per-project).
+
+```bash
 cd ~/your-project
-~/path/to/claude-agents-skills/setup.sh frontend
+~/path/to/claude-agents-skills/setup.sh frontend    # or python, or rust
+```
 
-# Extras — pull in cross-stack skills (e.g., Neo4j for a Python project)
+Need Neo4j skills in a Python project? Add extras:
+
+```bash
 ~/path/to/claude-agents-skills/setup.sh python neo4j
 ```
 
-After setup, your project gets:
+That's it. Your project now has skills in `.claude/skills/`, agents in `.claude/agents/`, hooks in `.claude/settings.json`, and verify scripts in `scripts/`. Open Claude Code and everything is loaded automatically.
 
-```
-.claude/skills/       Technology reference docs Claude reads automatically
-.claude/agents/       Agent definitions (test-writer, builder, reviewer, etc.)
-.claude/settings.json Hooks for formatting, verification, and agent coordination
-scripts/              Verify, guard, and agent teams hook scripts
-feature-docs/         Lifecycle directories, CLAUDE.md guides, and example feature doc
-```
+## What You Get: Day-to-Day Usage
 
-## Skills
+### Skills make Claude write code your way
 
-12 complete skills across frontend and global stacks, plus 5 stubs waiting for content.
+Without skills, Claude writes generic React. With the `react` skill loaded, it writes React 19 with your TypeScript patterns, your hook conventions, your error handling style. Same for Tailwind v4, Playwright testing, Zustand stores, shadcn/ui components — 12 skills, over 7,000 lines of patterns and examples.
 
-| Skill | Stack | Description |
+You don't reference skills manually. Claude reads them automatically when they're relevant.
+
+<details>
+<summary>All 12 skills (+ 5 stubs)</summary>
+
+| Skill | Stack | What it teaches Claude |
 |---|---|---|
 | react | frontend | Components, hooks, TypeScript, state, performance |
 | testing-playwright | frontend | E2E testing, page objects, fixtures, ARIA snapshots |
-| shadcn-ui | frontend | Component library, composition, theming, forms |
+| shadcn-ui | frontend | Component composition, theming, forms |
 | nvl | frontend | Neo4j graph visualization, styling, layout |
 | tailwind | frontend | Tailwind v4 CSS-first config, responsive, animations |
 | zustand-state | frontend | Stores, selectors, middleware, multi-view sync |
 | react-patterns | frontend | React 19 patterns, TypeScript strict, architecture |
 | neo4j-driver-js | frontend | Neo4j JS driver, sessions, transactions |
-| agent-teams | global | Agent Teams workflow, feature doc lifecycle, test-first coordination |
+| agent-teams | global | Multi-agent workflow, feature doc lifecycle |
 | git-workflow | global | Branching, commits, PR workflow, rebase vs merge |
 | neo4j-cypher | global | Cypher query patterns, performance, fraud-domain |
 | neo4j-data-models | global | Graph modeling, fraud detection schemas |
 
-## Agents
+Stubs waiting for content: `fastapi`, `testing-pytest`, `neo4j-driver-python`, `testing-rust`, `neo4j-driver-rust`
 
-10 agents spanning universal, frontend, Python, and Rust stacks.
+</details>
 
-| Agent | Stack | Model | Description |
-|---|---|---|---|
-| code-reviewer | universal | opus | Security, error handling, convention checks |
-| planner | universal | sonnet | Implementation planning before coding |
-| frontend-engineer | frontend | opus | UI review, React optimization, component scaffolding |
-| component-builder | frontend | sonnet | Investigation workspace components |
-| test-writer | frontend | sonnet | Write failing Vitest/Playwright tests from feature docs |
-| builder | frontend | opus | Implement code to make failing tests pass |
-| test-writer | python | sonnet | Write failing pytest tests from feature docs |
-| builder | python | opus | Implement code to make failing pytest tests pass |
-| test-writer | rust | sonnet | Write failing cargo tests from feature docs |
-| builder | rust | opus | Implement code to make failing cargo tests pass |
+### Agents give Claude specialized roles
 
-## Agent Teams
+Instead of one Claude doing everything, agents split the work:
 
-This is the interesting part. Directly inspired by Nicholas Carlini's ["Building a C compiler with a team of parallel Claudes"](https://www.anthropic.com/engineering/building-c-compiler), Agent Teams enables parallel multi-agent development with the same core insight: **the quality of your test harness determines the quality of your output.**
+- **code-reviewer** (opus) — reviews your code for security issues, error handling gaps, and convention violations
+- **planner** (sonnet) — designs implementation before anyone writes code
+- **test-writer** (sonnet) — writes failing tests from feature doc acceptance criteria
+- **builder** (opus) — implements code until those tests pass
 
-Three agents coordinate through feature docs. Each has a strict role:
+These exist for frontend (Vitest/Playwright), Python (pytest), and Rust (cargo test).
 
-- **Test Writer** (sonnet) reads acceptance criteria and writes failing tests. Never touches implementation.
-- **Builder** (opus) implements code until tests pass. Never modifies tests.
-- **Reviewer** (code-reviewer) validates quality and conventions after all tests are green.
+### Hooks enforce your conventions automatically
 
-The separation is deliberate. When the same agent writes both tests and implementation, it writes tests its own code trivially satisfies. Splitting the roles creates genuine verification — the tests become an oracle, not a rubber stamp.
+This is where it gets interesting. Hooks aren't reminders — they're gates. They run automatically and block bad things from happening:
 
-### Feature Doc Lifecycle
+- **Every file you edit** gets auto-formatted (Prettier, Black, or rustfmt)
+- **Every response** triggers a fast type-check so you catch errors immediately
+- **Every task completion** runs the full suite — type check, lint, tests. If anything fails, the task doesn't complete
+- **Dangerous commands** like `rm -rf /`, `git push --force`, and `DROP DATABASE` are blocked before they execute
 
-Features move through directories. The directory *is* the status.
+You never have to remember to run the linter. The system runs it for you.
 
+## Agent Teams: The Interesting Part
+
+This is directly inspired by Nicholas Carlini's ["Building a C compiler with a team of parallel Claudes"](https://www.anthropic.com/engineering/building-c-compiler). The core insight: **the quality of your test harness determines the quality of your output.** If the same agent writes both tests and implementation, it writes tests its own code trivially satisfies. Split the roles and the tests become a real oracle.
+
+Here's the full flow:
+
+### 1. You describe what you want
+
+Source the entry point and describe your feature. You can start with rough exploration (ideation) or jump straight to a structured feature doc with GIVEN/WHEN/THEN acceptance criteria.
+
+```bash
+# In Claude Code:
+# Source feature-docs/new-feature.md
 ```
-Human explores idea      →  feature-docs/ideation/<name>/   (research, code reviews, notes)
-Human distills doc       →  feature-docs/ready/             (GIVEN/WHEN/THEN criteria)
-Test-writer picks up     →  feature-docs/testing/           (failing tests committed)
-Builder picks up         →  feature-docs/building/          (implements until green)
-Builder finishes         →  feature-docs/review/            (all tests pass)
-Reviewer validates       →  feature-docs/completed/         (PR ready)
-```
 
-Source `feature-docs/new-feature.md` to start. It walks you through the full flow and can resume where you left off.
+Your feature doc lands in `feature-docs/ready/`.
 
-### Quality Gates
+### 2. Test-writer writes failing tests
 
-Hooks enforce conventions that humans forget. Each one maps to a lesson from autonomous agent development:
+A sonnet agent picks up your feature doc, reads the acceptance criteria, and writes tests that fail. It commits them and moves the doc to `feature-docs/testing/`. This agent never touches implementation code.
 
-| Hook | Carlini Principle | What It Does |
-|---|---|---|
-| `task-completed.sh` | Testing as oracle | Blocks task completion until full verify passes (type check + lint + test) |
-| `stop-hook.sh` | Fast feedback (`--fast` mode) | Runs type-check only after each response — fast iteration without waiting for full suite |
-| `teammate-idle.sh` | Time blindness mitigation | Detects features stuck in `building/` for >30 min and warns you. Redirects idle agents to pending work |
-| `guard-bash.sh` | Task isolation | Blocks `rm -rf /`, `git push --force`, `DROP DATABASE`. When feature-docs exist, blocks commits to main |
+### 3. Builder makes the tests pass
 
-File ownership prevents conflicts: features declare their `affected-files`, and no agent touches files owned by another in-progress feature. Same idea as Carlini's file-locking for parallel Docker containers, applied to feature branches.
+An opus agent picks up the failing tests and implements until everything is green. It moves the doc to `feature-docs/review/`. This agent never modifies tests.
 
-Progress lives in `feature-docs/STATUS.md`, updated by every agent after each stage. When an agent starts a new session with zero context, it reads STATUS.md and knows exactly where things stand.
+### 4. Reviewer checks the work
+
+The code-reviewer agent validates quality, conventions, and completeness. If it passes, the doc moves to `feature-docs/completed/` and you've got a PR-ready feature.
+
+### 5. Hooks keep everyone honest
+
+Behind the scenes, quality gates from the Carlini playbook are running:
+
+| What happens | Why |
+|---|---|
+| Fast type-check after every response | Same idea as Carlini's `--fast` flag — quick feedback during iteration without waiting for the full suite |
+| Full verify on task completion | Tests are the oracle. No agent finishes until type check + lint + tests all pass |
+| Stuck detection after 30 min | LLMs can't track time. If a feature is stuck in building, you get a warning |
+| Idle agents redirected to pending work | When an agent finishes, it picks up the next feature doc automatically |
+| File ownership per feature | Like Carlini's file-locking for parallel Docker containers — agents don't step on each other's files |
+
+Progress lives in `feature-docs/STATUS.md`, updated after every stage. When an agent starts fresh with zero context, it reads STATUS.md and knows exactly where things stand.
+
+Already have a feature doc from a previous session? Source `feature-docs/implement-feature.md` to pick it up and resume.
 
 ## Contributing
 
-Python and Rust skill stubs need real content. Five stubs (`fastapi`, `testing-pytest`, `neo4j-driver-python`, `testing-rust`, `neo4j-driver-rust`) are waiting in `skills/python/` and `skills/rust/`.
+Five skill stubs need real content — `fastapi`, `testing-pytest`, `neo4j-driver-python`, `testing-rust`, `neo4j-driver-rust` in `skills/python/` and `skills/rust/`.
 
-Skill format: [skills/CLAUDE.md](skills/CLAUDE.md) — YAML frontmatter, numbered pattern sections, anti-patterns table, copy-pasteable code examples.
-
-Agent format: [agents/CLAUDE.md](agents/CLAUDE.md) — YAML frontmatter, role statement, process, output format, memory updates.
+Skill format: [skills/CLAUDE.md](skills/CLAUDE.md). Agent format: [agents/CLAUDE.md](agents/CLAUDE.md).
