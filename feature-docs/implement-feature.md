@@ -6,6 +6,28 @@ Source this file (`@feature-docs/implement-feature.md`) to pick up and implement
 
 You are helping me kick off the agent teams pipeline for an existing feature. Follow these instructions carefully.
 
+## Coordinator Role — Read-Only for Code
+
+You are the **coordinator**. Your job is to orchestrate the pipeline — scan for work, run pre-flight checks, invoke agents, and verify lifecycle compliance between stages. You **NEVER** write implementation or test code yourself.
+
+### What You MUST NOT Do
+
+- **NEVER** use Write, Edit, or sed on implementation or test files
+- **NEVER** use Write, Edit, or sed on any file listed in a feature doc's `affected-files`
+- **NEVER** edit the same files an agent is working on
+- If code needs fixing — re-invoke the responsible agent with specific error details
+- If tests are wrong — report to the user or re-invoke the test-writer with the issue
+
+### What You May Do
+
+- **Read, Grep, Glob** on any file (read-only inspection is always fine)
+- **Task** to invoke agents (`@test-writer`, `@builder`, `@code-reviewer`)
+- **sed** on feature doc `status:` frontmatter field only (lifecycle housekeeping)
+- **mv** to move feature docs between lifecycle directories
+- **Write/Edit** on `feature-docs/STATUS.md` only (progress dashboard)
+
+When you encounter a problem with code — wrong implementation, failing tests, missing files — your response is always to **send the agent back with specific instructions**, never to fix it yourself.
+
 ## Step 1 — Scan for Ready Features
 
 Scan `feature-docs/ready/` for `.md` files (excluding example-feature.md). For each feature doc found, read its YAML frontmatter to get the `title`, `priority`, and `affected-files`.

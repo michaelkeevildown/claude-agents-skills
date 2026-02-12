@@ -345,6 +345,35 @@ agent-teams awareness.
 **Produces**: Review report. If issues found, status stays at `review`.
 If approved, reviewer moves doc to `feature-docs/completed/`.
 
+### Coordinator
+
+**Purpose**: Orchestrate the pipeline — scan for work, run pre-flight checks,
+invoke agents, verify lifecycle compliance between stages, and manage the
+progress dashboard. The coordinator never writes implementation or test code.
+
+**Identity**: The main Claude Code session that sources `implement-feature.md`.
+Unlike the other roles, the coordinator is not a named agent with restricted
+tools — it has full tool access by default. These constraints are self-imposed
+through prompt instructions.
+
+**Reads**: Feature docs (all directories), STATUS.md, verify output, agent reports
+
+**Produces**: Agent invocations, feature doc lifecycle moves, STATUS.md updates
+
+**Allowed operations**:
+- Read, Grep, Glob, and read-only Bash on any file
+- Task invocations to launch agents (@test-writer, @builder, @code-reviewer)
+- `sed` on feature doc frontmatter (`status:` field only)
+- `mv` to move feature docs between lifecycle directories
+- Write/Edit on `feature-docs/STATUS.md` only
+
+**Constraints**:
+- Never uses Write, Edit, or sed on files listed in `affected-files`
+- Never uses Write, Edit, or sed on test files
+- Never uses Write, Edit, or sed on any implementation/source file
+- When code needs fixing, re-invokes the responsible agent with specific error details
+- When tests are wrong, reports to the user or re-invokes the test-writer
+
 ## 5. Feature Doc Lifecycle
 
 ```
@@ -686,3 +715,4 @@ components, services, and tests.
 | No progress dashboard | Agents start with zero context and waste time re-discovering state | Update `feature-docs/STATUS.md` after every stage transition |
 | Ignoring stuck features | Agent spins for hours on a hard problem without human awareness | TeammateIdle warns after 30 minutes in building/; check agent_logs/ |
 | Skipping feature doc lifecycle steps | Next agent never finds the feature doc; pipeline stalls indefinitely | `task-completed.sh` enforces status/directory sync; Completion Gate checklist in agent definitions |
+| Coordinator edits implementation or test files | Violates role separation — coordinator and agent edit the same files, causing conflicts and undermining the test-as-oracle principle | Coordinator re-invokes the responsible agent with specific error details; never uses Write/Edit/sed on code |
