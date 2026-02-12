@@ -145,7 +145,7 @@ Each ideation folder's `README.md` has YAML frontmatter:
 ```yaml
 ---
 feature: user-auth
-status: in-progress        # or: complete
+status: in-progress        # or: complete, shipped
 created: 2025-01-15
 ---
 ```
@@ -191,6 +191,11 @@ When the feature is clear enough to write testable acceptance criteria, say
 The ideation folder stays as an archive. Agents never read ideation folders — only
 the distilled feature doc in `ready/`. The `ideation-ref` field lets agents optionally
 check the ideation folder for additional context.
+
+When the feature later completes the full pipeline (reviewer approves, doc moves to
+`completed/`), the coordinator updates the ideation README status from `complete` to
+`shipped` and appends a final progress entry noting pipeline completion. This is handled
+by the coordinator's "After reviewer approves" checklist in `implement-feature.md`.
 
 Alternatively, if you already know what you want and want to skip ideation, source
 `feature-docs/new-feature.md` and choose "skip to feature doc" when prompted — it
@@ -726,3 +731,4 @@ components, services, and tests.
 | Unbounded review → building loop | Builder and reviewer cycle indefinitely, burning tokens on issues the builder cannot resolve alone | Auto-loop up to 3 cycles; after 3, escalate to the user with remaining issues |
 | Launching next agent before current one finishes | Both agents edit the same feature's files simultaneously, causing conflicts and lost work | Per-feature sequential: wait for each agent to complete before launching the next; cross-feature parallelism is fine with non-overlapping `affected-files` |
 | Reviewer fixes code directly | Defeats independence — reviewer can't objectively review code it wrote; bypasses TDD pipeline | Reviewer reports issues only; coordinator routes to test-writer (for test gaps) or builder (for implementation issues) |
+| Ideation README never updated after pipeline | Feature appears incomplete in ideation folder; scanning for shipped features requires reading `completed/` instead of ideation metadata | Coordinator updates ideation README to `shipped` in "After reviewer approves" step |
