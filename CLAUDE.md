@@ -55,6 +55,7 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 | builder | frontend | opus | 146 | Implement code to make failing tests pass (React/Zustand) |
 | test-writer | python | sonnet | 163 | Write failing pytest tests from feature docs |
 | builder | python | opus | 143 | Implement code to make failing pytest tests pass |
+| code-reviewer | rust | opus | 123 | Rust-specific code review — ownership, async safety, error handling, unsafe audit |
 | test-writer | rust | sonnet | 155 | Write failing cargo tests from feature docs |
 | builder | rust | opus | 143 | Implement code to make failing cargo tests pass |
 
@@ -67,7 +68,7 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 | shadcn-ui | frontend | 733 | Component library, composition, theming, forms |
 | nvl | frontend | 685 | Neo4j Visualization Library, graph rendering, styling, layout |
 | tailwind | frontend | 659 | Tailwind v4 CSS-first config, responsive, animations |
-| agent-teams | global | 718 | Agent Teams workflow, ideation phase, feature doc lifecycle, test-first coordination |
+| agent-teams | global | 719 | Agent Teams workflow, ideation phase, feature doc lifecycle, test-first coordination |
 | git-workflow | global | 579 | Branching, commits, PR workflow, rebase vs merge |
 | zustand-state | frontend | 521 | Stores, selectors, middleware, multi-view sync |
 | react-patterns | frontend | 472 | React 19 patterns, TypeScript strict, architecture |

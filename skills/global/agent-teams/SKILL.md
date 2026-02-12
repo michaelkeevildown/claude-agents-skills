@@ -345,6 +345,12 @@ agent-teams awareness.
 **Produces**: Review report. If issues found, status stays at `review`.
 If approved, reviewer moves doc to `feature-docs/completed/`.
 
+**Constraints**:
+- Strictly read-only — never edits implementation or test files
+- Never uses Bash to modify files (`sed -i`, `echo >`, etc.)
+- Reports issues to the coordinator; the coordinator routes fixes to the appropriate agent
+- Independence is the reviewer's value — if the reviewer fixes code, it cannot objectively review it
+
 ### Coordinator
 
 **Purpose**: Orchestrate the pipeline — scan for work, run pre-flight checks,
@@ -716,3 +722,7 @@ components, services, and tests.
 | Ignoring stuck features | Agent spins for hours on a hard problem without human awareness | TeammateIdle warns after 30 minutes in building/; check agent_logs/ |
 | Skipping feature doc lifecycle steps | Next agent never finds the feature doc; pipeline stalls indefinitely | `task-completed.sh` enforces status/directory sync; Completion Gate checklist in agent definitions |
 | Coordinator edits implementation or test files | Violates role separation — coordinator and agent edit the same files, causing conflicts and undermining the test-as-oracle principle | Coordinator re-invokes the responsible agent with specific error details; never uses Write/Edit/sed on code |
+| Coordinator fixes follow-up issues directly | Bypasses TDD — no failing test, no builder, no review; defeats the entire workflow even for "small" fixes | Route follow-ups through the full pipeline: test-writer → builder → reviewer; create a new feature doc or amend the existing one |
+| Unbounded review → building loop | Builder and reviewer cycle indefinitely, burning tokens on issues the builder cannot resolve alone | Auto-loop up to 3 cycles; after 3, escalate to the user with remaining issues |
+| Launching next agent before current one finishes | Both agents edit the same feature's files simultaneously, causing conflicts and lost work | Per-feature sequential: wait for each agent to complete before launching the next; cross-feature parallelism is fine with non-overlapping `affected-files` |
+| Reviewer fixes code directly | Defeats independence — reviewer can't objectively review code it wrote; bypasses TDD pipeline | Reviewer reports issues only; coordinator routes to test-writer (for test gaps) or builder (for implementation issues) |

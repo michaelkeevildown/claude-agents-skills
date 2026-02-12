@@ -90,5 +90,6 @@ Keep entries concise — one line per pattern, deduplicate with existing entries
 | `frontend/builder.md` | opus | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass) |
 | `python/test-writer.md` | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs) |
 | `python/builder.md` | opus | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass) |
+| `rust/code-reviewer.md` | opus | Read, Grep, Glob, Bash | 1 (Rust-specific review checklist) |
 | `rust/test-writer.md` | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs) |
 | `rust/builder.md` | opus | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass) |
