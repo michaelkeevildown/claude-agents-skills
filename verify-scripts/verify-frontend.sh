@@ -8,6 +8,10 @@ mkdir -p agent_logs
 
 echo "==> Running frontend verification" >&2
 
+echo "--- Format check (Prettier) ---" >&2
+npx prettier --check . 2>&1 | tee agent_logs/prettier.log | tail -10 >&2
+[ "${PIPESTATUS[0]}" -eq 0 ] || { echo "FAIL: prettier format check failed (see agent_logs/prettier.log)" >&2; exit 2; }
+
 echo "--- TypeScript type check ---" >&2
 npx tsc --noEmit 2>&1 | tee agent_logs/tsc.log | tail -10 >&2
 [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "FAIL: TypeScript errors (see agent_logs/tsc.log)" >&2; exit 2; }

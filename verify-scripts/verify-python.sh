@@ -8,6 +8,10 @@ mkdir -p agent_logs
 
 echo "==> Running Python verification" >&2
 
+echo "--- Format check (ruff) ---" >&2
+ruff format --check . 2>&1 | tee agent_logs/ruff-format.log | tail -10 >&2
+[ "${PIPESTATUS[0]}" -eq 0 ] || { echo "FAIL: ruff format check failed (see agent_logs/ruff-format.log)" >&2; exit 2; }
+
 echo "--- Type check (mypy) ---" >&2
 mypy . 2>&1 | tee agent_logs/mypy.log | tail -10 >&2
 [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "FAIL: mypy type errors (see agent_logs/mypy.log)" >&2; exit 2; }
