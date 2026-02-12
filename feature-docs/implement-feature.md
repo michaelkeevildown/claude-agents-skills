@@ -60,19 +60,33 @@ Check if a feature branch `feat/<feature-name>` already exists (run `git branch 
 
 ## Step 4 — Kickoff
 
-Show me what will happen:
+**If pre-flight checks passed with no warnings** (no missing sections, no file ownership conflicts, no existing branch from a previous attempt), skip confirmation and go straight to the kickoff command:
+
+> **Kicking off:**
+>
+> - **Feature**: <title>
+> - **Agent**: @test-writer
+> - **Branch**: `feat/<feature-name>` (will be created)
+> - **Affected files**: <list from frontmatter>
+>
+> ```
+> @test-writer Pick up feature-docs/ready/<filename>.md
+> ```
+
+**If any warnings were raised** (missing sections, file conflicts, or branch already exists), show the plan and ask for confirmation before providing the kickoff command:
 
 > **Implementation Plan**
 >
 > - **Feature**: <title>
 > - **Agent**: @test-writer
 > - **Action**: Write failing tests for all acceptance criteria
-> - **Branch**: `feat/<feature-name>` (exists / will be created)
+> - **Branch**: `feat/<feature-name>` (exists — previous attempt?)
 > - **Affected files**: <list from frontmatter>
+> - **Warnings**: <list warnings from Steps 2–3>
 >
 > Ready to kick off?
 
-On confirmation, output the exact kickoff command for me to run:
+On confirmation, output the kickoff command:
 
 ```
 @test-writer Pick up feature-docs/ready/<filename>.md
