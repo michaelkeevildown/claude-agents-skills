@@ -160,8 +160,8 @@ setup_project() {
     echo "    Copied guard-bash.sh -> scripts/guard-bash.sh"
   fi
 
-  # Copy agent teams hook scripts if they exist
-  for hook_script in task-completed.sh teammate-idle.sh stop-hook.sh; do
+  # Copy agent teams hook scripts and utilities if they exist
+  for hook_script in task-completed.sh teammate-idle.sh stop-hook.sh next-feature-number.sh lifecycle-stage.sh; do
     local hook_file="${REPO_DIR}/verify-scripts/${hook_script}"
     if [ -f "${hook_file}" ]; then
       mkdir -p "${project_dir}/scripts"

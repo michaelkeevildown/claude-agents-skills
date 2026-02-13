@@ -117,13 +117,13 @@ Ideation happens in `feature-docs/ideation/` with one subfolder per feature:
 ```
 feature-docs/ideation/
   CLAUDE.md               # Auto-discovered guide for all ideation folders
-  user-auth/
+  001-user-auth/
     README.md             # Status tracking + progress log
     code-review.md        # Analysis of existing code to change
     api-research.md       # How other projects solve this
     design-notes.md       # Data flow, component tree, schema
     spike-results.md      # Quick experiments
-  cart-redesign/
+  002-cart-redesign/
     README.md
     current-analysis.md
     competitor-notes.md
@@ -423,6 +423,20 @@ skill conventions).
 - Builder commits implementation on the same branch
 - Reviewer reviews the branch, then the branch is PR'd to main
 
+### Naming Convention
+
+Feature doc filenames use a 3-digit numeric prefix: `NNN-feature-name.md`
+(e.g., `001-user-auth.md`, `002-cart-redesign.md`). The prefix is assigned at
+creation time by running `scripts/next-feature-number.sh`, which scans all
+lifecycle directories and ideation folders for existing prefixes and returns
+the next available number. Ideation folders use the same prefix (e.g.,
+`ideation/001-user-auth/`). The numeric prefix carries through the entire
+lifecycle — the same file that starts as `ready/001-user-auth.md` becomes
+`testing/001-user-auth.md`, then `building/`, `review/`, and `completed/`.
+
+This prevents confusion between similarly-named features. `001-user-auth.md`
+can never be mistaken for `002-user-auth-v2.md`.
+
 ## 6. Coordination Protocol
 
 ### Automated Kickoff
@@ -437,17 +451,17 @@ handoffs automatically. This is the recommended way to start implementation.
 For one feature at a time, the user drives each handoff manually:
 
 ```
-# Step 1: Human creates feature doc
+# Step 1: Human creates feature doc (with numeric prefix)
 # Place the doc in feature-docs/ready/
 
 # Step 2: Invoke test-writer
-@test-writer Pick up feature-docs/ready/user-auth.md
+@test-writer Pick up feature-docs/ready/001-user-auth.md
 
 # Step 3: Wait for test-writer to finish, then invoke builder
-@builder Pick up feature-docs/testing/user-auth.md
+@builder Pick up feature-docs/testing/001-user-auth.md
 
 # Step 4: Wait for builder to finish, then invoke reviewer
-@code-reviewer Review feature-docs/review/user-auth.md
+@code-reviewer Review feature-docs/review/001-user-auth.md
 ```
 
 ### Parallel Workflow (Multiple Features)
@@ -455,13 +469,13 @@ For one feature at a time, the user drives each handoff manually:
 For multiple features in parallel, ensure no `affected-files` overlap:
 
 ```
-# Two features with non-overlapping files
-@test-writer Pick up feature-docs/ready/user-auth.md
-@test-writer Pick up feature-docs/ready/cart.md
+# Two features with non-overlapping files — numeric prefix prevents name confusion
+@test-writer Pick up feature-docs/ready/001-user-auth.md
+@test-writer Pick up feature-docs/ready/002-cart.md
 
 # After both test-writers finish
-@builder Pick up feature-docs/testing/user-auth.md
-@builder Pick up feature-docs/testing/cart.md
+@builder Pick up feature-docs/testing/001-user-auth.md
+@builder Pick up feature-docs/testing/002-cart.md
 ```
 
 If features share files, run them **sequentially** to avoid conflicts.
@@ -588,6 +602,10 @@ found. Second, it runs `scripts/verify.sh` (full pipeline) and blocks (exit 2) o
 any failure. Output is truncated to 30 lines to avoid context pollution. Verbose
 logs are available in `agent_logs/` for debugging.
 
+**Lifecycle-aware**: During the `testing` stage, only lifecycle compliance is
+checked — the verify pipeline is skipped because tests are expected to fail.
+The builder runs full verify when it completes.
+
 ### TeammateIdle
 
 Redirects idle teammates to pending feature docs.
@@ -622,6 +640,10 @@ tree is clean, it exits 0 (skips verify). If files have changed, it runs
 `scripts/fast-verify.sh` (type check only) for quick feedback. If no fast-verify
 script exists, it falls back to `scripts/verify.sh`. It reads `stop_hook_active`
 from stdin to prevent recursive loops. Output is truncated to 20 lines.
+
+**Lifecycle-aware**: During the `testing` stage, verification is skipped entirely
+because test-writer code references unimplemented APIs that will always fail type
+checking.
 
 ### Branch Protection
 
@@ -732,3 +754,5 @@ components, services, and tests.
 | Launching next agent before current one finishes | Both agents edit the same feature's files simultaneously, causing conflicts and lost work | Per-feature sequential: wait for each agent to complete before launching the next; cross-feature parallelism is fine with non-overlapping `affected-files` |
 | Reviewer fixes code directly | Defeats independence — reviewer can't objectively review code it wrote; bypasses TDD pipeline | Reviewer reports issues only; coordinator routes to test-writer (for test gaps) or builder (for implementation issues) |
 | Ideation README never updated after pipeline | Feature appears incomplete in ideation folder; scanning for shipped features requires reading `completed/` instead of ideation metadata | Coordinator updates ideation README to `shipped` in "After reviewer approves" step |
+| Feature docs without numeric prefix | Similarly-named features (user-auth.md vs user-auth-v2.md) cause agents to read the wrong doc from completed/ or other directories | Always use `scripts/next-feature-number.sh` to get a unique NNN- prefix at creation time |
+| Running verify on test-writer output | Type errors on unresolved imports fire on every response; test failures block task completion | Hooks detect `testing` stage via `lifecycle-stage.sh` and skip verification |
