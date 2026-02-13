@@ -38,20 +38,20 @@ You don't reference skills manually. Claude reads them automatically when they'r
 <details>
 <summary>All 12 skills (+ 5 stubs)</summary>
 
-| Skill | Stack | What it teaches Claude |
-|---|---|---|
-| react | frontend | Components, hooks, TypeScript, state, performance |
-| testing-playwright | frontend | E2E testing, page objects, fixtures, ARIA snapshots |
-| shadcn-ui | frontend | Component composition, theming, forms |
-| nvl | frontend | Neo4j graph visualization, styling, layout |
-| tailwind | frontend | Tailwind v4 CSS-first config, responsive, animations |
-| zustand-state | frontend | Stores, selectors, middleware, multi-view sync |
-| react-patterns | frontend | React 19 patterns, TypeScript strict, architecture |
-| neo4j-driver-js | frontend | Neo4j JS driver, sessions, transactions |
-| agent-teams | global | Multi-agent workflow, feature doc lifecycle |
-| git-workflow | global | Branching, commits, PR workflow, rebase vs merge |
-| neo4j-cypher | global | Cypher query patterns, performance, fraud-domain |
-| neo4j-data-models | global | Graph modeling, fraud detection schemas |
+| Skill              | Stack    | What it teaches Claude                               |
+| ------------------ | -------- | ---------------------------------------------------- |
+| react              | frontend | Components, hooks, TypeScript, state, performance    |
+| testing-playwright | frontend | E2E testing, page objects, fixtures, ARIA snapshots  |
+| shadcn-ui          | frontend | Component composition, theming, forms                |
+| nvl                | frontend | Neo4j graph visualization, styling, layout           |
+| tailwind           | frontend | Tailwind v4 CSS-first config, responsive, animations |
+| zustand-state      | frontend | Stores, selectors, middleware, multi-view sync       |
+| react-patterns     | frontend | React 19 patterns, TypeScript strict, architecture   |
+| neo4j-driver-js    | frontend | Neo4j JS driver, sessions, transactions              |
+| agent-teams        | global   | Multi-agent workflow, feature doc lifecycle          |
+| git-workflow       | global   | Branching, commits, PR workflow, rebase vs merge     |
+| neo4j-cypher       | global   | Cypher query patterns, performance, fraud-domain     |
+| neo4j-data-models  | global   | Graph modeling, fraud detection schemas              |
 
 Stubs waiting for content: `fastapi`, `testing-pytest`, `neo4j-driver-python`, `testing-rust`, `neo4j-driver-rust`
 
@@ -112,13 +112,13 @@ The code-reviewer agent validates quality, conventions, and completeness. If it 
 
 Behind the scenes, quality gates from the Carlini playbook are running:
 
-| What happens | Why |
-|---|---|
-| Fast type-check after every response | Same idea as Carlini's `--fast` flag — quick feedback during iteration without waiting for the full suite |
-| Full verify on task completion | Tests are the oracle. No agent finishes until type check + lint + tests all pass |
-| Stuck detection after 30 min | LLMs can't track time. If a feature is stuck in building, you get a warning |
-| Idle agents redirected to pending work | When an agent finishes, it picks up the next feature doc automatically |
-| File ownership per feature | Like Carlini's file-locking for parallel Docker containers — agents don't step on each other's files |
+| What happens                           | Why                                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Fast type-check after every response   | Same idea as Carlini's `--fast` flag — quick feedback during iteration without waiting for the full suite |
+| Full verify on task completion         | Tests are the oracle. No agent finishes until type check + lint + tests all pass                          |
+| Stuck detection after 30 min           | LLMs can't track time. If a feature is stuck in building, you get a warning                               |
+| Idle agents redirected to pending work | When an agent finishes, it picks up the next feature doc automatically                                    |
+| File ownership per feature             | Like Carlini's file-locking for parallel Docker containers — agents don't step on each other's files      |
 
 Progress lives in `feature-docs/STATUS.md`, updated after every stage. When an agent starts fresh with zero context, it reads STATUS.md and knows exactly where things stand.
 

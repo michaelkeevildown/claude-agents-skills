@@ -30,6 +30,7 @@ You are a frontend component builder specialized in investigation workspace appl
 ### 1. Understand the Component's Role
 
 Before writing code, determine:
+
 - **Which Zustand store(s)** does this component read from or write to?
 - **Which views** does it synchronize with? (If it updates `selectedNodeIds`, the graph, table, and timeline all react)
 - **Is it tab-scoped?** Most investigation components are — they read from `state.tabStates[state.activeTabId]`
@@ -41,16 +42,16 @@ Follow this structure:
 
 ```tsx
 // Standard imports
-import { useCallback, useMemo } from 'react';
-import { cn } from '@/lib/utils';
-import { useInvestigationStore } from '@/stores/investigation';
+import { useCallback, useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { useInvestigationStore } from "@/stores/investigation";
 
 // shadcn/ui imports
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 // Types
-interface ComponentNameProps extends React.ComponentProps<'div'> {
+interface ComponentNameProps extends React.ComponentProps<"div"> {
   // Component-specific props
 }
 
@@ -58,29 +59,32 @@ export function ComponentName({ className, ...props }: ComponentNameProps) {
   // 1. Store selectors (fine-grained, tab-scoped)
   const activeTabId = useInvestigationStore((s) => s.activeTabId);
   const nodes = useInvestigationStore((s) =>
-    s.activeTabId ? s.tabStates[s.activeTabId]?.nodes ?? [] : []
+    s.activeTabId ? (s.tabStates[s.activeTabId]?.nodes ?? []) : [],
   );
 
   // 2. Computed values (memoized)
   const visibleNodes = useMemo(
     () => nodes.filter((n) => !removedNodeIds.has(n.id)),
-    [nodes, removedNodeIds]
+    [nodes, removedNodeIds],
   );
 
   // 3. Event handlers (stable references)
-  const handleAction = useCallback((nodeId: string) => {
-    if (!activeTabId) return;
-    useInvestigationStore.getState().updateTabState(activeTabId, {
-      selectedNodeIds: new Set([nodeId]),
-    });
-  }, [activeTabId]);
+  const handleAction = useCallback(
+    (nodeId: string) => {
+      if (!activeTabId) return;
+      useInvestigationStore.getState().updateTabState(activeTabId, {
+        selectedNodeIds: new Set([nodeId]),
+      });
+    },
+    [activeTabId],
+  );
 
   // 4. Guard: no active tab
   if (!activeTabId) return null;
 
   // 5. Render with shadcn/ui components
   return (
-    <div className={cn('flex flex-col', className)} {...props}>
+    <div className={cn("flex flex-col", className)} {...props}>
       {/* Loading state */}
       {/* Empty state */}
       {/* Content */}
@@ -94,12 +98,14 @@ export function ComponentName({ className, ...props }: ComponentNameProps) {
 Before considering the component done, verify every item:
 
 **State Integration**
+
 - [ ] Uses fine-grained Zustand selectors (not `useStore()` without a selector)
 - [ ] Selectors are scoped to the active tab: `state.tabStates[state.activeTabId]`
 - [ ] Actions that modify state use `useStore.getState().action()` pattern
 - [ ] State updates propagate to all synchronized views (graph, table, timeline)
 
 **UI Quality**
+
 - [ ] Uses shadcn/ui primitives, not raw HTML elements
 - [ ] Accepts and forwards `className` via `cn()`
 - [ ] Uses `React.ComponentProps<typeof X>` or extends native element props
@@ -108,17 +114,20 @@ Before considering the component done, verify every item:
 - [ ] Includes error state (when an operation fails)
 
 **Accessibility**
+
 - [ ] Icon-only buttons have `aria-label`
 - [ ] Interactive elements have `data-testid` attributes
 - [ ] Custom interactive elements handle keyboard events (Enter/Space)
 - [ ] Dialogs include `DialogDescription` (can be visually hidden with `sr-only`)
 
 **Performance**
+
 - [ ] Event handlers wrapped in `useCallback` when passed to memoized children
 - [ ] Expensive computations (filtering, sorting) wrapped in `useMemo`
 - [ ] Does not create new objects/arrays inline in JSX that are passed to memoized children
 
 **React 19**
+
 - [ ] Uses `ref` as a regular prop (no `forwardRef` wrapper)
 - [ ] Uses `React.ComponentProps<typeof X>` which includes `ref` in React 19
 
@@ -137,6 +146,7 @@ List the files created or modified, then show verification results. For each fil
 ## Memory Updates
 
 After completing each build, update your agent memory with:
+
 - Component patterns discovered in this project
 - Store access patterns (which selectors, which actions)
 - Common integration issues you encountered

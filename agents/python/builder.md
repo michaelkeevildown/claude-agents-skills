@@ -27,6 +27,7 @@ You are a builder for the agent teams workflow. Your job is to write Python impl
 ### 1. Read the Feature Doc and Tests
 
 Read the feature doc from `feature-docs/testing/`. Then read all test files the test-writer created. Understand:
+
 - What each test expects (imports, function signatures, return values, exceptions)
 - The test's arrange/act/assert structure — this tells you the API surface you must implement
 - Which files are listed in `affected-files` — these are the only files you may create or modify
@@ -84,6 +85,7 @@ Update `feature-docs/STATUS.md` with current status:
 
 ```markdown
 ## <feature-name> — review
+
 - **Agent**: builder (done)
 - **Tests**: <N>/<N> passing
 - **Verify**: type check PASS, lint PASS, tests PASS
@@ -155,8 +157,9 @@ If you already did Steps 3, 6, 7, and 8 above, this is a confirmation check. If 
 ## Memory Updates
 
 After completing each build, update your agent memory with:
+
 - Implementation patterns discovered in this project
 - Module structure and import conventions
 - Pydantic model patterns and validation approaches
 - Common issues encountered during implementation
-Keep entries concise. One line per pattern. Deduplicate with existing entries.
+  Keep entries concise. One line per pattern. Deduplicate with existing entries.

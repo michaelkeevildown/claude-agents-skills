@@ -54,9 +54,9 @@ echo "All checks passed." >&2
 
 ## Existing Scripts
 
-| Script | Type Check | Lint | Test |
-|---|---|---|---|
+| Script               | Type Check         | Lint                            | Test             |
+| -------------------- | ------------------ | ------------------------------- | ---------------- |
 | `verify-frontend.sh` | `npx tsc --noEmit` | `npx eslint . --max-warnings 0` | `npx vitest run` |
-| `verify-python.sh` | `mypy .` | `ruff check .` | `pytest` |
-| `verify-rust.sh` | `cargo check` | `cargo clippy -- -D warnings` | `cargo test` |
-| `guard-bash.sh` | — | — | — |
+| `verify-python.sh`   | `mypy .`           | `ruff check .`                  | `pytest`         |
+| `verify-rust.sh`     | `cargo check`      | `cargo clippy -- -D warnings`   | `cargo test`     |
+| `guard-bash.sh`      | —                  | —                               | —                |

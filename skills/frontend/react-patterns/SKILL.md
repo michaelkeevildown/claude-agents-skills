@@ -19,13 +19,19 @@ Use this skill when building React components with TypeScript in strict mode. Co
 
 ```tsx
 // React 19 — ref is a regular prop
-function Input({ ref, className, ...props }: React.ComponentProps<'input'>) {
-  return <input ref={ref} className={cn('border rounded px-3 py-2', className)} {...props} />;
+function Input({ ref, className, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      ref={ref}
+      className={cn("border rounded px-3 py-2", className)}
+      {...props}
+    />
+  );
 }
 
 // Usage
 const inputRef = useRef<HTMLInputElement>(null);
-<Input ref={inputRef} placeholder="Search..." />
+<Input ref={inputRef} placeholder="Search..." />;
 ```
 
 `React.ComponentProps<typeof Component>` already includes `ref` in React 19.
@@ -35,17 +41,17 @@ const inputRef = useRef<HTMLInputElement>(null);
 Read promises and context directly in render:
 
 ```tsx
-import { use } from 'react';
+import { use } from "react";
 
 function UserProfile({ userPromise }: { userPromise: Promise<User> }) {
-  const user = use(userPromise);  // Suspends until resolved
+  const user = use(userPromise); // Suspends until resolved
   return <div>{user.name}</div>;
 }
 
 // Must be wrapped in Suspense
 <Suspense fallback={<Skeleton />}>
   <UserProfile userPromise={fetchUser(id)} />
-</Suspense>
+</Suspense>;
 ```
 
 ### useActionState
@@ -53,16 +59,19 @@ function UserProfile({ userPromise }: { userPromise: Promise<User> }) {
 Replace manual form state management:
 
 ```tsx
-import { useActionState } from 'react';
+import { useActionState } from "react";
 
 function LoginForm() {
   const [state, submitAction, isPending] = useActionState(
     async (_prevState: { error?: string }, formData: FormData) => {
-      const result = await login(formData.get('email'), formData.get('password'));
+      const result = await login(
+        formData.get("email"),
+        formData.get("password"),
+      );
       if (!result.success) return { error: result.message };
       return {};
     },
-    {}
+    {},
   );
 
   return (
@@ -71,7 +80,7 @@ function LoginForm() {
       <Input name="password" type="password" />
       {state.error && <p className="text-destructive">{state.error}</p>}
       <Button type="submit" disabled={isPending}>
-        {isPending ? 'Signing in...' : 'Sign in'}
+        {isPending ? "Signing in..." : "Sign in"}
       </Button>
     </form>
   );
@@ -83,16 +92,16 @@ function LoginForm() {
 Show optimistic UI while an async action is in progress:
 
 ```tsx
-import { useOptimistic } from 'react';
+import { useOptimistic } from "react";
 
 function NodeList({ nodes }: { nodes: Node[] }) {
   const [optimisticNodes, addOptimisticNode] = useOptimistic(
     nodes,
-    (current, newNode: Node) => [...current, newNode]
+    (current, newNode: Node) => [...current, newNode],
   );
 
   const handleAdd = async (node: Node) => {
-    addOptimisticNode(node);       // Immediately show in UI
+    addOptimisticNode(node); // Immediately show in UI
     await saveNodeToDatabase(node); // Actually save
   };
 
@@ -108,7 +117,7 @@ function NodeList({ nodes }: { nodes: Node[] }) {
 
 ```tsx
 // Extend native HTML element props
-interface SearchInputProps extends React.ComponentProps<'input'> {
+interface SearchInputProps extends React.ComponentProps<"input"> {
   onSearch: (term: string) => void;
 }
 
@@ -123,17 +132,22 @@ interface CustomCardProps extends React.ComponentProps<typeof Card> {
 
 ```tsx
 type NodeDetailProps =
-  | { type: 'person'; person: Person; accounts: Account[] }
-  | { type: 'account'; account: Account; transactions: Transaction[] }
-  | { type: 'transaction'; transaction: Transaction };
+  | { type: "person"; person: Person; accounts: Account[] }
+  | { type: "account"; account: Account; transactions: Transaction[] }
+  | { type: "transaction"; transaction: Transaction };
 
 function NodeDetail(props: NodeDetailProps) {
   switch (props.type) {
-    case 'person':
+    case "person":
       return <PersonDetail person={props.person} accounts={props.accounts} />;
-    case 'account':
-      return <AccountDetail account={props.account} transactions={props.transactions} />;
-    case 'transaction':
+    case "account":
+      return (
+        <AccountDetail
+          account={props.account}
+          transactions={props.transactions}
+        />
+      );
+    case "transaction":
       return <TransactionDetail transaction={props.transaction} />;
   }
 }
@@ -161,10 +175,13 @@ function DataTable<T extends { id: string }>({
 
 ```tsx
 const nodeStyleConfig = {
-  Customer: { icon: 'User', baseColor: '#3B82F6', baseSize: 30 },
-  Account: { icon: 'Landmark', baseColor: '#10B981', baseSize: 28 },
-  Transaction: { icon: 'ArrowLeftRight', baseColor: '#F59E0B', baseSize: 24 },
-} satisfies Record<string, { icon: string; baseColor: string; baseSize: number }>;
+  Customer: { icon: "User", baseColor: "#3B82F6", baseSize: 30 },
+  Account: { icon: "Landmark", baseColor: "#10B981", baseSize: 28 },
+  Transaction: { icon: "ArrowLeftRight", baseColor: "#F59E0B", baseSize: 24 },
+} satisfies Record<
+  string,
+  { icon: string; baseColor: string; baseSize: number }
+>;
 ```
 
 ---
@@ -189,9 +206,9 @@ const NodesTable = ({ nodes, onSelect }: Props) => {
 // ✅ Focused components
 const InvestigationPanel = () => (
   <div>
-    <NodesTable />       {/* Table logic only */}
-    <GraphCanvas />      {/* Graph rendering only */}
-    <CaseTimeline />     {/* Timeline logic only */}
+    <NodesTable /> {/* Table logic only */}
+    <GraphCanvas /> {/* Graph rendering only */}
+    <CaseTimeline /> {/* Timeline logic only */}
   </div>
 );
 
@@ -226,7 +243,7 @@ const GraphCanvas = () => {
 const useTabState = () => {
   const activeTabId = useStore((s) => s.activeTabId);
   const tabState = useStore((s) =>
-    s.activeTabId ? s.tabStates[s.activeTabId] ?? null : null
+    s.activeTabId ? (s.tabStates[s.activeTabId] ?? null) : null,
   );
   return { activeTabId, tabState };
 };
@@ -245,9 +262,11 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 };
 
 // Usage
-const [search, setSearch] = useState('');
+const [search, setSearch] = useState("");
 const debouncedSearch = useDebounce(search, 300);
-useEffect(() => { fetchNodes(debouncedSearch); }, [debouncedSearch]);
+useEffect(() => {
+  fetchNodes(debouncedSearch);
+}, [debouncedSearch]);
 ```
 
 ### useLocalStorage — Persist UI State
@@ -266,12 +285,13 @@ const useLocalStorage = <T,>(key: string, initial: T) => {
   const setAndPersist = useCallback(
     (newValue: T | ((prev: T) => T)) => {
       setValue((prev) => {
-        const resolved = newValue instanceof Function ? newValue(prev) : newValue;
+        const resolved =
+          newValue instanceof Function ? newValue(prev) : newValue;
         localStorage.setItem(key, JSON.stringify(resolved));
         return resolved;
       });
     },
-    [key]
+    [key],
   );
 
   return [value, setAndPersist] as const;
@@ -298,13 +318,18 @@ export const NodesRow = memo(({ node, onSelect }: Props) => (
 ```tsx
 const NodesTable = ({ nodes }: Props) => {
   // ✅ Stable reference — doesn't change between renders
-  const handleRowClick = useCallback((id: string) => {
-    useStore.getState().updateTabState(activeTabId, {
-      selectedNodeIds: new Set([id]),
-    });
-  }, [activeTabId]);
+  const handleRowClick = useCallback(
+    (id: string) => {
+      useStore.getState().updateTabState(activeTabId, {
+        selectedNodeIds: new Set([id]),
+      });
+    },
+    [activeTabId],
+  );
 
-  return nodes.map((n) => <NodesRow key={n.id} node={n} onClick={handleRowClick} />);
+  return nodes.map((n) => (
+    <NodesRow key={n.id} node={n} onClick={handleRowClick} />
+  ));
 };
 ```
 
@@ -312,8 +337,9 @@ const NodesTable = ({ nodes }: Props) => {
 
 ```tsx
 const filteredNodes = useMemo(
-  () => nodes.filter((n) => !removedNodeIds.has(n.id) && matchesFilter(n, filter)),
-  [nodes, removedNodeIds, filter]
+  () =>
+    nodes.filter((n) => !removedNodeIds.has(n.id) && matchesFilter(n, filter)),
+  [nodes, removedNodeIds, filter],
 );
 ```
 
@@ -325,15 +351,18 @@ Keep the UI responsive while filtering large datasets:
 const [isPending, startTransition] = useTransition();
 
 const handleFilterChange = (newFilter: string) => {
-  setFilterInput(newFilter);        // Urgent: update the input immediately
+  setFilterInput(newFilter); // Urgent: update the input immediately
   startTransition(() => {
-    setAppliedFilter(newFilter);    // Non-urgent: filter the table in background
+    setAppliedFilter(newFilter); // Non-urgent: filter the table in background
   });
 };
 
 return (
   <>
-    <Input value={filterInput} onChange={(e) => handleFilterChange(e.target.value)} />
+    <Input
+      value={filterInput}
+      onChange={(e) => handleFilterChange(e.target.value)}
+    />
     {isPending && <Spinner />}
     <DataTable data={filteredByAppliedFilter} />
   </>
@@ -343,8 +372,10 @@ return (
 ### Code Splitting with React.lazy
 
 ```tsx
-const GraphCanvas = lazy(() => import('@/components/graph/GraphCanvas'));
-const CaseTimeline = lazy(() => import('@/components/investigation/CaseTimeline'));
+const GraphCanvas = lazy(() => import("@/components/graph/GraphCanvas"));
+const CaseTimeline = lazy(
+  () => import("@/components/investigation/CaseTimeline"),
+);
 
 const InvestigationPage = () => (
   <Suspense fallback={<Skeleton className="h-full w-full" />}>
@@ -360,7 +391,7 @@ const InvestigationPage = () => (
 Isolate failures per tab — one crashing tab shouldn't take down others.
 
 ```tsx
-import { Component, type ReactNode } from 'react';
+import { Component, type ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
@@ -383,17 +414,21 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error boundary caught:', error, errorInfo);
+    console.error("Error boundary caught:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback ?? (
-        <div className="flex flex-col items-center justify-center p-8">
-          <AlertCircle className="h-12 w-12 text-destructive" />
-          <h2 className="mt-4 text-lg font-semibold">Something went wrong</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{this.state.error?.message}</p>
-        </div>
+      return (
+        this.props.fallback ?? (
+          <div className="flex flex-col items-center justify-center p-8">
+            <AlertCircle className="h-12 w-12 text-destructive" />
+            <h2 className="mt-4 text-lg font-semibold">Something went wrong</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {this.state.error?.message}
+            </p>
+          </div>
+        )
       );
     }
     return this.props.children;
@@ -403,7 +438,7 @@ export class ErrorBoundary extends Component<Props, State> {
 // Usage: wrap each tab's content
 <ErrorBoundary>
   <InvestigationTab tabId={tab.id} />
-</ErrorBoundary>
+</ErrorBoundary>;
 ```
 
 ---
@@ -436,7 +471,7 @@ export class ErrorBoundary extends Component<Props, State> {
 ```tsx
 const NodeRow = ({ node, onSelect }: Props) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onSelect(node.id);
     }
@@ -460,13 +495,13 @@ const NodeRow = ({ node, onSelect }: Props) => {
 
 ## Anti-Patterns
 
-| Anti-Pattern | Why It Fails | Fix |
-|---|---|---|
-| `useEffect` for data fetching on mount | Missing cleanup, race conditions on rapid re-mounts | Use a service layer or React Query; call from event handlers |
-| Props drilling through 4+ levels | Fragile, every intermediate component must forward props | Use Zustand selectors or React context |
-| Class components | Cannot use hooks, more boilerplate | Functional components only (error boundaries are the one exception) |
-| `dangerouslySetInnerHTML` without sanitization | XSS vulnerability | Sanitize with DOMPurify first, or avoid entirely |
-| Inline object/array props on memoized children | `memo()` is bypassed — new object reference every render | Extract to `useMemo` or module-level constant |
-| Overusing `useEffect` | Effects run after render, cause waterfalls, hard to reason about | Prefer event handlers for user actions, `useMemo` for derived values |
-| Not wrapping lazy components in Suspense | Runtime error: "A component suspended while responding to synchronous input" | Always pair `React.lazy()` with a `<Suspense>` boundary |
-| Missing `key` prop on list items | React can't track which items changed, causing incorrect re-renders or stale state | Always use a stable unique `key` (element ID, not array index) |
+| Anti-Pattern                                   | Why It Fails                                                                       | Fix                                                                  |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `useEffect` for data fetching on mount         | Missing cleanup, race conditions on rapid re-mounts                                | Use a service layer or React Query; call from event handlers         |
+| Props drilling through 4+ levels               | Fragile, every intermediate component must forward props                           | Use Zustand selectors or React context                               |
+| Class components                               | Cannot use hooks, more boilerplate                                                 | Functional components only (error boundaries are the one exception)  |
+| `dangerouslySetInnerHTML` without sanitization | XSS vulnerability                                                                  | Sanitize with DOMPurify first, or avoid entirely                     |
+| Inline object/array props on memoized children | `memo()` is bypassed — new object reference every render                           | Extract to `useMemo` or module-level constant                        |
+| Overusing `useEffect`                          | Effects run after render, cause waterfalls, hard to reason about                   | Prefer event handlers for user actions, `useMemo` for derived values |
+| Not wrapping lazy components in Suspense       | Runtime error: "A component suspended while responding to synchronous input"       | Always pair `React.lazy()` with a `<Suspense>` boundary              |
+| Missing `key` prop on list items               | React can't track which items changed, causing incorrect re-renders or stale state | Always use a stable unique `key` (element ID, not array index)       |

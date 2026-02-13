@@ -39,63 +39,60 @@ playwright.config.ts          # Configuration
 
 ```typescript
 // playwright.config.ts
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [
-    ['html', { open: 'never' }],
-    ['list'],
-  ],
+  reporter: [["html", { open: "never" }], ["list"]],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    baseURL: process.env.BASE_URL || "http://localhost:3000",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "on-first-retry",
   },
 
   // v1.52+: fail CI if tests only pass on retry (flaky)
   failOnFlakyTests: !!process.env.CI,
   // v1.50+: only regenerate snapshots that actually changed
-  updateSnapshots: 'changed',
+  updateSnapshots: "changed",
 
   projects: [
     // Auth setup runs first — produces storageState files
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    { name: "setup", testMatch: /.*\.setup\.ts/ },
 
     {
-      name: 'chromium',
+      name: "chromium",
       use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'tests/.auth/admin.json',
+        ...devices["Desktop Chrome"],
+        storageState: "tests/.auth/admin.json",
       },
-      dependencies: ['setup'],
+      dependencies: ["setup"],
     },
     {
-      name: 'firefox',
+      name: "firefox",
       use: {
-        ...devices['Desktop Firefox'],
-        storageState: 'tests/.auth/admin.json',
+        ...devices["Desktop Firefox"],
+        storageState: "tests/.auth/admin.json",
       },
-      dependencies: ['setup'],
+      dependencies: ["setup"],
     },
     {
-      name: 'mobile',
-      use: { ...devices['Pixel 5'] },
-      dependencies: ['setup'],
+      name: "mobile",
+      use: { ...devices["Pixel 5"] },
+      dependencies: ["setup"],
     },
   ],
 
   webServer: {
-    command: 'npm run dev',
+    command: "npm run dev",
     port: 3000,
     reuseExistingServer: !process.env.CI,
   },
-})
+});
 ```
 
 ## Selector Strategy
@@ -113,64 +110,64 @@ export default defineConfig({
 
 ```typescript
 // 1. Role selectors (preferred — reflects user-facing semantics)
-page.getByRole('button', { name: 'Submit' })
-page.getByRole('heading', { name: 'Dashboard' })
-page.getByRole('link', { name: 'Settings' })
-page.getByRole('textbox', { name: 'Email' })
-page.getByRole('dialog')
+page.getByRole("button", { name: "Submit" });
+page.getByRole("heading", { name: "Dashboard" });
+page.getByRole("link", { name: "Settings" });
+page.getByRole("textbox", { name: "Email" });
+page.getByRole("dialog");
 
 // 2. Label (form fields)
-page.getByLabel('Email address')
+page.getByLabel("Email address");
 
 // 3. Text
-page.getByText('Welcome back')
+page.getByText("Welcome back");
 
 // 4. Secondary semantic locators
-page.getByPlaceholder('Enter your email')
-page.getByAltText('Company logo')
+page.getByPlaceholder("Enter your email");
+page.getByAltText("Company logo");
 
 // 5. Test ID (fallback)
-page.getByTestId('submit-button')
+page.getByTestId("submit-button");
 
 // 6. CSS (avoid unless necessary)
-page.locator('.nav-menu >> li:first-child')
+page.locator(".nav-menu >> li:first-child");
 ```
 
 ### Locator Combinators
 
 ```typescript
 // Match either locator with .or()
-const saveBtn = page.getByRole('button', { name: 'Save' })
-const submitBtn = page.getByRole('button', { name: 'Submit' })
-await saveBtn.or(submitBtn).click()
+const saveBtn = page.getByRole("button", { name: "Save" });
+const submitBtn = page.getByRole("button", { name: "Submit" });
+await saveBtn.or(submitBtn).click();
 
 // Combine conditions with .and()
-const enabledDialog = page.getByRole('dialog').and(page.locator(':visible'))
+const enabledDialog = page.getByRole("dialog").and(page.locator(":visible"));
 
 // Exclude elements with .filter({ hasNot })
-const activeRows = page.getByRole('row').filter({
-  hasNot: page.getByText('Archived'),
-})
+const activeRows = page.getByRole("row").filter({
+  hasNot: page.getByText("Archived"),
+});
 
 // Chain and filter for complex UIs
 await page
-  .getByRole('listitem')
-  .filter({ hasText: 'Product 2' })
-  .getByRole('button', { name: 'Add to cart' })
-  .click()
+  .getByRole("listitem")
+  .filter({ hasText: "Product 2" })
+  .getByRole("button", { name: "Add to cart" })
+  .click();
 ```
 
 ### Selector Anti-Patterns
 
 ```typescript
 // BAD: fragile, tied to implementation
-page.locator('#root > div > div:nth-child(2) > button')
-page.locator('.css-1a2b3c')  // generated class names
-page.locator('button.MuiButton-root')  // library internals
+page.locator("#root > div > div:nth-child(2) > button");
+page.locator(".css-1a2b3c"); // generated class names
+page.locator("button.MuiButton-root"); // library internals
 
 // GOOD: stable, semantic
-page.getByRole('button', { name: 'Checkout' })
-page.getByTestId('checkout-button')
+page.getByRole("button", { name: "Checkout" });
+page.getByTestId("checkout-button");
 ```
 
 ## Test Patterns
@@ -178,103 +175,103 @@ page.getByTestId('checkout-button')
 ### Arrange / Act / Assert
 
 ```typescript
-import { test, expect } from '@playwright/test'
+import { test, expect } from "@playwright/test";
 
-test('user can submit feedback form', async ({ page }) => {
+test("user can submit feedback form", async ({ page }) => {
   // Arrange
-  await page.goto('/feedback')
+  await page.goto("/feedback");
 
   // Act
-  await page.getByLabel('Message').fill('Great product!')
-  await page.getByRole('button', { name: 'Submit' }).click()
+  await page.getByLabel("Message").fill("Great product!");
+  await page.getByRole("button", { name: "Submit" }).click();
 
   // Assert
-  await expect(page.getByText('Thank you for your feedback')).toBeVisible()
-})
+  await expect(page.getByText("Thank you for your feedback")).toBeVisible();
+});
 ```
 
 ### Page Object Model
 
 ```typescript
 // tests/pages/login.page.ts
-import { type Page, type Locator } from '@playwright/test'
+import { type Page, type Locator } from "@playwright/test";
 
 export class LoginPage {
-  readonly page: Page
-  readonly emailInput: Locator
-  readonly passwordInput: Locator
-  readonly submitButton: Locator
-  readonly errorMessage: Locator
+  readonly page: Page;
+  readonly emailInput: Locator;
+  readonly passwordInput: Locator;
+  readonly submitButton: Locator;
+  readonly errorMessage: Locator;
 
   constructor(page: Page) {
-    this.page = page
-    this.emailInput = page.getByLabel('Email')
-    this.passwordInput = page.getByLabel('Password')
-    this.submitButton = page.getByRole('button', { name: 'Sign in' })
-    this.errorMessage = page.getByTestId('login-error')
+    this.page = page;
+    this.emailInput = page.getByLabel("Email");
+    this.passwordInput = page.getByLabel("Password");
+    this.submitButton = page.getByRole("button", { name: "Sign in" });
+    this.errorMessage = page.getByTestId("login-error");
   }
 
   async goto() {
-    await this.page.goto('/login')
+    await this.page.goto("/login");
   }
 
   async login(email: string, password: string) {
-    await this.emailInput.fill(email)
-    await this.passwordInput.fill(password)
-    await this.submitButton.click()
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitButton.click();
   }
 }
 
 // tests/e2e/auth.spec.ts
-import { test, expect } from '@playwright/test'
-import { LoginPage } from '../pages/login.page'
+import { test, expect } from "@playwright/test";
+import { LoginPage } from "../pages/login.page";
 
-test('successful login redirects to dashboard', async ({ page }) => {
-  const loginPage = new LoginPage(page)
-  await loginPage.goto()
-  await loginPage.login('user@example.com', 'password123')
-  await expect(page).toHaveURL('/dashboard')
-})
+test("successful login redirects to dashboard", async ({ page }) => {
+  const loginPage = new LoginPage(page);
+  await loginPage.goto();
+  await loginPage.login("user@example.com", "password123");
+  await expect(page).toHaveURL("/dashboard");
+});
 
-test('invalid credentials show error', async ({ page }) => {
-  const loginPage = new LoginPage(page)
-  await loginPage.goto()
-  await loginPage.login('user@example.com', 'wrong')
-  await expect(loginPage.errorMessage).toBeVisible()
-  await expect(loginPage.errorMessage).toContainText('Invalid credentials')
-})
+test("invalid credentials show error", async ({ page }) => {
+  const loginPage = new LoginPage(page);
+  await loginPage.goto();
+  await loginPage.login("user@example.com", "wrong");
+  await expect(loginPage.errorMessage).toBeVisible();
+  await expect(loginPage.errorMessage).toContainText("Invalid credentials");
+});
 ```
 
 ### Custom Fixtures
 
 ```typescript
 // tests/fixtures/auth.fixture.ts
-import { test as base, type Page } from '@playwright/test'
-import { LoginPage } from '../pages/login.page'
+import { test as base, type Page } from "@playwright/test";
+import { LoginPage } from "../pages/login.page";
 
 type AuthFixtures = {
-  loginPage: LoginPage
-  authenticatedPage: Page
-}
+  loginPage: LoginPage;
+  authenticatedPage: Page;
+};
 
 export const test = base.extend<AuthFixtures>({
   loginPage: async ({ page }, use) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await use(loginPage)
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await use(loginPage);
   },
 
   authenticatedPage: async ({ page }, use) => {
-    await page.goto('/login')
-    await page.getByLabel('Email').fill('test@example.com')
-    await page.getByLabel('Password').fill('password123')
-    await page.getByRole('button', { name: 'Sign in' }).click()
-    await page.waitForURL('/dashboard')
-    await use(page)
+    await page.goto("/login");
+    await page.getByLabel("Email").fill("test@example.com");
+    await page.getByLabel("Password").fill("password123");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL("/dashboard");
+    await use(page);
   },
-})
+});
 
-export { expect } from '@playwright/test'
+export { expect } from "@playwright/test";
 ```
 
 ### Test Isolation
@@ -283,25 +280,25 @@ Each test should be independent. Use API calls for setup instead of UI flows:
 
 ```typescript
 // BAD: test depends on previous test creating data
-test('edit user', async ({ page }) => {
+test("edit user", async ({ page }) => {
   // assumes "create user" test ran first
-  await page.goto('/users')
+  await page.goto("/users");
   // ...
-})
+});
 
 // GOOD: each test sets up its own data
-test('edit user', async ({ page, request }) => {
+test("edit user", async ({ page, request }) => {
   // Create user via API
-  const response = await request.post('/api/users', {
-    data: { name: 'Test User', email: 'test@example.com' },
-  })
-  const user = await response.json()
+  const response = await request.post("/api/users", {
+    data: { name: "Test User", email: "test@example.com" },
+  });
+  const user = await response.json();
 
-  await page.goto(`/users/${user.id}/edit`)
-  await page.getByLabel('Name').fill('Updated Name')
-  await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByText('Updated Name')).toBeVisible()
-})
+  await page.goto(`/users/${user.id}/edit`);
+  await page.getByLabel("Name").fill("Updated Name");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Updated Name")).toBeVisible();
+});
 ```
 
 ### Authentication via Setup Projects
@@ -310,18 +307,18 @@ Use setup projects with `dependencies` instead of `globalSetup` — they integra
 
 ```typescript
 // tests/e2e/auth.setup.ts
-import { test as setup, expect } from '@playwright/test'
+import { test as setup, expect } from "@playwright/test";
 
-const authFile = 'tests/.auth/admin.json'
+const authFile = "tests/.auth/admin.json";
 
-setup('authenticate', async ({ page }) => {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill('admin@example.com')
-  await page.getByLabel('Password').fill('admin123')
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.waitForURL('/dashboard')
-  await page.context().storageState({ path: authFile })
-})
+setup("authenticate", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("admin@example.com");
+  await page.getByLabel("Password").fill("admin123");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.waitForURL("/dashboard");
+  await page.context().storageState({ path: authFile });
+});
 
 // In playwright.config.ts — projects reference this (see Configuration):
 // { name: 'setup', testMatch: /.*\.setup\.ts/ }
@@ -332,27 +329,31 @@ setup('authenticate', async ({ page }) => {
 For API-based auth (faster when a login endpoint exists):
 
 ```typescript
-setup('authenticate via API', async ({ request }) => {
-  await request.post('/api/auth/login', {
-    data: { email: 'admin@example.com', password: 'admin123' },
-  })
-  await request.storageState({ path: authFile })
-})
+setup("authenticate via API", async ({ request }) => {
+  await request.post("/api/auth/login", {
+    data: { email: "admin@example.com", password: "admin123" },
+  });
+  await request.storageState({ path: authFile });
+});
 ```
 
 ### Tag-Based Filtering
 
 ```typescript
 // Tag individual tests (v1.42+)
-test('checkout flow', { tag: ['@smoke', '@checkout'] }, async ({ page }) => {
+test("checkout flow", { tag: ["@smoke", "@checkout"] }, async ({ page }) => {
   // ...
-})
+});
 
 // Tag groups
-test.describe('payment flow', { tag: '@payment' }, () => {
-  test('credit card', async ({ page }) => { /* ... */ })
-  test('PayPal', async ({ page }) => { /* ... */ })
-})
+test.describe("payment flow", { tag: "@payment" }, () => {
+  test("credit card", async ({ page }) => {
+    /* ... */
+  });
+  test("PayPal", async ({ page }) => {
+    /* ... */
+  });
+});
 ```
 
 ```bash
@@ -365,15 +366,15 @@ npx playwright test --grep-invert @slow
 
 ```typescript
 // Collect multiple failures instead of stopping at the first
-test('form validation shows all errors', async ({ page }) => {
-  await page.goto('/register')
-  await page.getByRole('button', { name: 'Submit' }).click()
+test("form validation shows all errors", async ({ page }) => {
+  await page.goto("/register");
+  await page.getByRole("button", { name: "Submit" }).click();
 
-  await expect.soft(page.getByText('Name is required')).toBeVisible()
-  await expect.soft(page.getByText('Email is required')).toBeVisible()
-  await expect.soft(page.getByText('Password is required')).toBeVisible()
+  await expect.soft(page.getByText("Name is required")).toBeVisible();
+  await expect.soft(page.getByText("Email is required")).toBeVisible();
+  await expect.soft(page.getByText("Password is required")).toBeVisible();
   // Test reports all failures, not just the first
-})
+});
 ```
 
 ## Accessibility Testing
@@ -383,26 +384,26 @@ test('form validation shows all errors', async ({ page }) => {
 Compare the accessibility tree structure rather than pixels — more resilient to styling changes:
 
 ```typescript
-test('navigation has correct structure', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.getByRole('navigation')).toMatchAriaSnapshot(`
+test("navigation has correct structure", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("navigation")).toMatchAriaSnapshot(`
     - navigation:
       - link "Home"
       - link "Products"
       - link "About"
       - link "Contact"
-  `)
-})
+  `);
+});
 
 // Partial matching with regex for dynamic content
-test('user menu shows name', async ({ page }) => {
-  await expect(page.getByRole('menu')).toMatchAriaSnapshot(`
+test("user menu shows name", async ({ page }) => {
+  await expect(page.getByRole("menu")).toMatchAriaSnapshot(`
     - menu:
       - menuitem /Hello, .+/
       - menuitem "Settings"
       - menuitem "Sign out"
-  `)
-})
+  `);
+});
 ```
 
 Update snapshots: `npx playwright test --update-snapshots`
@@ -410,13 +411,15 @@ Update snapshots: `npx playwright test --update-snapshots`
 ### Accessibility Assertions (v1.44+)
 
 ```typescript
-await expect(page.getByTestId('submit')).toHaveRole('button')
-await expect(page.getByRole('textbox')).toHaveAccessibleName('Email address')
-await expect(page.getByRole('textbox')).toHaveAccessibleDescription(
-  'We will never share your email'
-)
+await expect(page.getByTestId("submit")).toHaveRole("button");
+await expect(page.getByRole("textbox")).toHaveAccessibleName("Email address");
+await expect(page.getByRole("textbox")).toHaveAccessibleDescription(
+  "We will never share your email",
+);
 // v1.50+
-await expect(page.getByRole('textbox')).toHaveAccessibleErrorMessage('Email is required')
+await expect(page.getByRole("textbox")).toHaveAccessibleErrorMessage(
+  "Email is required",
+);
 ```
 
 ## Time Manipulation (Clock API)
@@ -425,23 +428,23 @@ Control time in tests without depending on real timers (v1.45+):
 
 ```typescript
 // Fix time to a specific moment
-test('shows greeting based on time of day', async ({ page }) => {
-  await page.clock.setFixedTime(new Date('2025-12-25T08:00:00'))
-  await page.goto('/')
-  await expect(page.getByText('Good morning')).toBeVisible()
-})
+test("shows greeting based on time of day", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2025-12-25T08:00:00"));
+  await page.goto("/");
+  await expect(page.getByText("Good morning")).toBeVisible();
+});
 
 // Install fake timers and advance
-test('session timeout warning', async ({ page }) => {
-  await page.clock.install({ time: new Date('2025-01-01T00:00:00') })
-  await page.goto('/dashboard')
+test("session timeout warning", async ({ page }) => {
+  await page.clock.install({ time: new Date("2025-01-01T00:00:00") });
+  await page.goto("/dashboard");
 
-  await page.clock.fastForward('29:00')  // 29 minutes
-  await expect(page.getByText('Session expiring')).not.toBeVisible()
+  await page.clock.fastForward("29:00"); // 29 minutes
+  await expect(page.getByText("Session expiring")).not.toBeVisible();
 
-  await page.clock.fastForward('01:30')  // 30:30 total
-  await expect(page.getByText('Session expiring')).toBeVisible()
-})
+  await page.clock.fastForward("01:30"); // 30:30 total
+  await expect(page.getByText("Session expiring")).toBeVisible();
+});
 ```
 
 Overrides: `Date`, `setTimeout`, `setInterval`, `requestAnimationFrame`, `performance`.
@@ -458,7 +461,7 @@ Playwright auto-waits for elements to be actionable before interacting:
 // - element to be stable (no animations)
 // - element to be enabled
 // - element to receive events
-await page.getByRole('button', { name: 'Submit' }).click()
+await page.getByRole("button", { name: "Submit" }).click();
 ```
 
 ### Assertions with Auto-Retry
@@ -467,29 +470,29 @@ await page.getByRole('button', { name: 'Submit' }).click()
 
 ```typescript
 // These auto-retry until condition is met or timeout
-await expect(page.getByText('Success')).toBeVisible()
-await expect(page.getByTestId('count')).toHaveText('5')
-await expect(page).toHaveURL('/dashboard')
-await expect(page).toHaveTitle('Dashboard')
+await expect(page.getByText("Success")).toBeVisible();
+await expect(page.getByTestId("count")).toHaveText("5");
+await expect(page).toHaveURL("/dashboard");
+await expect(page).toHaveTitle("Dashboard");
 
 // Negate assertions also auto-retry
-await expect(page.getByTestId('spinner')).not.toBeVisible()
+await expect(page.getByTestId("spinner")).not.toBeVisible();
 ```
 
 ### Explicit Waits (When Needed)
 
 ```typescript
 // Wait for a specific network response
-const responsePromise = page.waitForResponse('**/api/users')
-await page.getByRole('button', { name: 'Load' }).click()
-const response = await responsePromise
+const responsePromise = page.waitForResponse("**/api/users");
+await page.getByRole("button", { name: "Load" }).click();
+const response = await responsePromise;
 
 // Wait for navigation (sequential — Playwright handles auto-waiting)
-await page.getByRole('button', { name: 'Submit' }).click()
-await page.waitForURL('/dashboard')
+await page.getByRole("button", { name: "Submit" }).click();
+await page.waitForURL("/dashboard");
 
 // Wait for network idle (use sparingly)
-await page.waitForLoadState('networkidle')
+await page.waitForLoadState("networkidle");
 ```
 
 ### Overlay / Popup Handling (v1.42+)
@@ -499,11 +502,11 @@ Auto-dismiss overlays that appear unpredictably during tests:
 ```typescript
 // Register once — handler runs whenever overlay appears
 await page.addLocatorHandler(
-  page.getByRole('dialog', { name: 'Cookie consent' }),
+  page.getByRole("dialog", { name: "Cookie consent" }),
   async (dialog) => {
-    await dialog.getByRole('button', { name: 'Accept' }).click()
-  }
-)
+    await dialog.getByRole("button", { name: "Accept" }).click();
+  },
+);
 // All subsequent actions auto-dismiss the cookie dialog if it appears
 ```
 
@@ -511,20 +514,20 @@ await page.addLocatorHandler(
 
 ```typescript
 // BAD: arbitrary sleep
-await page.waitForTimeout(3000)
+await page.waitForTimeout(3000);
 
 // BAD: polling for element
-while (!(await page.getByText('Ready').isVisible())) {
-  await page.waitForTimeout(100)
+while (!(await page.getByText("Ready").isVisible())) {
+  await page.waitForTimeout(100);
 }
 
 // GOOD: auto-retrying assertion
-await expect(page.getByText('Ready')).toBeVisible({ timeout: 10000 })
+await expect(page.getByText("Ready")).toBeVisible({ timeout: 10000 });
 
 // GOOD: wait for specific condition
-await page.waitForResponse(resp =>
-  resp.url().includes('/api/data') && resp.status() === 200
-)
+await page.waitForResponse(
+  (resp) => resp.url().includes("/api/data") && resp.status() === 200,
+);
 ```
 
 ## Visual Regression
@@ -532,17 +535,17 @@ await page.waitForResponse(resp =>
 ### Screenshot Comparison
 
 ```typescript
-test('homepage matches snapshot', async ({ page }) => {
-  await page.goto('/')
-  await expect(page).toHaveScreenshot('homepage.png')
-})
+test("homepage matches snapshot", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveScreenshot("homepage.png");
+});
 
 // Element screenshot
-test('sidebar matches snapshot', async ({ page }) => {
-  await page.goto('/dashboard')
-  const sidebar = page.getByTestId('sidebar')
-  await expect(sidebar).toHaveScreenshot('sidebar.png')
-})
+test("sidebar matches snapshot", async ({ page }) => {
+  await page.goto("/dashboard");
+  const sidebar = page.getByTestId("sidebar");
+  await expect(sidebar).toHaveScreenshot("sidebar.png");
+});
 ```
 
 ### Configuration
@@ -552,34 +555,31 @@ test('sidebar matches snapshot', async ({ page }) => {
 export default defineConfig({
   expect: {
     toHaveScreenshot: {
-      maxDiffPixelRatio: 0.01,  // Allow 1% pixel difference
-      threshold: 0.2,           // Per-pixel color threshold
-      animations: 'disabled',   // Disable CSS animations for consistency
+      maxDiffPixelRatio: 0.01, // Allow 1% pixel difference
+      threshold: 0.2, // Per-pixel color threshold
+      animations: "disabled", // Disable CSS animations for consistency
     },
   },
   // v1.50+: only regenerate changed snapshots
-  updateSnapshots: 'changed',
-})
+  updateSnapshots: "changed",
+});
 ```
 
 ### Best Practices for Visual Tests
 
 ```typescript
 // Hide dynamic content before screenshot
-test('dashboard layout', async ({ page }) => {
-  await page.goto('/dashboard')
+test("dashboard layout", async ({ page }) => {
+  await page.goto("/dashboard");
 
   // Mask dynamic elements
-  await expect(page).toHaveScreenshot('dashboard.png', {
-    mask: [
-      page.getByTestId('timestamp'),
-      page.getByTestId('random-avatar'),
-    ],
-  })
-})
+  await expect(page).toHaveScreenshot("dashboard.png", {
+    mask: [page.getByTestId("timestamp"), page.getByTestId("random-avatar")],
+  });
+});
 
 // Use consistent viewport
-test.use({ viewport: { width: 1280, height: 720 } })
+test.use({ viewport: { width: 1280, height: 720 } });
 ```
 
 ## Network Interception
@@ -588,37 +588,37 @@ test.use({ viewport: { width: 1280, height: 720 } })
 
 ```typescript
 // Mock API with json shorthand
-test('shows error on API failure', async ({ page }) => {
-  await page.route('**/api/users', route =>
-    route.fulfill({ status: 500, json: { error: 'Internal Server Error' } })
-  )
+test("shows error on API failure", async ({ page }) => {
+  await page.route("**/api/users", (route) =>
+    route.fulfill({ status: 500, json: { error: "Internal Server Error" } }),
+  );
 
-  await page.goto('/users')
-  await expect(page.getByText('Failed to load users')).toBeVisible()
-})
+  await page.goto("/users");
+  await expect(page.getByText("Failed to load users")).toBeVisible();
+});
 
 // Mock empty state
-test('shows empty state', async ({ page }) => {
-  await page.route('**/api/users', route =>
-    route.fulfill({ status: 200, json: [] })
-  )
+test("shows empty state", async ({ page }) => {
+  await page.route("**/api/users", (route) =>
+    route.fulfill({ status: 200, json: [] }),
+  );
 
-  await page.goto('/users')
-  await expect(page.getByText('No users found')).toBeVisible()
-})
+  await page.goto("/users");
+  await expect(page.getByText("No users found")).toBeVisible();
+});
 
 // Intercept and modify real responses
-test('injects extra item', async ({ page }) => {
-  await page.route('**/api/products', async route => {
-    const response = await route.fetch()
-    const json = await response.json()
-    json.push({ id: 999, name: 'Injected Product' })
-    await route.fulfill({ json })
-  })
+test("injects extra item", async ({ page }) => {
+  await page.route("**/api/products", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    json.push({ id: 999, name: "Injected Product" });
+    await route.fulfill({ json });
+  });
 
-  await page.goto('/products')
-  await expect(page.getByText('Injected Product')).toBeVisible()
-})
+  await page.goto("/products");
+  await expect(page.getByText("Injected Product")).toBeVisible();
+});
 ```
 
 Register routes **before** `page.goto()` to intercept early requests.
@@ -627,23 +627,23 @@ Register routes **before** `page.goto()` to intercept early requests.
 
 ```typescript
 // Full WebSocket mock (no server connection)
-test('receives live updates', async ({ page }) => {
-  await page.routeWebSocket('wss://example.com/ws', ws => {
-    ws.onMessage(message => {
-      if (message === 'ping') ws.send('pong')
-    })
-  })
+test("receives live updates", async ({ page }) => {
+  await page.routeWebSocket("wss://example.com/ws", (ws) => {
+    ws.onMessage((message) => {
+      if (message === "ping") ws.send("pong");
+    });
+  });
 
-  await page.goto('/live-dashboard')
-  await expect(page.getByTestId('status')).toHaveText('Connected')
-})
+  await page.goto("/live-dashboard");
+  await expect(page.getByTestId("status")).toHaveText("Connected");
+});
 
 // Intercept and modify messages between page and server
-await page.routeWebSocket('wss://example.com/ws', ws => {
-  const server = ws.connectToServer()
-  ws.onMessage(message => server.send(message))         // forward to server
-  server.onMessage(message => ws.send(message))          // forward to page
-})
+await page.routeWebSocket("wss://example.com/ws", (ws) => {
+  const server = ws.connectToServer();
+  ws.onMessage((message) => server.send(message)); // forward to server
+  server.onMessage((message) => ws.send(message)); // forward to page
+});
 ```
 
 ## CI Integration
@@ -688,11 +688,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   failOnFlakyTests: !!process.env.CI,
   use: {
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "on-first-retry",
   },
-})
+});
 ```
 
 ### Useful CLI Options
@@ -717,6 +717,7 @@ npx playwright show-trace trace.zip
 ```
 
 Traces include:
+
 - Step-by-step screenshots
 - DOM snapshots at each action
 - Network requests
@@ -729,37 +730,37 @@ Traces include:
 ```typescript
 // 1. Don't rely on timing
 // BAD
-await page.getByTestId('button').click()
-await page.waitForTimeout(1000)
-expect(await page.textContent('#result')).toBe('Done')
+await page.getByTestId("button").click();
+await page.waitForTimeout(1000);
+expect(await page.textContent("#result")).toBe("Done");
 
 // GOOD
-await page.getByTestId('button').click()
-await expect(page.getByTestId('result')).toHaveText('Done')
+await page.getByTestId("button").click();
+await expect(page.getByTestId("result")).toHaveText("Done");
 
 // 2. Don't depend on test order
 // BAD: shared state between tests
-let userId: string
-test('create user', async ({ page }) => {
+let userId: string;
+test("create user", async ({ page }) => {
   // ... creates user
-  userId = '123'
-})
-test('delete user', async ({ page }) => {
+  userId = "123";
+});
+test("delete user", async ({ page }) => {
   // uses userId from previous test
-})
+});
 
 // GOOD: each test is self-contained
-test('delete user', async ({ page, request }) => {
-  const user = await request.post('/api/users', { data: { name: 'temp' } })
+test("delete user", async ({ page, request }) => {
+  const user = await request.post("/api/users", { data: { name: "temp" } });
   // ... delete the user
-})
+});
 
 // 3. Don't use exact text matching for dynamic content
 // BAD
-await expect(page.getByText('Created 2 seconds ago')).toBeVisible()
+await expect(page.getByText("Created 2 seconds ago")).toBeVisible();
 
 // GOOD
-await expect(page.getByText(/Created \d+ \w+ ago/)).toBeVisible()
+await expect(page.getByText(/Created \d+ \w+ ago/)).toBeVisible();
 ```
 
 ### Test Data Management
@@ -771,24 +772,24 @@ function createTestUser(overrides = {}) {
     name: `Test User ${Date.now()}`,
     email: `test-${Date.now()}@example.com`,
     ...overrides,
-  }
+  };
 }
 
 // Clean up after tests
 test.afterEach(async ({ request }) => {
-  await request.delete('/api/test/cleanup')
-})
+  await request.delete("/api/test/cleanup");
+});
 ```
 
 ### Deprecated APIs
 
 ```typescript
 // BAD: page.type() is deprecated
-await page.type('#email', 'user@example.com')
+await page.type("#email", "user@example.com");
 
 // GOOD: use fill() or pressSequentially()
-await page.getByLabel('Email').fill('user@example.com')
-await page.getByLabel('Search').pressSequentially('query', { delay: 50 })
+await page.getByLabel("Email").fill("user@example.com");
+await page.getByLabel("Search").pressSequentially("query", { delay: 50 });
 
 // REMOVED in v1.57: page.accessibility — use ARIA snapshots instead
 // REMOVED in v1.58: _react and _vue selectors — use getByRole/getByTestId
@@ -800,57 +801,57 @@ await page.getByLabel('Search').pressSequentially('query', { delay: 50 })
 
 ```typescript
 // BAD: tests CSS class, not behavior
-expect(await button.getAttribute('class')).toContain('btn-primary')
+expect(await button.getAttribute("class")).toContain("btn-primary");
 
 // GOOD: tests what user sees
-await expect(button).toBeVisible()
-await expect(button).toBeEnabled()
+await expect(button).toBeVisible();
+await expect(button).toBeEnabled();
 
 // If you must check a class (rare), use the dedicated assertion (v1.52+):
-await expect(button).toContainClass('btn-primary')
+await expect(button).toContainClass("btn-primary");
 ```
 
 ### 2. Over-Specifying Assertions
 
 ```typescript
 // BAD: brittle, breaks on any text change
-await expect(page.getByTestId('message')).toHaveText(
-  'Successfully created user John Doe with ID 12345 at 2024-01-15T10:30:00Z'
-)
+await expect(page.getByTestId("message")).toHaveText(
+  "Successfully created user John Doe with ID 12345 at 2024-01-15T10:30:00Z",
+);
 
 // GOOD: assert on the meaningful part
-await expect(page.getByTestId('message')).toContainText('Successfully created')
+await expect(page.getByTestId("message")).toContainText("Successfully created");
 ```
 
 ### 3. Not Using Test Hooks for Setup
 
 ```typescript
 // BAD: repeating setup in every test
-test('test 1', async ({ page }) => {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill('admin@test.com')
-  await page.getByLabel('Password').fill('password')
-  await page.getByRole('button', { name: 'Sign in' }).click()
+test("test 1", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("admin@test.com");
+  await page.getByLabel("Password").fill("password");
+  await page.getByRole("button", { name: "Sign in" }).click();
   // ... actual test
-})
+});
 
 // GOOD: use beforeEach or fixtures
 test.beforeEach(async ({ page }) => {
-  await page.goto('/dashboard')
-})
+  await page.goto("/dashboard");
+});
 ```
 
 ### 4. Not Waiting for Page State
 
 ```typescript
 // BAD: navigates and immediately asserts
-await page.goto('/dashboard')
-const count = await page.textContent('#count')
+await page.goto("/dashboard");
+const count = await page.textContent("#count");
 
 // GOOD: wait for the page to be ready
-await page.goto('/dashboard')
-await expect(page.getByTestId('count')).toBeVisible()
-const count = await page.getByTestId('count').textContent()
+await page.goto("/dashboard");
+await expect(page.getByTestId("count")).toBeVisible();
+const count = await page.getByTestId("count").textContent();
 ```
 
 ### 5. Using Promise.all for Navigation
@@ -858,24 +859,24 @@ const count = await page.getByTestId('count').textContent()
 ```typescript
 // BAD: unnecessary — Playwright auto-waits for navigation
 await Promise.all([
-  page.waitForURL('/dashboard'),
-  page.getByRole('button', { name: 'Submit' }).click(),
-])
+  page.waitForURL("/dashboard"),
+  page.getByRole("button", { name: "Submit" }).click(),
+]);
 
 // GOOD: sequential is fine — Playwright handles the race
-await page.getByRole('button', { name: 'Submit' }).click()
-await page.waitForURL('/dashboard')
+await page.getByRole("button", { name: "Submit" }).click();
+await page.waitForURL("/dashboard");
 ```
 
 ### 6. Not Handling Random Overlays
 
 ```typescript
 // BAD: test fails when cookie banner appears unpredictably
-await page.getByRole('button', { name: 'Checkout' }).click()
+await page.getByRole("button", { name: "Checkout" }).click();
 
 // GOOD: register a handler once, auto-dismiss overlays (v1.42+)
 await page.addLocatorHandler(
-  page.getByRole('dialog', { name: 'Cookie consent' }),
-  async (d) => d.getByRole('button', { name: 'Accept' }).click()
-)
+  page.getByRole("dialog", { name: "Cookie consent" }),
+  async (d) => d.getByRole("button", { name: "Accept" }).click(),
+);
 ```

@@ -36,24 +36,30 @@ You are a technical planner. Your job is to produce a clear, actionable implemen
 # Plan: [Task Title]
 
 ## Summary
+
 One paragraph describing what will be built and why.
 
 ## Assumptions
+
 - List anything assumed but not explicitly stated in the requirement
 
 ## Files to Create
+
 - `path/to/new/file.ts` — purpose of this file
 
 ## Files to Modify
+
 - `path/to/existing/file.ts` — what changes and why
 
 ## Implementation Steps
+
 1. Step one — specific action with file path
 2. Step two — specific action with file path
    - Sub-step if needed
 3. ...
 
 ## Verification
+
 - [ ] TypeScript/Python/Rust type check passes
 - [ ] Lint passes
 - [ ] Build succeeds
@@ -61,10 +67,12 @@ One paragraph describing what will be built and why.
 - [ ] [Manual verification steps if applicable]
 
 ## Risks and Edge Cases
+
 - Risk: description → Mitigation: approach
 - Edge case: description → Handling: approach
 
 ## Out of Scope
+
 - Things explicitly not included in this implementation
 ```
 
@@ -80,6 +88,7 @@ One paragraph describing what will be built and why.
 ## Memory Updates
 
 After completing each plan, update your agent memory with:
+
 - Planning approaches that produced clean implementations
 - Codebase structure insights that will help future planning
 - Common risk patterns found across projects

@@ -13,6 +13,7 @@ Scan `feature-docs/ideation/` for any subfolders. For each subfolder, read its `
 **If in-progress features exist**, list them with their feature name and the last entry from the `## Progress` section, then ask:
 
 > I found these in-progress features:
+>
 > - **feature-name**: last progress entry summary
 >
 > Would you like to resume one of these, or start a new feature?
@@ -26,6 +27,7 @@ Ask me:
 > What feature do you want to build? Give me a brief description — what does it do and why does it need to exist?
 
 Listen to my answer. Ask follow-up questions if my description is vague. You need enough context to understand:
+
 - What problem this solves
 - Who benefits from it
 - How it fits into the existing application
@@ -57,6 +59,7 @@ Seed the README using the template from `feature-docs/ideation/CLAUDE.md` (see t
 
 ```markdown
 ### <today's date> — Initial exploration
+
 - **Summary**: <1-2 sentence description of what we discussed>
 - **Open questions**: <list any unknowns identified so far>
 ```
@@ -84,18 +87,20 @@ This is the open-ended phase. Before showing the menu, **check what has already 
 
 Use the artifacts present to determine which activities are completed:
 
-| Activity | Completed when |
-|---|---|
-| Review code | `code-review.md` exists |
-| Research approaches | `research.md` or `spike-results.md` exists |
-| Design | Design artifacts exist (e.g., `api-design.md`, `component-analysis.md`, `state-management-notes.md`) |
+| Activity            | Completed when                                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------------- |
+| Review code         | `code-review.md` exists                                                                              |
+| Research approaches | `research.md` or `spike-results.md` exists                                                           |
+| Design              | Design artifacts exist (e.g., `api-design.md`, `component-analysis.md`, `state-management-notes.md`) |
 
 Then present a **status-aware menu**. Show completed activities as a summary, and only offer the remaining options:
 
 > **Completed so far:**
+>
 > - <for each completed activity, show a one-line summary from the most recent relevant progress entry>
 >
 > **What's next?**
+>
 > - <only list uncompleted activities from the table above>
 > - **Write notes**: I'll save anything important to the ideation folder
 > - **Create the feature**: When you're ready, say "create the feature" and I'll distill everything into a ready file
@@ -105,9 +110,11 @@ Then present a **status-aware menu**. Show completed activities as a summary, an
 If **all three activities** (review code, research, design) are completed, skip the uncompleted list and just show:
 
 > **Completed so far:**
+>
 > - <summaries>
 >
 > **What's next?**
+>
 > - **Write notes**: I'll save anything important to the ideation folder
 > - **Create the feature**: When you're ready, say "create the feature" and I'll distill everything into a ready file
 > - Or ask me to dive deeper into any of the completed areas
@@ -118,12 +125,15 @@ During this phase:
 
 - **Save important artifacts** to the ideation folder with descriptive filenames (e.g., `api-design.md`, `state-management-notes.md`, `component-analysis.md`)
 - **After each significant piece of work**, append a progress entry to the README.md's `## Progress` section:
+
   ```markdown
   ### <date> — <brief title>
+
   - **What we did**: <summary>
   - **Decisions made**: <any conclusions reached>
   - **Open questions**: <what's still unresolved>
   ```
+
 - **Re-check artifacts** each time you show this menu — the completed list should always reflect the current state
 - **Stay in this phase** until I say "create the feature" or indicate I'm ready to proceed
 

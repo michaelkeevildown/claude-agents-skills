@@ -21,6 +21,7 @@ in parallel using the Agent Teams feature. Covers:
 - Bootstrap and retrofit prompts for new and existing projects
 
 Defer to other skills for:
+
 - **git-workflow skill**: Branch naming, commit message conventions, PR creation
 - **testing-playwright skill**: Frontend E2E test patterns (Playwright-specific)
 - **testing-pytest skill**: Python test patterns (pytest-specific)
@@ -145,7 +146,7 @@ Each ideation folder's `README.md` has YAML frontmatter:
 ```yaml
 ---
 feature: user-auth
-status: in-progress        # or: complete, shipped
+status: in-progress # or: complete, shipped
 created: 2025-01-15
 ---
 ```
@@ -154,11 +155,13 @@ The `## Progress` section tracks dated entries across sessions:
 
 ```markdown
 ### 2025-01-15 — Initial exploration
+
 - **What we did**: Reviewed existing auth code, identified session management gap
 - **Decisions made**: Use httpOnly cookies, not localStorage
 - **Open questions**: Which OAuth provider to use later?
 
 ### 2025-01-16 — API design
+
 - **What we did**: Designed login/logout endpoints, drafted store structure
 - **Decisions made**: Separate auth store from user profile store
 - **Open questions**: How to handle token refresh?
@@ -281,12 +284,12 @@ Every acceptance criterion must be:
 
 Vague criteria produce vague tests produce wrong implementations.
 
-| Vague (agent has to guess) | Precise (agent can write a test) |
-|---|---|
-| THEN the login works | THEN `authenticate()` returns a `Session` with non-null `token` |
-| THEN an error is shown | THEN it throws `AuthenticationError` with code `"INVALID_CREDENTIALS"` |
-| THEN the data is saved | THEN `authStore.getState().session` contains the `Session` |
-| THEN the field is removed | THEN the returned object does NOT include a `legacyField` key |
+| Vague (agent has to guess) | Precise (agent can write a test)                                       |
+| -------------------------- | ---------------------------------------------------------------------- |
+| THEN the login works       | THEN `authenticate()` returns a `Session` with non-null `token`        |
+| THEN an error is shown     | THEN it throws `AuthenticationError` with code `"INVALID_CREDENTIALS"` |
+| THEN the data is saved     | THEN `authStore.getState().session` contains the `Session`             |
+| THEN the field is removed  | THEN the returned object does NOT include a `legacyField` key          |
 
 ## 4. Agent Roles
 
@@ -300,6 +303,7 @@ implementation oracle.
 **Produces**: Test files that fail (all tests must fail before handing off to builder)
 
 **Constraints**:
+
 - Never writes implementation code — only test files
 - Tests must import from the implementation path even though the file may not exist yet
 - Each acceptance criterion produces at least one test
@@ -307,6 +311,7 @@ implementation oracle.
 - Commits tests with `test(<scope>): add failing tests for <feature-name>`
 
 **Stack-specific patterns**:
+
 - Frontend: Vitest for unit/integration, Playwright for E2E
 - Python: pytest with fixtures and parametrize
 - Rust: `#[test]` in module, integration tests in `tests/`
@@ -320,12 +325,14 @@ implementation oracle.
 **Produces**: Implementation code that makes all tests pass
 
 **Constraints**:
+
 - Never modifies test files — if tests are wrong, stop and report to the user
 - Must run `scripts/verify.sh` after each significant implementation step
 - Only touches files listed in the feature doc's `affected-files`
 - Commits implementation with `feat(<scope>): implement <feature-name>`
 
 **Stack-specific patterns**:
+
 - Frontend: React components, Zustand stores, API handlers
 - Python: FastAPI routes, services, Pydantic models, database queries
 - Rust: Modules, traits, impls, error types
@@ -339,6 +346,7 @@ design system consistency, and qualitative issues.
 agent-teams awareness.
 
 **Checks**:
+
 - Code follows project conventions (CLAUDE.md rules)
 - No duplicate logic introduced
 - Error handling is complete
@@ -351,6 +359,7 @@ agent-teams awareness.
 If approved, reviewer moves doc to `feature-docs/completed/`.
 
 **Constraints**:
+
 - Strictly read-only — never edits implementation or test files
 - Never uses Bash to modify files (`sed -i`, `echo >`, etc.)
 - Reports issues to the coordinator; the coordinator routes fixes to the appropriate agent
@@ -372,6 +381,7 @@ through prompt instructions.
 **Produces**: Agent invocations, feature doc lifecycle moves, STATUS.md updates
 
 **Allowed operations**:
+
 - Read, Grep, Glob, and read-only Bash on any file
 - Task invocations to launch agents (@test-writer, @builder, @code-reviewer)
 - `sed` on feature doc frontmatter (`status:` field only)
@@ -379,6 +389,7 @@ through prompt instructions.
 - Write/Edit on `feature-docs/STATUS.md` only
 
 **Constraints**:
+
 - Never uses Write, Edit, or sed on files listed in `affected-files`
 - Never uses Write, Edit, or sed on test files
 - Never uses Write, Edit, or sed on any implementation/source file
@@ -403,13 +414,13 @@ Reviewer validates       →  status: done        (feature-docs/completed/)
 
 ### Status Transitions
 
-| From | To | Who | Action |
-|---|---|---|---|
-| ready | testing | test-writer | Move doc, write failing tests, commit |
-| testing | building | builder | Move doc, begin implementation |
-| building | review | builder | Move doc, all tests pass, verify clean |
-| review | completed | reviewer | Move doc, approve quality |
-| review | building | reviewer | Move doc back, issues found (re-work) |
+| From     | To        | Who         | Action                                 |
+| -------- | --------- | ----------- | -------------------------------------- |
+| ready    | testing   | test-writer | Move doc, write failing tests, commit  |
+| testing  | building  | builder     | Move doc, begin implementation         |
+| building | review    | builder     | Move doc, all tests pass, verify clean |
+| review   | completed | reviewer    | Move doc, approve quality              |
+| review   | building  | reviewer    | Move doc back, issues found (re-work)  |
 
 The status field in the feature doc frontmatter and the directory location must
 stay in sync. Moving the file IS the status transition.
@@ -504,6 +515,7 @@ directory (e.g., still in `ready/` when it should be in `testing/`), the task is
 blocked. This prevents agents from skipping the doc-move step.
 
 **2. Full verify pipeline**:
+
 - Type checking (tsc / mypy / cargo check)
 - Linting (eslint / ruff / clippy)
 - Tests (vitest / pytest / cargo test)
@@ -526,6 +538,7 @@ frontmatter declares which files that agent may modify. Before starting:
 ### Resolving Conflicts
 
 If two features must touch the same file:
+
 - Run them sequentially (feature A completes fully before feature B starts)
 - Or split the shared file into separate modules first
 
@@ -733,26 +746,26 @@ components, services, and tests.
 
 ## Anti-Patterns
 
-| Anti-Pattern | Why It Fails | Fix |
-|---|---|---|
-| Builder modifies test files | Grading your own homework — tests lose independence as the oracle | Builder must never touch files created by test-writer |
-| Skipping the test-writer step | Builder writes both tests and code; tests are weak and trivially satisfied | Always have test-writer produce failing tests first |
-| No file ownership declaration | Two agents edit the same file; merge conflicts and lost work | Feature docs must list `affected-files`; check for overlaps |
-| Running parallel features on same branch | Merge conflicts, unclear ownership, broken bisect history | One branch per feature; merge to main sequentially |
-| Passing full test output to agents | Context pollution fills the window with stack traces | Pass summary only: X passed, Y failed, first failure message |
-| Feature doc without testable criteria | Test-writer cannot produce meaningful tests; builder has no target | Every acceptance criterion must use GIVEN/WHEN/THEN format |
-| Skipping the reviewer step | Qualitative issues (conventions, duplication, design) go undetected | Reviewer validates what tests cannot catch |
-| Using agent teams for trivial changes | 15x token cost for a one-line fix is wasteful | Single session for changes touching fewer than 3 files |
-| Running full test suite on every save | Agent wastes time waiting for slow tests during iteration | Use fast-verify.sh (type check only) on Stop; full suite on TaskCompleted |
-| Tests that check truthiness not values | Wrong implementation passes — `toBeTruthy()` accepts any non-null | Assert specific return values, error types, and state changes |
-| No progress dashboard | Agents start with zero context and waste time re-discovering state | Update `feature-docs/STATUS.md` after every stage transition |
-| Ignoring stuck features | Agent spins for hours on a hard problem without human awareness | TeammateIdle warns after 30 minutes in building/; check agent_logs/ |
-| Skipping feature doc lifecycle steps | Next agent never finds the feature doc; pipeline stalls indefinitely | `task-completed.sh` enforces status/directory sync; Completion Gate checklist in agent definitions |
-| Coordinator edits implementation or test files | Violates role separation — coordinator and agent edit the same files, causing conflicts and undermining the test-as-oracle principle | Coordinator re-invokes the responsible agent with specific error details; never uses Write/Edit/sed on code |
-| Coordinator fixes follow-up issues directly | Bypasses TDD — no failing test, no builder, no review; defeats the entire workflow even for "small" fixes | Route follow-ups through the full pipeline: test-writer → builder → reviewer; create a new feature doc or amend the existing one |
-| Unbounded review → building loop | Builder and reviewer cycle indefinitely, burning tokens on issues the builder cannot resolve alone | Auto-loop up to 3 cycles; after 3, escalate to the user with remaining issues |
-| Launching next agent before current one finishes | Both agents edit the same feature's files simultaneously, causing conflicts and lost work | Per-feature sequential: wait for each agent to complete before launching the next; cross-feature parallelism is fine with non-overlapping `affected-files` |
-| Reviewer fixes code directly | Defeats independence — reviewer can't objectively review code it wrote; bypasses TDD pipeline | Reviewer reports issues only; coordinator routes to test-writer (for test gaps) or builder (for implementation issues) |
-| Ideation README never updated after pipeline | Feature appears incomplete in ideation folder; scanning for shipped features requires reading `completed/` instead of ideation metadata | Coordinator updates ideation README to `shipped` in "After reviewer approves" step |
-| Feature docs without numeric prefix | Similarly-named features (user-auth.md vs user-auth-v2.md) cause agents to read the wrong doc from completed/ or other directories | Always use `scripts/next-feature-number.sh` to get a unique NNN- prefix at creation time |
-| Running verify on test-writer output | Type errors on unresolved imports fire on every response; test failures block task completion | Hooks detect `testing` stage via `lifecycle-stage.sh` and skip verification |
+| Anti-Pattern                                     | Why It Fails                                                                                                                            | Fix                                                                                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Builder modifies test files                      | Grading your own homework — tests lose independence as the oracle                                                                       | Builder must never touch files created by test-writer                                                                                                      |
+| Skipping the test-writer step                    | Builder writes both tests and code; tests are weak and trivially satisfied                                                              | Always have test-writer produce failing tests first                                                                                                        |
+| No file ownership declaration                    | Two agents edit the same file; merge conflicts and lost work                                                                            | Feature docs must list `affected-files`; check for overlaps                                                                                                |
+| Running parallel features on same branch         | Merge conflicts, unclear ownership, broken bisect history                                                                               | One branch per feature; merge to main sequentially                                                                                                         |
+| Passing full test output to agents               | Context pollution fills the window with stack traces                                                                                    | Pass summary only: X passed, Y failed, first failure message                                                                                               |
+| Feature doc without testable criteria            | Test-writer cannot produce meaningful tests; builder has no target                                                                      | Every acceptance criterion must use GIVEN/WHEN/THEN format                                                                                                 |
+| Skipping the reviewer step                       | Qualitative issues (conventions, duplication, design) go undetected                                                                     | Reviewer validates what tests cannot catch                                                                                                                 |
+| Using agent teams for trivial changes            | 15x token cost for a one-line fix is wasteful                                                                                           | Single session for changes touching fewer than 3 files                                                                                                     |
+| Running full test suite on every save            | Agent wastes time waiting for slow tests during iteration                                                                               | Use fast-verify.sh (type check only) on Stop; full suite on TaskCompleted                                                                                  |
+| Tests that check truthiness not values           | Wrong implementation passes — `toBeTruthy()` accepts any non-null                                                                       | Assert specific return values, error types, and state changes                                                                                              |
+| No progress dashboard                            | Agents start with zero context and waste time re-discovering state                                                                      | Update `feature-docs/STATUS.md` after every stage transition                                                                                               |
+| Ignoring stuck features                          | Agent spins for hours on a hard problem without human awareness                                                                         | TeammateIdle warns after 30 minutes in building/; check agent_logs/                                                                                        |
+| Skipping feature doc lifecycle steps             | Next agent never finds the feature doc; pipeline stalls indefinitely                                                                    | `task-completed.sh` enforces status/directory sync; Completion Gate checklist in agent definitions                                                         |
+| Coordinator edits implementation or test files   | Violates role separation — coordinator and agent edit the same files, causing conflicts and undermining the test-as-oracle principle    | Coordinator re-invokes the responsible agent with specific error details; never uses Write/Edit/sed on code                                                |
+| Coordinator fixes follow-up issues directly      | Bypasses TDD — no failing test, no builder, no review; defeats the entire workflow even for "small" fixes                               | Route follow-ups through the full pipeline: test-writer → builder → reviewer; create a new feature doc or amend the existing one                           |
+| Unbounded review → building loop                 | Builder and reviewer cycle indefinitely, burning tokens on issues the builder cannot resolve alone                                      | Auto-loop up to 3 cycles; after 3, escalate to the user with remaining issues                                                                              |
+| Launching next agent before current one finishes | Both agents edit the same feature's files simultaneously, causing conflicts and lost work                                               | Per-feature sequential: wait for each agent to complete before launching the next; cross-feature parallelism is fine with non-overlapping `affected-files` |
+| Reviewer fixes code directly                     | Defeats independence — reviewer can't objectively review code it wrote; bypasses TDD pipeline                                           | Reviewer reports issues only; coordinator routes to test-writer (for test gaps) or builder (for implementation issues)                                     |
+| Ideation README never updated after pipeline     | Feature appears incomplete in ideation folder; scanning for shipped features requires reading `completed/` instead of ideation metadata | Coordinator updates ideation README to `shipped` in "After reviewer approves" step                                                                         |
+| Feature docs without numeric prefix              | Similarly-named features (user-auth.md vs user-auth-v2.md) cause agents to read the wrong doc from completed/ or other directories      | Always use `scripts/next-feature-number.sh` to get a unique NNN- prefix at creation time                                                                   |
+| Running verify on test-writer output             | Type errors on unresolved imports fire on every response; test failures block task completion                                           | Hooks detect `testing` stage via `lifecycle-stage.sh` and skip verification                                                                                |

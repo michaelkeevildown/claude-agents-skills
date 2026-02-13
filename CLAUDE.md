@@ -45,56 +45,58 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 
 ### Agents
 
-| Agent | Stack | Model | Lines | Description |
-|---|---|---|---|---|
-| code-reviewer | universal | opus | 75 | Code review with security, error handling, convention checks |
-| planner | universal | sonnet | 88 | Implementation planning before coding |
-| frontend-engineer | frontend | opus | 157 | UI review, React optimization, component scaffolding (3 workflows) |
-| component-builder | frontend | sonnet | 146 | Investigation workspace components with Zustand/NVL integration |
-| test-writer | frontend | sonnet | 147 | Write failing Vitest/Playwright tests from feature docs |
-| builder | frontend | opus | 146 | Implement code to make failing tests pass (React/Zustand) |
-| test-writer | python | sonnet | 163 | Write failing pytest tests from feature docs |
-| builder | python | opus | 143 | Implement code to make failing pytest tests pass |
-| code-reviewer | rust | opus | 123 | Rust-specific code review — ownership, async safety, error handling, unsafe audit |
-| test-writer | rust | sonnet | 155 | Write failing cargo tests from feature docs |
-| builder | rust | opus | 143 | Implement code to make failing cargo tests pass |
+| Agent             | Stack     | Model  | Lines | Description                                                                       |
+| ----------------- | --------- | ------ | ----- | --------------------------------------------------------------------------------- |
+| code-reviewer     | universal | opus   | 75    | Code review with security, error handling, convention checks                      |
+| planner           | universal | sonnet | 88    | Implementation planning before coding                                             |
+| frontend-engineer | frontend  | opus   | 157   | UI review, React optimization, component scaffolding (3 workflows)                |
+| component-builder | frontend  | sonnet | 146   | Investigation workspace components with Zustand/NVL integration                   |
+| test-writer       | frontend  | sonnet | 147   | Write failing Vitest/Playwright tests from feature docs                           |
+| builder           | frontend  | opus   | 146   | Implement code to make failing tests pass (React/Zustand)                         |
+| test-writer       | python    | sonnet | 163   | Write failing pytest tests from feature docs                                      |
+| builder           | python    | opus   | 143   | Implement code to make failing pytest tests pass                                  |
+| code-reviewer     | rust      | opus   | 123   | Rust-specific code review — ownership, async safety, error handling, unsafe audit |
+| test-writer       | rust      | sonnet | 155   | Write failing cargo tests from feature docs                                       |
+| builder           | rust      | opus   | 143   | Implement code to make failing cargo tests pass                                   |
 
 ### Skills — Complete
 
-| Skill | Stack | Lines | Description |
-|---|---|---|---|
-| react | frontend | 940 | Components, hooks, TypeScript, state, performance, error handling |
-| testing-playwright | frontend | 881 | E2E testing, page objects, fixtures, ARIA snapshots |
-| shadcn-ui | frontend | 733 | Component library, composition, theming, forms |
-| nvl | frontend | 685 | Neo4j Visualization Library, graph rendering, styling, layout |
-| tailwind | frontend | 659 | Tailwind v4 CSS-first config, responsive, animations |
-| agent-teams | global | 719 | Agent Teams workflow, ideation phase, feature doc lifecycle, test-first coordination |
-| git-workflow | global | 579 | Branching, commits, PR workflow, rebase vs merge |
-| zustand-state | frontend | 521 | Stores, selectors, middleware, multi-view sync |
-| react-patterns | frontend | 472 | React 19 patterns, TypeScript strict, architecture |
-| neo4j-driver-js | frontend | 444 | Neo4j JS driver, sessions, transactions, type handling |
-| neo4j-cypher | global | 433 | Cypher query patterns, performance, fraud-domain queries |
-| neo4j-data-models | global | 428 | Graph modeling, fraud detection schemas, best practices |
+| Skill              | Stack    | Lines | Description                                                                          |
+| ------------------ | -------- | ----- | ------------------------------------------------------------------------------------ |
+| react              | frontend | 940   | Components, hooks, TypeScript, state, performance, error handling                    |
+| testing-playwright | frontend | 881   | E2E testing, page objects, fixtures, ARIA snapshots                                  |
+| shadcn-ui          | frontend | 733   | Component library, composition, theming, forms                                       |
+| nvl                | frontend | 685   | Neo4j Visualization Library, graph rendering, styling, layout                        |
+| tailwind           | frontend | 659   | Tailwind v4 CSS-first config, responsive, animations                                 |
+| agent-teams        | global   | 719   | Agent Teams workflow, ideation phase, feature doc lifecycle, test-first coordination |
+| git-workflow       | global   | 579   | Branching, commits, PR workflow, rebase vs merge                                     |
+| zustand-state      | frontend | 521   | Stores, selectors, middleware, multi-view sync                                       |
+| react-patterns     | frontend | 472   | React 19 patterns, TypeScript strict, architecture                                   |
+| neo4j-driver-js    | frontend | 444   | Neo4j JS driver, sessions, transactions, type handling                               |
+| neo4j-cypher       | global   | 433   | Cypher query patterns, performance, fraud-domain queries                             |
+| neo4j-data-models  | global   | 428   | Graph modeling, fraud detection schemas, best practices                              |
 
 ### Skills — Stubs (need content)
 
-| Skill | Stack | Lines |
-|---|---|---|
-| fastapi | python | 18 |
-| testing-pytest | python | 18 |
-| neo4j-driver-python | python | 18 |
-| testing-rust | rust | 18 |
-| neo4j-driver-rust | rust | 18 |
+| Skill               | Stack  | Lines |
+| ------------------- | ------ | ----- |
+| fastapi             | python | 18    |
+| testing-pytest      | python | 18    |
+| neo4j-driver-python | python | 18    |
+| testing-rust        | rust   | 18    |
+| neo4j-driver-rust   | rust   | 18    |
 
 ## Conventions
 
 ### Shell Scripts
+
 - Shebang: `#!/usr/bin/env bash`
 - First executable line: `set -euo pipefail`
 - All `.sh` files must be executable (`chmod +x`)
 - Quote all variables: `"$var"` not `$var`
 
 ### Naming
+
 - Directories and files: `lowercase-kebab-case`
 - Agent files: `<name>.md` in `agents/<stack>/`
 - Skill files: `SKILL.md` inside `skills/<stack>/<name>/`
@@ -102,11 +104,13 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 - Verify scripts: `verify-<stack>.sh` in `verify-scripts/`
 
 ### Frontmatter
+
 - Agents require: `name`, `description`, `tools`, `model`
 - Skills require: `name`, `description`
 - See `agents/CLAUDE.md` and `skills/CLAUDE.md` for full format specifications
 
 ### Stacks
+
 Four stack categories: `frontend`, `python`, `rust`, `global` (universal)
 
 ## Do NOT

@@ -27,6 +27,7 @@ You are a test writer for the agent teams workflow. Your job is to read feature 
 ### 1. Read the Feature Doc
 
 Read the feature doc from `feature-docs/ready/`. Extract:
+
 - All acceptance criteria (each becomes at least one test)
 - Edge cases (each becomes at least one test)
 - Affected files (test imports will target these paths)
@@ -56,15 +57,15 @@ Test files go in the project's test directory (not co-located with source). Foll
 
 ```typescript
 // tests/unit/auth/login.test.ts
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 
-describe('login', () => {
-  it('stores session token on valid credentials', () => {
+describe("login", () => {
+  it("stores session token on valid credentials", () => {
     // Import from implementation path (file may not exist yet)
     // Arrange → Act → Assert
   });
 
-  it('shows error on invalid credentials', () => {
+  it("shows error on invalid credentials", () => {
     // ...
   });
 });
@@ -97,6 +98,7 @@ Update `feature-docs/STATUS.md` (create if missing) with current status:
 
 ```markdown
 ## <feature-name> — testing
+
 - **Agent**: test-writer
 - **Tests**: <N> tests written, all failing (expected)
 - **Criteria covered**: <N>/<total> acceptance, <N>/<total> edge cases
@@ -157,8 +159,9 @@ If you already did Steps 6-8 above, this is a confirmation check. If you skipped
 ## Memory Updates
 
 After completing each test-writing session, update your agent memory with:
+
 - Test patterns discovered in this project (describe/it style, fixtures, mocks)
 - Import conventions and path aliases
 - Common assertion patterns
 - Test directory structure and naming conventions
-Keep entries concise. One line per pattern. Deduplicate with existing entries.
+  Keep entries concise. One line per pattern. Deduplicate with existing entries.

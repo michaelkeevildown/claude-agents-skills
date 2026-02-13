@@ -10,6 +10,7 @@ description: shadcn/ui component library — installation, usage patterns, themi
 **shadcn/ui is the default component and styling approach for all frontend projects.** Always prefer shadcn/ui components (`<Button>`, `<Input>`, `<Card>`, etc.) over raw HTML elements or hand-styled Tailwind.
 
 Use this skill for:
+
 - Component installation, composition, and customization
 - Theming with CSS variables (OKLCH color space)
 - Form integration with react-hook-form + zod
@@ -26,12 +27,14 @@ npx shadcn@latest init
 ```
 
 This creates:
+
 - `components.json` — configuration file (style is always `"new-york"`, the only supported style)
 - `lib/utils.ts` — the `cn()` utility (clsx + tailwind-merge)
 - `components/ui/` — raw shadcn/ui components (avoid heavy modifications)
 - Recommended additional directories: `components/primitives/` (lightly customized wrappers), `components/blocks/` (product-level compositions)
 
 Key `components.json` fields:
+
 - `tailwind.config`: Leave blank for Tailwind v4 projects
 - `tailwind.cssVariables`: `true` (default, uses OKLCH color space)
 - `registries`: Optional array for custom component registries
@@ -65,13 +68,15 @@ Components are copied into your codebase (not installed as dependencies). You ow
 Always use `cn()` for conditional/merged class names:
 
 ```tsx
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-<div className={cn(
-  "flex items-center gap-2",
-  isActive && "bg-primary text-primary-foreground",
-  className  // always forward className prop
-)} />
+<div
+  className={cn(
+    "flex items-center gap-2",
+    isActive && "bg-primary text-primary-foreground",
+    className, // always forward className prop
+  )}
+/>;
 ```
 
 ## Component Usage Patterns
@@ -87,10 +92,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 function DeleteDialog({ onConfirm }: { onConfirm: () => void }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -100,9 +105,7 @@ function DeleteDialog({ onConfirm }: { onConfirm: () => void }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Are you sure?</DialogTitle>
-          <DialogDescription>
-            This action cannot be undone.
-          </DialogDescription>
+          <DialogDescription>This action cannot be undone.</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
@@ -111,8 +114,8 @@ function DeleteDialog({ onConfirm }: { onConfirm: () => void }) {
           <Button
             variant="destructive"
             onClick={() => {
-              onConfirm()
-              setOpen(false)
+              onConfirm();
+              setOpen(false);
             }}
           >
             Delete
@@ -120,7 +123,7 @@ function DeleteDialog({ onConfirm }: { onConfirm: () => void }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 ```
 
@@ -134,7 +137,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 
 <Sheet>
   <SheetTrigger asChild>
@@ -147,7 +150,7 @@ import {
     </SheetHeader>
     {/* Content here */}
   </SheetContent>
-</Sheet>
+</Sheet>;
 ```
 
 ### Command (Command Palette / Combobox)
@@ -162,21 +165,21 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command"
+} from "@/components/ui/command";
 
 function CommandMenu() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((open) => !open)
+        e.preventDefault();
+        setOpen((open) => !open);
       }
-    }
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
-  }, [])
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -190,7 +193,7 @@ function CommandMenu() {
         </CommandGroup>
       </CommandList>
     </CommandDialog>
-  )
+  );
 }
 ```
 
@@ -198,9 +201,19 @@ function CommandMenu() {
 
 ```tsx
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table"
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 // Add getSortedRowModel, getFilteredRowModel, getPaginationRowModel as needed
 
@@ -208,10 +221,14 @@ function DataTable<TData, TValue>({
   columns,
   data,
 }: {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
 }) {
-  const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
     <Table>
@@ -220,7 +237,12 @@ function DataTable<TData, TValue>({
           <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => (
               <TableHead key={header.id}>
-                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
               </TableHead>
             ))}
           </TableRow>
@@ -238,7 +260,7 @@ function DataTable<TData, TValue>({
         ))}
       </TableBody>
     </Table>
-  )
+  );
 }
 ```
 
@@ -277,6 +299,7 @@ const [open, setOpen] = useState(false)
 ```
 
 Use controlled when you need to:
+
 - Close on form submit
 - Open programmatically (e.g., after an action)
 - Prevent closing under certain conditions
@@ -303,7 +326,7 @@ Always forward `className` in custom components built on shadcn/ui:
 
 ```tsx
 interface CustomCardProps extends React.ComponentProps<typeof Card> {
-  title: string
+  title: string;
 }
 
 function CustomCard({ title, className, ...props }: CustomCardProps) {
@@ -311,7 +334,7 @@ function CustomCard({ title, className, ...props }: CustomCardProps) {
     <Card className={cn("p-6", className)} {...props}>
       <CardTitle>{title}</CardTitle>
     </Card>
-  )
+  );
 }
 ```
 
@@ -362,21 +385,21 @@ Use Tailwind utilities to customize components. The `cn()` function handles merg
 shadcn/ui supports dark mode via the `dark` class on `<html>`. Use `next-themes`:
 
 ```tsx
-import { ThemeProvider } from "next-themes"
+import { ThemeProvider } from "next-themes";
 
 // In layout.tsx
 <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
   {children}
-</ThemeProvider>
+</ThemeProvider>;
 ```
 
 Toggle:
 
 ```tsx
-import { useTheme } from "next-themes"
+import { useTheme } from "next-themes";
 
 function ThemeToggle() {
-  const { setTheme, theme } = useTheme()
+  const { setTheme, theme } = useTheme();
   return (
     <Button
       variant="ghost"
@@ -386,7 +409,7 @@ function ThemeToggle() {
       <Sun className="h-5 w-5 rotate-0 scale-100 dark:-rotate-90 dark:scale-0" />
       <Moon className="absolute h-5 w-5 rotate-90 scale-0 dark:rotate-0 dark:scale-100" />
     </Button>
-  )
+  );
 }
 ```
 
@@ -395,23 +418,23 @@ function ThemeToggle() {
 ### Schema Definition
 
 ```tsx
-import { z } from "zod"
+import { z } from "zod";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   role: z.enum(["admin", "user", "viewer"]),
   notifications: z.boolean().default(false),
-})
+});
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof formSchema>;
 ```
 
 ### Form Component
 
 ```tsx
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
@@ -420,7 +443,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 
 function UserForm() {
   const form = useForm<FormValues>({
@@ -431,11 +454,11 @@ function UserForm() {
       role: "user",
       notifications: false,
     },
-  })
+  });
 
   function onSubmit(values: FormValues) {
     // values is fully typed and validated
-    console.log(values)
+    console.log(values);
   }
 
   return (
@@ -496,7 +519,7 @@ function UserForm() {
         <Button type="submit">Save</Button>
       </form>
     </Form>
-  )
+  );
 }
 ```
 
@@ -505,6 +528,7 @@ function UserForm() {
 ### Built-in Defaults
 
 shadcn/ui components (via Radix UI) include:
+
 - Keyboard navigation (Tab, Enter, Escape, Arrow keys)
 - Focus management (focus trap in dialogs, return focus on close)
 - ARIA attributes (role, aria-expanded, aria-controls, etc.)
@@ -553,15 +577,15 @@ You must still provide:
 ### Loading States
 
 ```tsx
-import { Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react";
 
 <Button disabled={isLoading}>
   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
   {isLoading ? "Saving..." : "Save Changes"}
-</Button>
+</Button>;
 
 // Skeleton for content loading
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui/skeleton";
 
 <Card>
   <CardHeader>
@@ -571,7 +595,7 @@ import { Skeleton } from "@/components/ui/skeleton"
   <CardContent>
     <Skeleton className="h-20 w-full" />
   </CardContent>
-</Card>
+</Card>;
 ```
 
 ### Empty States
@@ -582,7 +606,9 @@ Use the `<Empty>` component from shadcn/ui, or build a simple one:
 <div className="flex flex-col items-center justify-center py-12 text-center">
   <InboxIcon className="h-12 w-12 text-muted-foreground" />
   <h3 className="mt-4 text-lg font-semibold">No results</h3>
-  <p className="mt-2 text-sm text-muted-foreground">Get started by creating your first item.</p>
+  <p className="mt-2 text-sm text-muted-foreground">
+    Get started by creating your first item.
+  </p>
   <Button className="mt-4">Create New</Button>
 </div>
 ```
@@ -590,8 +616,8 @@ Use the `<Empty>` component from shadcn/ui, or build a simple one:
 ### Error Display
 
 ```tsx
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 function ErrorAlert({ message }: { message: string }) {
   return (
@@ -600,7 +626,7 @@ function ErrorAlert({ message }: { message: string }) {
       <AlertTitle>Error</AlertTitle>
       <AlertDescription>{message}</AlertDescription>
     </Alert>
-  )
+  );
 }
 ```
 
@@ -615,9 +641,13 @@ npx shadcn@latest add sonner
 Add `<Toaster />` once in your root layout:
 
 ```tsx
-import { Toaster } from "@/components/ui/sonner"
+import { Toaster } from "@/components/ui/sonner";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html>
       <body>
@@ -625,24 +655,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Toaster />
       </body>
     </html>
-  )
+  );
 }
 ```
 
 ```tsx
-import { toast } from "sonner"
+import { toast } from "sonner";
 
 function SaveButton() {
   async function handleSave() {
     try {
-      await save()
-      toast.success("Your changes have been saved.")
+      await save();
+      toast.success("Your changes have been saved.");
     } catch {
-      toast.error("Failed to save changes.")
+      toast.error("Failed to save changes.");
     }
   }
 
-  return <Button onClick={handleSave}>Save</Button>
+  return <Button onClick={handleSave}>Save</Button>;
 }
 ```
 
@@ -711,12 +741,15 @@ Never hardcode `oklch(...)` values either — always use semantic class names li
 ```tsx
 // BAD — className, onClick, etc. are lost
 function MyButton({ label }: { label: string }) {
-  return <Button>{label}</Button>
+  return <Button>{label}</Button>;
 }
 
 // GOOD — all button props forwarded
-function MyButton({ label, ...props }: { label: string } & React.ComponentProps<typeof Button>) {
-  return <Button {...props}>{label}</Button>
+function MyButton({
+  label,
+  ...props
+}: { label: string } & React.ComponentProps<typeof Button>) {
+  return <Button {...props}>{label}</Button>;
 }
 ```
 
@@ -724,10 +757,10 @@ function MyButton({ label, ...props }: { label: string } & React.ComponentProps<
 
 ```tsx
 // DEPRECATED — do not use
-import { useToast } from "@/hooks/use-toast"
-const { toast } = useToast()
+import { useToast } from "@/hooks/use-toast";
+const { toast } = useToast();
 
 // CORRECT — use sonner
-import { toast } from "sonner"
-toast.success("Saved")
+import { toast } from "sonner";
+toast.success("Saved");
 ```

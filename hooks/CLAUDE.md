@@ -22,22 +22,26 @@ Matches the stack name used in `setup.sh`: `frontend`, `python`, `rust`.
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/guard-bash.sh" }
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/guard-bash.sh"
+          }
         ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "hooks": [
-          { "type": "command", "command": "<formatter command>" }
-        ]
+        "hooks": [{ "type": "command", "command": "<formatter command>" }]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "<stop_hook_active guard + verify.sh>" }
+          {
+            "type": "command",
+            "command": "<stop_hook_active guard + verify.sh>"
+          }
         ]
       }
     ]
@@ -48,29 +52,32 @@ Matches the stack name used in `setup.sh`: `frontend`, `python`, `rust`.
 ## Hook Types
 
 **PreToolUse** — Runs before Claude uses a tool
+
 - `matcher`: regex pattern against tool name (e.g., `"Bash"`)
 - Use for: blocking dangerous Bash commands (rm -rf, force push, DROP)
 - Exit code 2 blocks the tool use; stderr shown to Claude
 - Avoid PreToolUse hooks on `Edit|Write` — they can interfere with the user's permission mode and cause repeated prompts. Protect sensitive files via project CLAUDE.md instructions instead
 
 **PostToolUse** — Runs after Claude uses a tool
+
 - `matcher`: regex pattern against tool name
 - Use for: auto-formatting every file Claude touches
 - Must be fast (<5 seconds) — runs on every matching tool use
 - Exit code 2 sends stderr to Claude (tool already ran, can't block)
 
 **Stop** — Runs when Claude completes a response
+
 - No matcher needed — fires on every completion
 - Use for: running the full verify script as a quality gate
 - **Must check `stop_hook_active`** to prevent infinite retry loops
 
 ## Exit Codes
 
-| Code | Meaning |
-|---|---|
-| `0` | Success — continue normally |
-| `2` | Block — PreToolUse blocks the tool; Stop forces Claude to fix issues |
-| Other | Non-blocking error — logged in verbose mode, no effect |
+| Code  | Meaning                                                              |
+| ----- | -------------------------------------------------------------------- |
+| `0`   | Success — continue normally                                          |
+| `2`   | Block — PreToolUse blocks the tool; Stop forces Claude to fix issues |
+| Other | Non-blocking error — logged in verbose mode, no effect               |
 
 ## Critical Patterns
 
@@ -107,8 +114,8 @@ Note: `MultiEdit` does not exist. Use `Edit|Write` for file modification hooks.
 
 ## Current Templates
 
-| File | PreToolUse | PostToolUse | Stop |
-|---|---|---|---|
-| `frontend-settings.json` | guard-bash.sh | prettier | verify.sh |
-| `python-settings.json` | guard-bash.sh | black + isort | verify.sh |
-| `rust-settings.json` | guard-bash.sh | rustfmt | verify.sh |
+| File                     | PreToolUse    | PostToolUse   | Stop      |
+| ------------------------ | ------------- | ------------- | --------- |
+| `frontend-settings.json` | guard-bash.sh | prettier      | verify.sh |
+| `python-settings.json`   | guard-bash.sh | black + isort | verify.sh |
+| `rust-settings.json`     | guard-bash.sh | rustfmt       | verify.sh |

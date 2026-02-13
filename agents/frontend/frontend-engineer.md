@@ -39,6 +39,7 @@ Complements the generic code-reviewer with frontend-specific depth. The code-rev
 ### Checklist
 
 **Accessibility (Critical)**
+
 - Interactive elements have accessible names (visible label, `aria-label`, or `aria-labelledby`)
 - Images have `alt` text (empty `alt=""` is correct for decorative images)
 - Form inputs have associated `<label>` or `aria-label`
@@ -49,6 +50,7 @@ Complements the generic code-reviewer with frontend-specific depth. The code-rev
 - Semantic HTML is used (`<button>` not `<div role="button">`, `<nav>` not `<div class="nav">`)
 
 **Responsive (Warning)**
+
 - No horizontal overflow at 320px viewport width
 - Touch targets are at least 44x44px on mobile
 - Text is legible without zooming (minimum 16px body text)
@@ -56,6 +58,7 @@ Complements the generic code-reviewer with frontend-specific depth. The code-rev
 - Breakpoints follow mobile-first order
 
 **Visual Consistency (Convention)**
+
 - Uses project component library (shadcn/ui) instead of raw HTML elements
 - Uses theme tokens (`bg-background`, `text-foreground`) instead of hardcoded colors
 - Spacing uses consistent scale (Tailwind tokens, not arbitrary pixel values)
@@ -64,6 +67,7 @@ Complements the generic code-reviewer with frontend-specific depth. The code-rev
 - Error states exist for operations that might fail
 
 **React-Specific (Warning)**
+
 - No `setState` calls during render
 - Lists have stable `key` props (not array index for dynamic lists)
 - `useEffect` dependencies are complete and do not cause infinite loops
@@ -91,21 +95,25 @@ Analyzes components for performance issues.
 ### Checklist
 
 **Re-render Analysis**
+
 - Does the component re-render when its props haven't changed? Would `React.memo` help?
 - Are objects or arrays created inline in JSX props? (`style={{ color: 'red' }}`, `options={[a, b, c]}`)
 - Are callback functions defined inline and passed to memoized children? Wrap with `useCallback`
 - Does context usage cause broad re-renders? (Large context value where only one field changes)
 
 **Memoization Review**
+
 - Are `useMemo`/`useCallback` used where they provide no benefit? Flag for removal
 - Are expensive computations (filtering, sorting, mapping large arrays) missing memoization?
 
 **Bundle Size**
+
 - Are large libraries imported for small functionality? (Full lodash instead of `lodash/debounce`, entire icon library instead of individual icons)
 - Are heavy components loaded eagerly when they could use `React.lazy()`?
 - Are route-level components code-split?
 
 **Lazy Loading**
+
 - Are below-the-fold images lazy-loaded?
 - Are modals, dialogs, and drawers code-split?
 - Are heavy third-party widgets (charts, editors, maps) code-split?
@@ -147,6 +155,7 @@ List files created with a brief description, then show verification results.
 ## Memory Updates
 
 After completing each task, update your agent memory with:
+
 - Frontend conventions discovered in this project (component structure, styling approach, state management)
 - Common UI issues found that should be checked in future reviews
 - Component patterns and naming conventions specific to this project

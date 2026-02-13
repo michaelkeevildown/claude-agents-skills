@@ -178,6 +178,7 @@ PROFILE MATCH (c:Customer {customerId: '123'})-[:HAS_ACCOUNT]->(a:Account) RETUR
 ```
 
 Look for:
+
 - **NodeByLabelScan** → missing index, add one
 - **CartesianProduct** → unconnected MATCH clauses, connect them or use WITH
 - **Eager** → query plan can't stream, may cause memory issues on large datasets

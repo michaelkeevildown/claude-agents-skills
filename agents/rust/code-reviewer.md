@@ -114,6 +114,7 @@ End with a summary:
 ## Memory Updates
 
 After completing each review, update your agent memory with:
+
 - Rust patterns and idioms specific to this crate
 - Error handling conventions (which error library, Result type aliases)
 - Async runtime in use (tokio, async-std) and any custom patterns

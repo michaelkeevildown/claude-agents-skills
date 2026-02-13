@@ -21,17 +21,18 @@ Stack-agnostic — applies to frontend, Python, Rust, and any other language.
 
 ### Branch Naming Convention
 
-| Prefix | Purpose | Example |
-|--------|---------|---------|
-| `feat/` | New feature | `feat/user-auth` |
-| `fix/` | Bug fix | `fix/login-redirect` |
-| `refactor/` | Code restructuring, no behavior change | `refactor/extract-utils` |
-| `chore/` | Tooling, dependencies, config | `chore/upgrade-deps` |
-| `docs/` | Documentation only | `docs/api-reference` |
-| `test/` | Adding or fixing tests | `test/auth-edge-cases` |
-| `spike/` | Exploration / throwaway (vibe coding sessions) | `spike/graph-layout-options` |
+| Prefix      | Purpose                                        | Example                      |
+| ----------- | ---------------------------------------------- | ---------------------------- |
+| `feat/`     | New feature                                    | `feat/user-auth`             |
+| `fix/`      | Bug fix                                        | `fix/login-redirect`         |
+| `refactor/` | Code restructuring, no behavior change         | `refactor/extract-utils`     |
+| `chore/`    | Tooling, dependencies, config                  | `chore/upgrade-deps`         |
+| `docs/`     | Documentation only                             | `docs/api-reference`         |
+| `test/`     | Adding or fixing tests                         | `test/auth-edge-cases`       |
+| `spike/`    | Exploration / throwaway (vibe coding sessions) | `spike/graph-layout-options` |
 
 **Naming rules:**
+
 - Lowercase, hyphens (not underscores or spaces), no slashes beyond the prefix
 - Max ~50 characters
 - Include ticket/issue ID when available: `feat/GH-42-user-auth`
@@ -82,17 +83,17 @@ git rebase origin/main
 
 ### Type Reference
 
-| Type | When to use |
-|------|-------------|
-| `feat` | New feature visible to users |
-| `fix` | Bug fix |
+| Type       | When to use                                             |
+| ---------- | ------------------------------------------------------- |
+| `feat`     | New feature visible to users                            |
+| `fix`      | Bug fix                                                 |
 | `refactor` | Code change that neither fixes a bug nor adds a feature |
-| `test` | Adding or correcting tests |
-| `docs` | Documentation only |
-| `chore` | Build process, dependencies, tooling |
-| `style` | Formatting, whitespace (no logic change) |
-| `perf` | Performance improvement |
-| `ci` | CI/CD configuration changes |
+| `test`     | Adding or correcting tests                              |
+| `docs`     | Documentation only                                      |
+| `chore`    | Build process, dependencies, tooling                    |
+| `style`    | Formatting, whitespace (no logic change)                |
+| `perf`     | Performance improvement                                 |
+| `ci`       | CI/CD configuration changes                             |
 
 ### Rules
 
@@ -233,7 +234,7 @@ Every PR should include:
 1. **Summary:** 1-3 bullet points describing what changed and why
 2. **Test plan:** How to verify the changes work (bulleted checklist)
 3. **Breaking changes:** Call out any breaking changes prominently
-5. **Screenshots:** For UI changes, include before/after screenshots
+4. **Screenshots:** For UI changes, include before/after screenshots
 
 ### Draft PRs
 
@@ -274,6 +275,7 @@ git rebase --continue
 ### When to Use Merge
 
 Use merge commits **only** when:
+
 - Merging a feature branch into `main` via PR (the platform handles this)
 - Merging a long-lived branch where commit history tells a story
 - You explicitly want a merge commit as a historical marker
@@ -425,6 +427,7 @@ git revert HEAD
 ### Pre-Commit Hook Behavior
 
 When a pre-commit hook fails:
+
 - The commit did **not** happen
 - Fix the issue flagged by the hook
 - Re-stage the files (`git add`)
@@ -455,25 +458,25 @@ git stash pop
 
 ## Quick Reference
 
-| Task | Command |
-|------|---------|
-| Create feature branch | `git checkout -b feat/description` |
-| Stage specific files | `git add path/to/file.ts` |
-| Stage interactively | `git add -p` |
-| Review staged changes | `git diff --staged` |
-| Review all changes | `git diff HEAD` |
-| Commit (single line) | `git commit -m "type(scope): subject"` |
-| Commit (multi-line) | `git commit -m "$(cat <<'EOF' ... EOF)"` |
-| Rebase onto main | `git fetch origin && git rebase origin/main` |
-| Squash branch | `git reset --soft origin/main && git commit` |
-| Undo last commit (keep changes) | `git reset --soft HEAD~1` |
-| Revert a commit | `git revert HEAD` |
-| Stash work | `git stash push -m "description"` |
-| Pop stash | `git stash pop` |
-| Create PR | `gh pr create --title "..." --body "..."` |
-| Create draft PR | `gh pr create --draft --title "..."` |
-| View PR status | `gh pr status` |
-| Checkpoint commit | `git add -A && git commit -m "wip: checkpoint"` |
+| Task                            | Command                                         |
+| ------------------------------- | ----------------------------------------------- |
+| Create feature branch           | `git checkout -b feat/description`              |
+| Stage specific files            | `git add path/to/file.ts`                       |
+| Stage interactively             | `git add -p`                                    |
+| Review staged changes           | `git diff --staged`                             |
+| Review all changes              | `git diff HEAD`                                 |
+| Commit (single line)            | `git commit -m "type(scope): subject"`          |
+| Commit (multi-line)             | `git commit -m "$(cat <<'EOF' ... EOF)"`        |
+| Rebase onto main                | `git fetch origin && git rebase origin/main`    |
+| Squash branch                   | `git reset --soft origin/main && git commit`    |
+| Undo last commit (keep changes) | `git reset --soft HEAD~1`                       |
+| Revert a commit                 | `git revert HEAD`                               |
+| Stash work                      | `git stash push -m "description"`               |
+| Pop stash                       | `git stash pop`                                 |
+| Create PR                       | `gh pr create --title "..." --body "..."`       |
+| Create draft PR                 | `gh pr create --draft --title "..."`            |
+| View PR status                  | `gh pr status`                                  |
+| Checkpoint commit               | `git add -A && git commit -m "wip: checkpoint"` |
 
 ---
 

@@ -27,6 +27,7 @@ You are a test writer for the agent teams workflow. Your job is to read feature 
 ### 1. Read the Feature Doc
 
 Read the feature doc from `feature-docs/ready/`. Extract:
+
 - All acceptance criteria (each becomes at least one test)
 - Edge cases (each becomes at least one test)
 - Affected files (test imports will target these modules)
@@ -105,6 +106,7 @@ Update `feature-docs/STATUS.md` (create if missing) with current status:
 
 ```markdown
 ## <feature-name> — testing
+
 - **Agent**: test-writer
 - **Tests**: <N> tests written, all failing (expected)
 - **Criteria covered**: <N>/<total> acceptance, <N>/<total> edge cases
@@ -164,8 +166,9 @@ If you already did Steps 6-8 above, this is a confirmation check. If you skipped
 ## Memory Updates
 
 After completing each test-writing session, update your agent memory with:
+
 - Test patterns discovered in this project (assertion macros, test helpers)
 - Module structure and crate organization
 - Common test fixture patterns
 - Test naming conventions and organization
-Keep entries concise. One line per pattern. Deduplicate with existing entries.
+  Keep entries concise. One line per pattern. Deduplicate with existing entries.

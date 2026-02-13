@@ -13,13 +13,13 @@
 
 ### Core Components
 
-| Component | Count | Purpose |
-|---|---|---|
-| Agent definitions | 11 | Markdown files with YAML frontmatter defining agent roles, processes, and constraints |
-| Skill documents | 12 complete, 5 stubs | Technology reference docs agents consult before starting work |
-| Hook scripts | 5 types | Shell scripts that enforce quality gates at key lifecycle points |
-| Verify scripts | 3 stacks | Stack-specific verification pipelines (format + type check + lint + test) |
-| Feature-docs system | 6 lifecycle stages | Directory-based state machine for coordinating multi-agent feature development |
+| Component           | Count                | Purpose                                                                               |
+| ------------------- | -------------------- | ------------------------------------------------------------------------------------- |
+| Agent definitions   | 11                   | Markdown files with YAML frontmatter defining agent roles, processes, and constraints |
+| Skill documents     | 12 complete, 5 stubs | Technology reference docs agents consult before starting work                         |
+| Hook scripts        | 5 types              | Shell scripts that enforce quality gates at key lifecycle points                      |
+| Verify scripts      | 3 stacks             | Stack-specific verification pipelines (format + type check + lint + test)             |
+| Feature-docs system | 6 lifecycle stages   | Directory-based state machine for coordinating multi-agent feature development        |
 
 ### The Agent-Teams Workflow
 
@@ -56,10 +56,10 @@ Model assignment: `opus` for complex reasoning (code-reviewer, builder, frontend
 
 ### Verification System (2-Tier)
 
-| Tier | Trigger | What It Checks | Speed |
-|---|---|---|---|
-| Fast verify | Stop hook (every response with file changes) | Type checking only | Seconds |
-| Full verify | TaskCompleted hook | Format + type check + lint + all tests | Minutes |
+| Tier        | Trigger                                      | What It Checks                         | Speed   |
+| ----------- | -------------------------------------------- | -------------------------------------- | ------- |
+| Fast verify | Stop hook (every response with file changes) | Type checking only                     | Seconds |
+| Full verify | TaskCompleted hook                           | Format + type check + lint + all tests | Minutes |
 
 The Stop hook (`verify-scripts/stop-hook.sh`) includes loop detection -- after 3 consecutive failures, it allows the agent to stop to prevent infinite retry loops. This mirrors Carlini's `--fast` mode from the Anthropic C compiler blog post.
 
@@ -117,11 +117,11 @@ Memory is project-local and agent-instance-local. It never flows back to improve
 
 **This repo:** The 2-tier verification maps well:
 
-| DGM Stage | Repo Equivalent |
-|---|---|
-| Stage 1 (basic functionality) | Stop hook / fast-verify (type checking only) |
-| Stage 2 (performance) | TaskCompleted / full verify (format + type + lint + test) |
-| Stage 3 (full eval, top performers only) | Code reviewer (quality judgment) |
+| DGM Stage                                | Repo Equivalent                                           |
+| ---------------------------------------- | --------------------------------------------------------- |
+| Stage 1 (basic functionality)            | Stop hook / fast-verify (type checking only)              |
+| Stage 2 (performance)                    | TaskCompleted / full verify (format + type + lint + test) |
+| Stage 3 (full eval, top performers only) | Code reviewer (quality judgment)                          |
 
 **Gap:** LOW-MEDIUM. The staged verification is well-designed. The gap is that it measures correctness, not quality. A third stage measuring code complexity, reviewer rejection rate, or pattern adherence would complete the mapping.
 
@@ -180,10 +180,10 @@ The Rust code-reviewer (`agents/rust/code-reviewer.md:103-112`) includes a summa
 
 Rust agents use `tail -30` while all other agents use `tail -20`:
 
-| File | Current | Expected |
-|---|---|---|
-| `agents/rust/builder.md` | `tail -30` | `tail -20` |
-| `agents/rust/test-writer.md` | `tail -30` | `tail -20` |
+| File                           | Current    | Expected   |
+| ------------------------------ | ---------- | ---------- |
+| `agents/rust/builder.md`       | `tail -30` | `tail -20` |
+| `agents/rust/test-writer.md`   | `tail -30` | `tail -20` |
 | `agents/rust/code-reviewer.md` | `tail -30` | `tail -20` |
 
 **Fix:** Normalize to `tail -20` across all three Rust agent files.
@@ -192,13 +192,13 @@ Rust agents use `tail -30` while all other agents use `tail -20`:
 
 Agents in the Python and Rust stacks reference skills that are stubs (18 lines, just TODOs):
 
-| Stub Skill | Referenced By |
-|---|---|
-| `skills/python/fastapi/SKILL.md` | Python test-writer, Python builder |
-| `skills/python/testing-pytest/SKILL.md` | Python test-writer, Python builder |
-| `skills/python/neo4j-driver-python/SKILL.md` | Python builder |
-| `skills/rust/testing-rust/SKILL.md` | Rust test-writer, Rust builder |
-| `skills/rust/neo4j-driver-rust/SKILL.md` | Rust builder |
+| Stub Skill                                   | Referenced By                      |
+| -------------------------------------------- | ---------------------------------- |
+| `skills/python/fastapi/SKILL.md`             | Python test-writer, Python builder |
+| `skills/python/testing-pytest/SKILL.md`      | Python test-writer, Python builder |
+| `skills/python/neo4j-driver-python/SKILL.md` | Python builder                     |
+| `skills/rust/testing-rust/SKILL.md`          | Rust test-writer, Rust builder     |
+| `skills/rust/neo4j-driver-rust/SKILL.md`     | Rust builder                       |
 
 This means Python and Rust agents operate with significantly less contextual knowledge than frontend agents (which have 8 complete skills, 400-940 lines each).
 
@@ -213,6 +213,7 @@ This means Python and Rust agents operate with significantly less contextual kno
 Apply the fixes from section 4.1-4.4. These are small, targeted edits with no dependencies between them.
 
 **Files modified:**
+
 - `agents/rust/code-reviewer.md` -- add Constraints section, normalize tail count
 - `agents/universal/code-reviewer.md` -- add verdict/summary to output format
 - `verify-scripts/CLAUDE.md` -- document 4 stages instead of 3
@@ -242,14 +243,14 @@ Six event types, all sharing an envelope:
 }
 ```
 
-| Event | Emitted By | When |
-|---|---|---|
-| `stage_transition` | coordinator | Feature doc moves between lifecycle dirs |
-| `verify_result` | task-completed.sh | After verify pipeline runs (pass or fail) |
-| `review_verdict` | coordinator | After code-reviewer produces a verdict |
-| `rework_cycle` | coordinator | Feature sent back from review |
-| `stuck_warning` | teammate-idle.sh | Feature in building/ > 30 minutes |
-| `pipeline_complete` | coordinator | Feature reaches completed/ |
+| Event               | Emitted By        | When                                      |
+| ------------------- | ----------------- | ----------------------------------------- |
+| `stage_transition`  | coordinator       | Feature doc moves between lifecycle dirs  |
+| `verify_result`     | task-completed.sh | After verify pipeline runs (pass or fail) |
+| `review_verdict`    | coordinator       | After code-reviewer produces a verdict    |
+| `rework_cycle`      | coordinator       | Feature sent back from review             |
+| `stuck_warning`     | teammate-idle.sh  | Feature in building/ > 30 minutes         |
+| `pipeline_complete` | coordinator       | Feature reaches completed/                |
 
 #### Hook Instrumentation
 
@@ -261,6 +262,7 @@ Six event types, all sharing an envelope:
 Add a "Metrics Capture" section to `feature-docs/implement-feature.md` instructing the coordinator to emit `stage_transition`, `review_verdict`, `rework_cycle`, and `pipeline_complete` events. The coordinator is the right place for these because it orchestrates all stage transitions and routing decisions.
 
 **Design choice -- JSONL over SQLite or CSV:**
+
 - No runtime dependencies (only `printf` and `>>` to write)
 - Append-only (concurrent agents writing from different hooks won't corrupt the file)
 - Self-describing (each line is a complete JSON object)
@@ -318,20 +320,22 @@ The retrospective produces a structured report:
 ### Phase 4: Agent-Teams Skill Update
 
 Add a `## 13. Pipeline Metrics` section to `skills/global/agent-teams/SKILL.md` documenting:
+
 - The event types and schema
 - The `emit-metric.sh` utility
 - When to run retrospective analysis
 - Healthy metric ranges:
 
-| Metric | Healthy Range | Warning Sign |
-|---|---|---|
-| Rework cycles per feature | 0-1 | >2 consistently |
-| Verify failure rate | <30% | >50% |
-| Same stage failing repeatedly | Varies | Missing guidance in agent definition |
-| Stuck features | 0 | >1 means specs are ambiguous |
-| Review rejection rate | <40% | >60% |
+| Metric                        | Healthy Range | Warning Sign                         |
+| ----------------------------- | ------------- | ------------------------------------ |
+| Rework cycles per feature     | 0-1           | >2 consistently                      |
+| Verify failure rate           | <30%          | >50%                                 |
+| Same stage failing repeatedly | Varies        | Missing guidance in agent definition |
+| Stuck features                | 0             | >1 means specs are ambiguous         |
+| Review rejection rate         | <40%          | >60%                                 |
 
 Add anti-patterns:
+
 - "No metrics collection" -- pipeline runs blind, improvements are guesswork
 - "Running retrospective without data" -- need 3-5 completed features minimum
 - "Retrospective suggestions never adopted" -- analysis happens but definitions never change
@@ -396,18 +400,23 @@ The key difference: the proposed system adds the **measurement** (Phase 2) and *
 These are real gaps the analysis identified but that warrant separate planning:
 
 ### Stub Skill Content
+
 Five skills are stubs (18 lines each). Each needs 400-900 lines of domain content. The retrospective agent will surface these as skill gaps once metrics show higher failure rates on those stacks, providing evidence-based prioritization.
 
 ### Cross-Stack Deduplication
+
 The builder and test-writer agents are ~70% identical across 3 stacks. A template/composition system (shared lifecycle + stack-specific overrides) would reduce duplication from 3x to 1x+overrides. This is a significant architectural change -- the current structure at `agents/{frontend,python,rust}/builder.md` has roughly 100 lines of shared process and 40-50 lines of stack-specific content.
 
 ### Python Code-Reviewer
+
 Rust has a stack-specific code-reviewer with deep checks (ownership, async safety, unsafe audit). Python has no equivalent for Python-specific concerns (asyncio, type hints, Pydantic, import patterns). Retrospective data will show if this causes measurable quality gaps.
 
 ### Agent Variant Archive
+
 DGM's archive of agent variants with selection. Instead of one canonical `builder.md` per stack, maintain a directory of variants. The coordinator selects a variant based on task characteristics. Requires metrics infrastructure to compare variant performance.
 
 ### Auto-Application of Retrospective Suggestions
+
 The full DGM loop modifies agent code automatically. This analysis stops at human review. A future phase could add "shadow evaluation" -- run a modified agent on a test feature, compare metrics to the baseline, and adopt the change only if metrics improve. This requires the evaluation infrastructure from Phase 2 to be mature.
 
 ---
@@ -416,24 +425,24 @@ The full DGM loop modifies agent code automatically. This analysis stops at huma
 
 ### Modified (Phases 1-4)
 
-| File | Change |
-|---|---|
-| `agents/rust/code-reviewer.md` | Add Constraints section; normalize tail -30 to -20 |
-| `agents/universal/code-reviewer.md` | Add verdict/summary to output format |
-| `verify-scripts/CLAUDE.md` | Document 4 stages instead of 3 |
-| `agents/rust/builder.md` | Normalize tail -30 to -20 |
-| `agents/rust/test-writer.md` | Normalize tail -30 to -20 |
-| `verify-scripts/task-completed.sh` | Source emit-metric.sh, emit verify_result |
-| `verify-scripts/teammate-idle.sh` | Emit stuck_warning metric |
-| `feature-docs/implement-feature.md` | Add metrics capture + retrospective trigger |
-| `setup.sh` | Copy emit-metric.sh to scripts/ |
-| `skills/global/agent-teams/SKILL.md` | Add metrics section + anti-patterns |
-| `agents/CLAUDE.md` | Add retrospective to agents table |
-| `CLAUDE.md` | Add retrospective to content inventory |
+| File                                 | Change                                             |
+| ------------------------------------ | -------------------------------------------------- |
+| `agents/rust/code-reviewer.md`       | Add Constraints section; normalize tail -30 to -20 |
+| `agents/universal/code-reviewer.md`  | Add verdict/summary to output format               |
+| `verify-scripts/CLAUDE.md`           | Document 4 stages instead of 3                     |
+| `agents/rust/builder.md`             | Normalize tail -30 to -20                          |
+| `agents/rust/test-writer.md`         | Normalize tail -30 to -20                          |
+| `verify-scripts/task-completed.sh`   | Source emit-metric.sh, emit verify_result          |
+| `verify-scripts/teammate-idle.sh`    | Emit stuck_warning metric                          |
+| `feature-docs/implement-feature.md`  | Add metrics capture + retrospective trigger        |
+| `setup.sh`                           | Copy emit-metric.sh to scripts/                    |
+| `skills/global/agent-teams/SKILL.md` | Add metrics section + anti-patterns                |
+| `agents/CLAUDE.md`                   | Add retrospective to agents table                  |
+| `CLAUDE.md`                          | Add retrospective to content inventory             |
 
 ### Created (Phases 2-3)
 
-| File | Purpose |
-|---|---|
-| `verify-scripts/emit-metric.sh` | POSIX shell function for emitting structured JSONL metrics |
+| File                                | Purpose                                                               |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| `verify-scripts/emit-metric.sh`     | POSIX shell function for emitting structured JSONL metrics            |
 | `agents/universal/retrospective.md` | Read-only analysis agent that reads metrics and suggests improvements |

@@ -1,0 +1,29 @@
+{
+  "name": "claude-agents-skills",
+  "version": "1.0.0",
+  "description": "You know how every new project with Claude Code starts the same way? You re-explain your React patterns. Re-paste your testing conventions. Re-describe how you like your Neo4j queries. Session after session, project after project.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michaelkeevildown/claude-agents-skills.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/michaelkeevildown/claude-agents-skills/issues"
+  },
+  "homepage": "https://github.com/michaelkeevildown/claude-agents-skills#readme",
+  "lint-staged": {
+    "*.{md,json}": "prettier --write"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1"
+  }
+}

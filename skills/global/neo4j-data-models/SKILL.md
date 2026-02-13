@@ -12,6 +12,7 @@ Use this skill when designing or extending a Neo4j graph data model. Covers nami
 ## Design Process
 
 Start with specific business questions before designing the model. Follow a three-phase cycle:
+
 1. **Conceptualize** the structure (nodes, relationships, properties)
 2. **Design queries** that answer the business questions
 3. **Validate** against real data and optimize
@@ -222,55 +223,55 @@ Account labels: `Account` (required), plus `Internal`, `External`, `HighRiskJuri
 
 #### Node Labels and Key Properties
 
-| Label | Key Properties | Other Properties |
-|-------|---------------|------------------|
-| **Account** | `accountNumber` (String) | `accountType`, `openedDate`, `closedDate`, `suspendedDate` |
-| **Customer** | `customerId` (String) | `firstName`, `middleName`, `lastName`, `dateOfBirth` (Date), `placeOfBirth`, `countryOfBirth` |
-| **Transaction** | `transactionId` (String) | `amount` (Float, always positive), `currency` (ISO 4217), `date` (DateTime), `message`, `type` |
-| **Movement** | `movementId` (String) | `amount` (Float), `currency`, `date` (DateTime), `description`, `status`, `sequenceNumber` (Integer), `authorisedBy`, `validatedBy` |
-| **Counterparty** | `counterpartyId` (String) | `name`, `type` (INDIVIDUAL/BUSINESS/GOVERNMENT/CHARITY), `registrationNumber` |
-| **Email** | `address` (String) | `domain` |
-| **Phone** | `phoneNumber` (String) | `countryCode` |
-| **Address** | `addressLine1` + `postTown` + `postCode` (composite) | `addressLine2`, `region`, `latitude`, `longitude` |
-| **Passport** | `passportNumber` (String) | `issueDate`, `expiryDate`, `issuingCountry`, `nationality` |
-| **DrivingLicense** | `licenseNumber` + `issuingCountry` (composite) | `issueDate`, `expiryDate` |
-| **Face** | `faceId` (String) | `embedding` (List\<Float\>, 512–1536 dims) |
-| **Device** | `deviceId` (String) | `deviceType`, `userAgent` |
-| **Session** | `sessionId` (String) | `status` |
-| **IP** | `ipAddress` (String) | — |
-| **ISP** | `name` (String) | — |
-| **Location** | `city` + `postCode` + `country` | `latitude`, `longitude` |
-| **Country** | `code` (ISO 3166-1 alpha-2) | `name` |
-| **Alert** | `alertId` (String) | `ruleName`, `ruleId`, `severity` (LOW/MEDIUM/HIGH/CRITICAL), `triggeredAt` |
-| **Case** | `caseId` (String) | `status`, `outcome`, `financialStakes` (Float), `investigatedBy`, `closedAt` |
+| Label              | Key Properties                                       | Other Properties                                                                                                                    |
+| ------------------ | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Account**        | `accountNumber` (String)                             | `accountType`, `openedDate`, `closedDate`, `suspendedDate`                                                                          |
+| **Customer**       | `customerId` (String)                                | `firstName`, `middleName`, `lastName`, `dateOfBirth` (Date), `placeOfBirth`, `countryOfBirth`                                       |
+| **Transaction**    | `transactionId` (String)                             | `amount` (Float, always positive), `currency` (ISO 4217), `date` (DateTime), `message`, `type`                                      |
+| **Movement**       | `movementId` (String)                                | `amount` (Float), `currency`, `date` (DateTime), `description`, `status`, `sequenceNumber` (Integer), `authorisedBy`, `validatedBy` |
+| **Counterparty**   | `counterpartyId` (String)                            | `name`, `type` (INDIVIDUAL/BUSINESS/GOVERNMENT/CHARITY), `registrationNumber`                                                       |
+| **Email**          | `address` (String)                                   | `domain`                                                                                                                            |
+| **Phone**          | `phoneNumber` (String)                               | `countryCode`                                                                                                                       |
+| **Address**        | `addressLine1` + `postTown` + `postCode` (composite) | `addressLine2`, `region`, `latitude`, `longitude`                                                                                   |
+| **Passport**       | `passportNumber` (String)                            | `issueDate`, `expiryDate`, `issuingCountry`, `nationality`                                                                          |
+| **DrivingLicense** | `licenseNumber` + `issuingCountry` (composite)       | `issueDate`, `expiryDate`                                                                                                           |
+| **Face**           | `faceId` (String)                                    | `embedding` (List\<Float\>, 512–1536 dims)                                                                                          |
+| **Device**         | `deviceId` (String)                                  | `deviceType`, `userAgent`                                                                                                           |
+| **Session**        | `sessionId` (String)                                 | `status`                                                                                                                            |
+| **IP**             | `ipAddress` (String)                                 | —                                                                                                                                   |
+| **ISP**            | `name` (String)                                      | —                                                                                                                                   |
+| **Location**       | `city` + `postCode` + `country`                      | `latitude`, `longitude`                                                                                                             |
+| **Country**        | `code` (ISO 3166-1 alpha-2)                          | `name`                                                                                                                              |
+| **Alert**          | `alertId` (String)                                   | `ruleName`, `ruleId`, `severity` (LOW/MEDIUM/HIGH/CRITICAL), `triggeredAt`                                                          |
+| **Case**           | `caseId` (String)                                    | `status`, `outcome`, `financialStakes` (Float), `investigatedBy`, `closedAt`                                                        |
 
 All nodes with timestamps use `createdAt` (DateTime) for record creation.
 
 #### Relationship Types
 
-| Relationship | Direction | Properties |
-|-------------|-----------|------------|
-| `:HAS_ACCOUNT` | Customer→Account | `role`, `since` |
-| `:HAS_ACCOUNT` | Counterparty→Account | `since` |
-| `:HAS_EMAIL` | Customer→Email | `since` |
-| `:HAS_PHONE` | Customer→Phone | `since` |
-| `:HAS_ADDRESS` | Customer→Address | `addedAt`, `lastChangedAt`, `isCurrent` |
-| `:HAS_ADDRESS` | Counterparty→Address | `since`, `isCurrent` |
-| `:HAS_PASSPORT` | Customer→Passport | `verificationDate`, `verificationMethod`, `verificationStatus` |
-| `:HAS_DRIVING_LICENSE` | Customer→DrivingLicense | `verificationDate`, `verificationMethod`, `verificationStatus` |
-| `:HAS_FACE` | Customer→Face | `verificationDate`, `verificationMethod`, `verificationStatus` |
-| `:HAS_NATIONALITY` | Customer→Country | — |
-| `:PERFORMS` | Account→Transaction | — |
-| `:BENEFITS_TO` | Transaction→Account | — |
-| `:IMPLIED` | Transaction→Movement | `totalMovements` |
-| `:IS_HOSTED` | Account→Country | — |
-| `:SESSION_USES_DEVICE` | Session→Device | — |
-| `:USES_IP` | Session→IP | — |
-| `:USED_BY` | Device→Customer | `lastUsed` |
-| `:IS_ALLOCATED_TO` | IP→ISP | `createdAt` |
-| `:LOCATED_IN` | Address/IP/Location→Country/Location | `createdAt` (on IP→Location) |
-| `:SUBJECT_OF` | Account/Customer→Case | — |
-| `:TRIGGERED` | Alert→Case | — |
+| Relationship           | Direction                            | Properties                                                     |
+| ---------------------- | ------------------------------------ | -------------------------------------------------------------- |
+| `:HAS_ACCOUNT`         | Customer→Account                     | `role`, `since`                                                |
+| `:HAS_ACCOUNT`         | Counterparty→Account                 | `since`                                                        |
+| `:HAS_EMAIL`           | Customer→Email                       | `since`                                                        |
+| `:HAS_PHONE`           | Customer→Phone                       | `since`                                                        |
+| `:HAS_ADDRESS`         | Customer→Address                     | `addedAt`, `lastChangedAt`, `isCurrent`                        |
+| `:HAS_ADDRESS`         | Counterparty→Address                 | `since`, `isCurrent`                                           |
+| `:HAS_PASSPORT`        | Customer→Passport                    | `verificationDate`, `verificationMethod`, `verificationStatus` |
+| `:HAS_DRIVING_LICENSE` | Customer→DrivingLicense              | `verificationDate`, `verificationMethod`, `verificationStatus` |
+| `:HAS_FACE`            | Customer→Face                        | `verificationDate`, `verificationMethod`, `verificationStatus` |
+| `:HAS_NATIONALITY`     | Customer→Country                     | —                                                              |
+| `:PERFORMS`            | Account→Transaction                  | —                                                              |
+| `:BENEFITS_TO`         | Transaction→Account                  | —                                                              |
+| `:IMPLIED`             | Transaction→Movement                 | `totalMovements`                                               |
+| `:IS_HOSTED`           | Account→Country                      | —                                                              |
+| `:SESSION_USES_DEVICE` | Session→Device                       | —                                                              |
+| `:USES_IP`             | Session→IP                           | —                                                              |
+| `:USED_BY`             | Device→Customer                      | `lastUsed`                                                     |
+| `:IS_ALLOCATED_TO`     | IP→ISP                               | `createdAt`                                                    |
+| `:LOCATED_IN`          | Address/IP/Location→Country/Location | `createdAt` (on IP→Location)                                   |
+| `:SUBJECT_OF`          | Account/Customer→Case                | —                                                              |
+| `:TRIGGERED`           | Alert→Case                           | —                                                              |
 
 #### Constraints and Indexes
 

@@ -40,10 +40,10 @@ Scan `feature-docs/ready/` for `.md` files. For each feature doc found, read its
 
 > Here are features ready for implementation:
 >
-> | # | Feature | Priority | Affected Files |
-> |---|---------|----------|----------------|
-> | 1 | Feature Title | high | 4 files |
-> | 2 | Feature Title | medium | 2 files |
+> | #   | Feature       | Priority | Affected Files |
+> | --- | ------------- | -------- | -------------- |
+> | 1   | Feature Title | high     | 4 files        |
+> | 2   | Feature Title | medium   | 2 files        |
 >
 > Which feature do you want to implement? (number or name)
 
@@ -72,6 +72,7 @@ After I select a feature:
 > `<filename>` is also claimed by **<other feature title>** (status: <status>).
 >
 > Running both features in parallel risks conflicting edits. Options:
+>
 > - Wait for the other feature to complete first
 > - Proceed anyway (only if you're sure the files won't conflict)
 >
@@ -133,16 +134,19 @@ After I kick off the agent, explain:
 > The **@test-writer** is now working on **<feature title>**.
 >
 > **What happens automatically:**
+>
 > - The `Stop` hook runs `scripts/verify.sh` after each agent response (if code changed)
 > - The `TaskCompleted` hook runs the full verify pipeline before any task can be marked done
 > - The `TeammateIdle` hook will auto-assign the next agent when the current one finishes:
 >   test-writer → builder → code-reviewer
 >
 > **Manual handoff** (if you prefer to control each step):
+>
 > - After test-writer finishes: `@builder Pick up feature-docs/testing/<filename>.md`
 > - After builder finishes: `@code-reviewer Review feature-docs/review/<filename>.md`
 >
 > **If the pipeline stalls** (agent stops mid-feature):
+>
 > - Features in `testing/` or `building/` are locked to the current agent
 > - To unlock, move the doc back to `ready/` and source this file again
 
@@ -196,21 +200,27 @@ After the builder finishes, verify before invoking the reviewer:
 > 2. [issue from review report]
 >
 > Would you like to:
+>
 > - **Create follow-ups** — route each through the TDD pipeline
 > - **Skip** — ship as-is and track them separately
 > - **Mark as blocking** — move the doc back to `ready/` and route through the full TDD pipeline
 
 4. **Update ideation README** (if applicable): Read the feature doc's `ideation-ref` frontmatter field. If it points to an ideation folder with a README, update it:
+
    ```bash
    sed -i '' 's/status: complete/status: shipped/' feature-docs/ideation/<feature-name>/README.md
    ```
+
    Then append a progress entry to the README's `## Progress` section:
+
    ```markdown
    ### <today's date> — Pipeline complete
+
    - **Result**: Feature shipped through agent teams pipeline (test-writer → builder → reviewer)
    - **Feature doc**: `feature-docs/completed/<filename>.md`
    - **Branch**: `feat/<feature-name>`
    ```
+
    If no `ideation-ref` field or no ideation folder, skip this step silently.
 
 5. The feature branch is ready for PR (unless the user chose to fix follow-ups first)
@@ -273,6 +283,7 @@ When the user or reviewer identifies an issue after the feature is in `completed
 > Follow-up issue identified: [description]
 >
 > Options:
+>
 > - **New feature doc** — create a separate doc in `ready/` for this fix
 > - **Amend existing** — move the completed doc back to `ready/`, add acceptance criteria for the fix
 > - **Skip** — note it as a known issue, ship without fixing

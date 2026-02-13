@@ -6,6 +6,7 @@ description: Neo4j Visualization Library (NVL) — graph rendering, node/relatio
 # NVL (Neo4j Visualization Library)
 
 ## When to Use
+
 Use this skill when building graph visualizations with NVL. Covers rendering setup, styling nodes and relationships, layout algorithms, user interaction handling, and proven patterns from production FinSight usage.
 
 ---
@@ -16,11 +17,11 @@ Use this skill when building graph visualizations with NVL. Covers rendering set
 npm install @neo4j-nvl/base @neo4j-nvl/react @neo4j-nvl/interaction-handlers
 ```
 
-| Package | Purpose |
-|---|---|
-| `@neo4j-nvl/base` | Core NVL class, types (`Node`, `Relationship`, `NvlOptions`) |
-| `@neo4j-nvl/react` | `BasicNvlWrapper`, `InteractiveNvlWrapper`, `StaticPictureWrapper` |
-| `@neo4j-nvl/interaction-handlers` | `ZoomInteraction`, `PanInteraction`, `ClickInteraction`, etc. |
+| Package                           | Purpose                                                            |
+| --------------------------------- | ------------------------------------------------------------------ |
+| `@neo4j-nvl/base`                 | Core NVL class, types (`Node`, `Relationship`, `NvlOptions`)       |
+| `@neo4j-nvl/react`                | `BasicNvlWrapper`, `InteractiveNvlWrapper`, `StaticPictureWrapper` |
+| `@neo4j-nvl/interaction-handlers` | `ZoomInteraction`, `PanInteraction`, `ClickInteraction`, etc.      |
 
 ---
 
@@ -29,16 +30,17 @@ npm install @neo4j-nvl/base @neo4j-nvl/react @neo4j-nvl/interaction-handlers
 All wrappers accept a `ref` for imperative access to the underlying NVL instance.
 
 ```tsx
-import type NVL from '@neo4j-nvl/base';
+import type NVL from "@neo4j-nvl/base";
 const nvlRef = useRef<NVL>(null);
 // Then: nvlRef.current.setZoom(1.5)
 ```
 
 ### BasicNvlWrapper
+
 Minimal wrapper — renders the graph, syncs prop changes, no built-in interaction handlers.
 
 ```tsx
-import { BasicNvlWrapper } from '@neo4j-nvl/react';
+import { BasicNvlWrapper } from "@neo4j-nvl/react";
 
 <BasicNvlWrapper
   ref={nvlRef}
@@ -47,20 +49,21 @@ import { BasicNvlWrapper } from '@neo4j-nvl/react';
   layout="forceDirected"
   layoutOptions={{ enableCytoscape: true }}
   nvlOptions={{ initialZoom: 1 }}
-  nvlCallbacks={{ onLayoutDone: () => console.log('done') }}
+  nvlCallbacks={{ onLayoutDone: () => console.log("done") }}
   zoom={0.8}
   pan={{ x: 0, y: 0 }}
-  positions={nodePositions}               // Apply positions via setNodePositions
+  positions={nodePositions} // Apply positions via setNodePositions
   onInitializationError={(err) => {}}
-  onClick={(event) => {}}                  // Native DOM events passed as props
-/>
+  onClick={(event) => {}} // Native DOM events passed as props
+/>;
 ```
 
 ### InteractiveNvlWrapper (primary choice)
+
 Full mouse event support — click, drag, hover, zoom, pan, box select, lasso.
 
 ```tsx
-import { InteractiveNvlWrapper } from '@neo4j-nvl/react';
+import { InteractiveNvlWrapper } from "@neo4j-nvl/react";
 
 <InteractiveNvlWrapper
   ref={nvlRef}
@@ -89,12 +92,13 @@ import { InteractiveNvlWrapper } from '@neo4j-nvl/react';
     onBoxSelect: ({ nodes, rels }) => {},
     onLassoSelect: ({ nodes, rels }) => {},
   }}
-  interactionOptions={{}}                  // Toggle interaction behaviors
+  interactionOptions={{}} // Toggle interaction behaviors
   onInitializationError={(err) => {}}
-/>
+/>;
 ```
 
 ### StaticPictureWrapper
+
 Non-interactive render — for thumbnails, exports, or read-only views. Same props as BasicNvlWrapper minus interaction-related ones.
 
 ---
@@ -104,35 +108,35 @@ Non-interactive render — for thumbnails, exports, or read-only views. Same pro
 ```typescript
 interface Node {
   // Required
-  id: string;                              // Unique across all nodes AND relationships
+  id: string; // Unique across all nodes AND relationships
 
   // Visual
-  color?: string;                          // Background color
-  size?: number;                           // Node dimensions
-  icon?: string;                           // URL or data URI (must be square, must be black)
+  color?: string; // Background color
+  size?: number; // Node dimensions
+  icon?: string; // URL or data URI (must be square, must be black)
   overlayIcon?: { url: string; position?: number[]; size?: number };
 
   // Captions
-  caption?: string;                        // Simple text label
-  captions?: StyledCaption[];              // Multiple styled captions (overrides caption)
+  caption?: string; // Simple text label
+  captions?: StyledCaption[]; // Multiple styled captions (overrides caption)
   captionSize?: number;
-  captionAlign?: 'center' | 'top' | 'bottom';
+  captionAlign?: "center" | "top" | "bottom";
 
   // State
-  selected?: boolean;                      // Blue border highlight
-  hovered?: boolean;                       // Hover visual state
-  activated?: boolean;                     // Activation state
-  disabled?: boolean;                      // Grayed out
-  pinned?: boolean;                        // Immune to layout forces
+  selected?: boolean; // Blue border highlight
+  hovered?: boolean; // Hover visual state
+  activated?: boolean; // Activation state
+  disabled?: boolean; // Grayed out
+  pinned?: boolean; // Immune to layout forces
 
   // Experimental
-  html?: HTMLElement;                      // DOM element rendered on top of node
+  html?: HTMLElement; // DOM element rendered on top of node
 }
 
 type StyledCaption = {
   key?: string;
   value?: string;
-  styles?: string[];                       // e.g. ['bold', 'italic']
+  styles?: string[]; // e.g. ['bold', 'italic']
 };
 ```
 
@@ -141,15 +145,15 @@ type StyledCaption = {
 ```tsx
 // Label-based style config → NVL node
 const nvlNodes: NVLNode[] = visibleNodes.map((node) => {
-  const primaryLabel = getPrimaryLabel(node);           // node.labels[0]
+  const primaryLabel = getPrimaryLabel(node); // node.labels[0]
   const styleConfig = getNodeStyleConfig(primaryLabel); // { baseColor, baseSize, icon }
-  const displayName = getNodeDisplayName(node);         // Label-aware formatting
-  const iconDataUri = getCachedIconDataUri(iconName, '#000000'); // Black SVG data URI
+  const displayName = getNodeDisplayName(node); // Label-aware formatting
+  const iconDataUri = getCachedIconDataUri(iconName, "#000000"); // Black SVG data URI
 
   return {
     id: node.id,
     caption: displayName,
-    captionAlign: 'top',
+    captionAlign: "top",
     size: styleConfig.baseSize,
     color: styleConfig.baseColor,
     icon: iconDataUri,
@@ -167,21 +171,21 @@ const nvlNodes: NVLNode[] = visibleNodes.map((node) => {
 ```typescript
 interface Relationship {
   // Required
-  id: string;                              // Unique across all nodes AND relationships
-  from: string;                            // Source node ID
-  to: string;                              // Target node ID
+  id: string; // Unique across all nodes AND relationships
+  from: string; // Source node ID
+  to: string; // Target node ID
 
   // Visual
   color?: string;
   width?: number;
-  type?: string;                           // Relationship type label
+  type?: string; // Relationship type label
 
   // Captions
   caption?: string;
-  captions?: StyledCaption[];              // Overrides caption when set
+  captions?: StyledCaption[]; // Overrides caption when set
   captionSize?: number;
-  captionAlign?: 'center' | 'top' | 'bottom';
-  captionHtml?: HTMLElement;               // Experimental
+  captionAlign?: "center" | "top" | "bottom";
+  captionHtml?: HTMLElement; // Experimental
 
   // State
   selected?: boolean;
@@ -207,7 +211,8 @@ const nvlRelationships: NVLRelationship[] = visibleRelationships.map((rel) => {
     width: styleConfig.width,
     color: styleConfig.color,
     disabled: hiddenNodeIds.has(rel.source) || hiddenNodeIds.has(rel.target),
-    hovered: highlightedNodeIds.has(rel.source) || highlightedNodeIds.has(rel.target),
+    hovered:
+      highlightedNodeIds.has(rel.source) || highlightedNodeIds.has(rel.target),
   };
 });
 ```
@@ -220,16 +225,16 @@ const nvlRelationships: NVLRelationship[] = visibleRelationships.map((rel) => {
 interface NvlOptions {
   // Zoom & Pan
   initialZoom?: number;
-  minZoom?: number;                        // Default: 0.075
-  maxZoom?: number;                        // Default: 10
-  allowDynamicMinZoom?: boolean;           // Default: true — exceed minZoom if content doesn't fit
+  minZoom?: number; // Default: 0.075
+  maxZoom?: number; // Default: 10
+  allowDynamicMinZoom?: boolean; // Default: true — exceed minZoom if content doesn't fit
   panX?: number;
   panY?: number;
 
   // Rendering
-  renderer?: 'webgl' | 'canvas';          // Default: 'webgl'
-  disableWebWorkers?: boolean;             // Use synchronous layout fallback
-  minimapContainer?: HTMLElement;          // DOM element for minimap rendering
+  renderer?: "webgl" | "canvas"; // Default: 'webgl'
+  disableWebWorkers?: boolean; // Use synchronous layout fallback
+  minimapContainer?: HTMLElement; // DOM element for minimap rendering
 
   // Layout
   layout?: Layout;
@@ -240,8 +245,8 @@ interface NvlOptions {
   callbacks?: ExternalCallbacks;
 
   // Accessibility & Telemetry
-  disableAria?: boolean;                   // Default: false
-  disableTelemetry?: boolean;              // Default: false
+  disableAria?: boolean; // Default: false
+  disableTelemetry?: boolean; // Default: false
 
   // Styling defaults
   styling?: {
@@ -254,7 +259,7 @@ interface NvlOptions {
     dropShadowColor?: string;
     nodeDefaultBorderColor?: string;
     minimapViewportBoxColor?: string;
-    iconStyle?: { scale?: number };        // e.g. 0.6 = 60% of node size
+    iconStyle?: { scale?: number }; // e.g. 0.6 = 60% of node size
   };
 }
 ```
@@ -262,15 +267,18 @@ interface NvlOptions {
 ### FinSight options pattern
 
 ```tsx
-const nvlOptions = useMemo(() => ({
-  disableWebWorkers: true,
-  renderer: 'canvas' as const,
-  minimapContainer: minimapElement || undefined,
-  styling: {
-    minimapViewportBoxColor: '#3B82F6',
-    iconStyle: { scale: 0.6 },
-  },
-}), [minimapElement]);
+const nvlOptions = useMemo(
+  () => ({
+    disableWebWorkers: true,
+    renderer: "canvas" as const,
+    minimapContainer: minimapElement || undefined,
+    styling: {
+      minimapViewportBoxColor: "#3B82F6",
+      iconStyle: { scale: 0.6 },
+    },
+  }),
+  [minimapElement],
+);
 ```
 
 ---
@@ -278,16 +286,16 @@ const nvlOptions = useMemo(() => ({
 ## 6. Layout Configuration
 
 ```typescript
-type Layout = 'forceDirected' | 'hierarchical' | 'd3Force' | 'grid' | 'free';
+type Layout = "forceDirected" | "hierarchical" | "d3Force" | "grid" | "free";
 ```
 
 ### forceDirected (default)
 
 ```typescript
 interface ForceDirectedOptions {
-  enableCytoscape?: boolean;     // CoseBilkent for smaller graphs — better initial positioning
-  enableVerlet?: boolean;        // New physics engine (default: true)
-  intelWorkaround?: boolean;     // Fixes Intel GPU WebGL shader issues
+  enableCytoscape?: boolean; // CoseBilkent for smaller graphs — better initial positioning
+  enableVerlet?: boolean; // New physics engine (default: true)
+  intelWorkaround?: boolean; // Fixes Intel GPU WebGL shader issues
 }
 ```
 
@@ -295,8 +303,8 @@ interface ForceDirectedOptions {
 
 ```typescript
 interface HierarchicalOptions {
-  direction?: 'left' | 'right' | 'up' | 'down';
-  packing?: 'bin' | 'stack';
+  direction?: "left" | "right" | "up" | "down";
+  packing?: "bin" | "stack";
 }
 ```
 
@@ -312,7 +320,7 @@ useEffect(() => {
 }, [layout]);
 
 // Update layout options without changing algorithm
-nvlRef.current.setLayoutOptions({ direction: 'up' });
+nvlRef.current.setLayoutOptions({ direction: "up" });
 
 // Check if layout is still animating
 nvlRef.current.isLayoutMoving(); // boolean
@@ -325,9 +333,15 @@ nvlRef.current.isLayoutMoving(); // boolean
 Used with `BasicNvlWrapper` (or vanilla JS) when you need manual control. `InteractiveNvlWrapper` handles these internally via `mouseEventCallbacks`.
 
 ```tsx
-import { ZoomInteraction, PanInteraction, ClickInteraction,
-         DragNodeInteraction, HoverInteraction,
-         BoxSelectInteraction, LassoInteraction } from '@neo4j-nvl/interaction-handlers';
+import {
+  ZoomInteraction,
+  PanInteraction,
+  ClickInteraction,
+  DragNodeInteraction,
+  HoverInteraction,
+  BoxSelectInteraction,
+  LassoInteraction,
+} from "@neo4j-nvl/interaction-handlers";
 ```
 
 ### Registering handlers (via ref)
@@ -347,20 +361,20 @@ useEffect(() => {
 
 ### Handler classes and callbacks
 
-| Handler | Constructor | Callback | Signature |
-|---|---|---|---|
-| `ZoomInteraction` | `new ZoomInteraction(nvl)` | `onZoom` | `(zoomLevel: number) => void` |
-| `PanInteraction` | `new PanInteraction(nvl)` | `onPan` | `(panning: any) => void` |
-| `ClickInteraction` | `new ClickInteraction(nvl)` | `onNodeClick`, `onNodeDoubleClick`, `onNodeRightClick`, `onRelationshipClick`, `onRelationshipDoubleClick`, `onRelationshipRightClick`, `onSceneClick` | Various |
-| `DragNodeInteraction` | `new DragNodeInteraction(nvl)` | `onDrag` | `(nodes: Node[]) => void` |
-| `HoverInteraction` | `new HoverInteraction(nvl)` | `onHover` | `(element, hitTargets, event) => void` |
-| `BoxSelectInteraction` | `new BoxSelectInteraction(nvl)` | `onBoxSelect` | `({ nodes, rels }) => void` |
-| `LassoInteraction` | `new LassoInteraction(nvl)` | `onLassoSelect` | `({ nodes, rels }) => void` |
+| Handler                | Constructor                     | Callback                                                                                                                                               | Signature                              |
+| ---------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| `ZoomInteraction`      | `new ZoomInteraction(nvl)`      | `onZoom`                                                                                                                                               | `(zoomLevel: number) => void`          |
+| `PanInteraction`       | `new PanInteraction(nvl)`       | `onPan`                                                                                                                                                | `(panning: any) => void`               |
+| `ClickInteraction`     | `new ClickInteraction(nvl)`     | `onNodeClick`, `onNodeDoubleClick`, `onNodeRightClick`, `onRelationshipClick`, `onRelationshipDoubleClick`, `onRelationshipRightClick`, `onSceneClick` | Various                                |
+| `DragNodeInteraction`  | `new DragNodeInteraction(nvl)`  | `onDrag`                                                                                                                                               | `(nodes: Node[]) => void`              |
+| `HoverInteraction`     | `new HoverInteraction(nvl)`     | `onHover`                                                                                                                                              | `(element, hitTargets, event) => void` |
+| `BoxSelectInteraction` | `new BoxSelectInteraction(nvl)` | `onBoxSelect`                                                                                                                                          | `({ nodes, rels }) => void`            |
+| `LassoInteraction`     | `new LassoInteraction(nvl)`     | `onLassoSelect`                                                                                                                                        | `({ nodes, rels }) => void`            |
 
 ```tsx
 // Update callback after construction
-handler.updateCallback('onNodeClick', (node: Node) => {
-  console.log('clicked', node);
+handler.updateCallback("onNodeClick", (node: Node) => {
+  console.log("clicked", node);
 });
 ```
 
@@ -414,8 +428,8 @@ type ZoomOptions = {
   animated?: boolean;
   maxZoom?: number;
   minZoom?: number;
-  noPan?: boolean;                         // Zoom without panning
-  outOnly?: boolean;                       // Only zoom out, never in
+  noPan?: boolean; // Zoom without panning
+  outOnly?: boolean; // Only zoom out, never in
 };
 ```
 
@@ -497,16 +511,31 @@ Centralized config mapping node labels to visual properties:
 
 ```typescript
 type NodeStyleConfig = {
-  icon: string;       // Lucide icon name
-  baseColor: string;  // Hex color
-  baseSize: number;   // Node size
+  icon: string; // Lucide icon name
+  baseColor: string; // Hex color
+  baseSize: number; // Node size
   shape: string;
 };
 
 const nodeStyleConfig: Record<string, NodeStyleConfig> = {
-  Customer:    { icon: 'User',         baseColor: '#3B82F6', baseSize: 30, shape: 'circle' },
-  Account:     { icon: 'Landmark',     baseColor: '#10B981', baseSize: 28, shape: 'circle' },
-  Transaction: { icon: 'ArrowLeftRight', baseColor: '#F59E0B', baseSize: 24, shape: 'circle' },
+  Customer: {
+    icon: "User",
+    baseColor: "#3B82F6",
+    baseSize: 30,
+    shape: "circle",
+  },
+  Account: {
+    icon: "Landmark",
+    baseColor: "#10B981",
+    baseSize: 28,
+    shape: "circle",
+  },
+  Transaction: {
+    icon: "ArrowLeftRight",
+    baseColor: "#F59E0B",
+    baseSize: 24,
+    shape: "circle",
+  },
   // ...
 };
 
@@ -546,12 +575,18 @@ Format captions based on node label:
 function getNodeDisplayName(node: GraphNode): string {
   const label = getPrimaryLabel(node);
   switch (label) {
-    case 'Customer':    return `${node.properties.firstName} ${node.properties.lastName}`;
-    case 'Account':     return `Account ***${node.properties.accountNumber?.slice(-4)}`;
-    case 'Transaction': return `TXN-${node.properties.amount}`;
-    case 'Email':       return node.properties.address;
-    case 'Phone':       return node.properties.number;
-    default:            return node.properties.name ?? node.id;
+    case "Customer":
+      return `${node.properties.firstName} ${node.properties.lastName}`;
+    case "Account":
+      return `Account ***${node.properties.accountNumber?.slice(-4)}`;
+    case "Transaction":
+      return `TXN-${node.properties.amount}`;
+    case "Email":
+      return node.properties.address;
+    case "Phone":
+      return node.properties.number;
+    default:
+      return node.properties.name ?? node.id;
   }
 }
 ```
@@ -563,7 +598,7 @@ Filter out removed/hidden nodes before passing to NVL:
 ```tsx
 const visibleNodes = nodes.filter((n) => !removedNodeIds.has(n.id));
 const visibleRelationships = relationships.filter(
-  (r) => !removedNodeIds.has(r.source) && !removedNodeIds.has(r.target)
+  (r) => !removedNodeIds.has(r.source) && !removedNodeIds.has(r.target),
 );
 // Hidden (but not removed) nodes: pass to NVL with disabled: true
 ```
@@ -601,9 +636,18 @@ Show node/relationship counts above the graph:
 
 ```tsx
 <div className="border-b px-4 py-2 flex items-center gap-4 text-sm">
-  <div>Nodes: <span className="font-medium">{visibleNodes.length}</span></div>
-  <div>Relationships: <span className="font-medium">{visibleRelationships.length}</span></div>
-  {hiddenCount > 0 && <div>Hidden: <span className="text-orange-600">{hiddenCount}</span></div>}
+  <div>
+    Nodes: <span className="font-medium">{visibleNodes.length}</span>
+  </div>
+  <div>
+    Relationships:{" "}
+    <span className="font-medium">{visibleRelationships.length}</span>
+  </div>
+  {hiddenCount > 0 && (
+    <div>
+      Hidden: <span className="text-orange-600">{hiddenCount}</span>
+    </div>
+  )}
 </div>
 ```
 
@@ -661,7 +705,10 @@ const handleFitView = useCallback(() => {
 ```tsx
 const handleExportImage = useCallback(() => {
   if (nvlRef.current) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, -5);
     nvlRef.current.saveToFile({ filename: `graph-${timestamp}.png` });
   }
 }, []);
@@ -671,15 +718,15 @@ const handleExportImage = useCallback(() => {
 
 ## 10. Anti-Patterns
 
-| Anti-Pattern | Why It Fails | Fix |
-|---|---|---|
-| Missing container height | NVL renders into a 0-height div and nothing appears | Ensure parent has explicit height (`h-full`, `flex-1`, or fixed px) |
-| Setting both `caption` and `captions` | `captions` array wins and `caption` is ignored silently | Use one or the other |
-| Non-black icons | NVL expects black SVGs; it applies node color automatically | Always pass `color: '#000000'` when generating icon data URIs |
-| Non-square icon images | Icons render distorted | Use square images/SVGs (e.g. 24x24) |
-| Forgetting `destroy()` on unmount | Memory leak — canvas, event listeners, workers stay alive | Call `nvl.destroy()` in cleanup (React wrappers handle this) |
-| WebGL renderer + captions/arrowheads | Some caption and arrowhead features only work with canvas renderer | Use `renderer: 'canvas'` when captions or arrowheads are needed |
-| Calling `setLayout` immediately after init | NVL hasn't finished initializing — call is silently dropped | Wrap in `setTimeout(() => {}, 50)` or use `onInitialization` callback |
-| Arbitrary `waitForTimeout` for layout | Brittle timing — may fire too early or too late | Use `isLayoutMoving()` or the `onLayoutDone` callback instead |
-| Non-unique IDs across nodes and relationships | NVL requires IDs unique across the entire graph — not just within nodes or rels | Prefix or namespace IDs if source data may collide |
-| Mutating node/rel arrays in place | React wrappers diff by reference — mutations are invisible | Always create new arrays: `[...nodes]` or `.map()` |
+| Anti-Pattern                                  | Why It Fails                                                                    | Fix                                                                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Missing container height                      | NVL renders into a 0-height div and nothing appears                             | Ensure parent has explicit height (`h-full`, `flex-1`, or fixed px)   |
+| Setting both `caption` and `captions`         | `captions` array wins and `caption` is ignored silently                         | Use one or the other                                                  |
+| Non-black icons                               | NVL expects black SVGs; it applies node color automatically                     | Always pass `color: '#000000'` when generating icon data URIs         |
+| Non-square icon images                        | Icons render distorted                                                          | Use square images/SVGs (e.g. 24x24)                                   |
+| Forgetting `destroy()` on unmount             | Memory leak — canvas, event listeners, workers stay alive                       | Call `nvl.destroy()` in cleanup (React wrappers handle this)          |
+| WebGL renderer + captions/arrowheads          | Some caption and arrowhead features only work with canvas renderer              | Use `renderer: 'canvas'` when captions or arrowheads are needed       |
+| Calling `setLayout` immediately after init    | NVL hasn't finished initializing — call is silently dropped                     | Wrap in `setTimeout(() => {}, 50)` or use `onInitialization` callback |
+| Arbitrary `waitForTimeout` for layout         | Brittle timing — may fire too early or too late                                 | Use `isLayoutMoving()` or the `onLayoutDone` callback instead         |
+| Non-unique IDs across nodes and relationships | NVL requires IDs unique across the entire graph — not just within nodes or rels | Prefix or namespace IDs if source data may collide                    |
+| Mutating node/rel arrays in place             | React wrappers diff by reference — mutations are invisible                      | Always create new arrays: `[...nodes]` or `.map()`                    |

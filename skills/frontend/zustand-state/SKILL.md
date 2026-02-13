@@ -16,7 +16,7 @@ Use this skill when creating or modifying state that crosses component boundarie
 ### Basic Store with TypeScript
 
 ```typescript
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface CounterStore {
   count: number;
@@ -73,7 +73,7 @@ const unsub = useStore.subscribe((state) => console.log(state.nodes));
 ```typescript
 interface Tab {
   id: string;
-  type: 'investigation' | 'case' | 'alert';
+  type: "investigation" | "case" | "alert";
   title: string;
   metadata: Record<string, unknown>;
   createdAt: Date;
@@ -105,7 +105,7 @@ interface InvestigationStore {
 ### Implementation
 
 ```typescript
-import { create } from 'zustand';
+import { create } from "zustand";
 
 const defaultTabState: TabState = {
   nodes: [],
@@ -153,7 +153,7 @@ const useInvestigationStore = create<InvestigationStore>((set, get) => ({
   switchTab: (tabId) =>
     set((state) => ({
       tabs: state.tabs.map((tab) =>
-        tab.id === tabId ? { ...tab, lastAccessedAt: new Date() } : tab
+        tab.id === tabId ? { ...tab, lastAccessedAt: new Date() } : tab,
       ),
       activeTabId: tabId,
     })),
@@ -172,7 +172,9 @@ const useInvestigationStore = create<InvestigationStore>((set, get) => ({
 
   getActiveTabState: () => {
     const state = get();
-    return state.activeTabId ? state.tabStates[state.activeTabId] ?? null : null;
+    return state.activeTabId
+      ? (state.tabStates[state.activeTabId] ?? null)
+      : null;
   },
 }));
 ```
@@ -210,7 +212,7 @@ const GraphCanvas = () => {
 const useTabState = () => {
   const activeTabId = useInvestigationStore((state) => state.activeTabId);
   const tabState = useInvestigationStore((state) =>
-    state.activeTabId ? state.tabStates[state.activeTabId] ?? null : null
+    state.activeTabId ? (state.tabStates[state.activeTabId] ?? null) : null,
   );
   return { activeTabId, tabState };
 };
@@ -225,7 +227,7 @@ const useTabState = () => {
 ```typescript
 // ✅ Only re-renders when nodes change for the active tab
 const nodes = useStore((state) =>
-  state.activeTabId ? state.tabStates[state.activeTabId]?.nodes ?? [] : []
+  state.activeTabId ? (state.tabStates[state.activeTabId]?.nodes ?? []) : [],
 );
 
 // ✅ Computed value — only re-renders when inputs change
@@ -234,7 +236,8 @@ const visibleNodeCount = useStore((state) => {
     ? state.tabStates[state.activeTabId]
     : null;
   if (!tabState) return 0;
-  return tabState.nodes.filter((n) => !tabState.removedNodeIds.has(n.id)).length;
+  return tabState.nodes.filter((n) => !tabState.removedNodeIds.has(n.id))
+    .length;
 });
 
 // ❌ Subscribes to entire store — re-renders on ANY change
@@ -249,7 +252,7 @@ const tabStates = useStore((state) => state.tabStates);
 When a selector returns a new object or array reference each time, use `useShallow` to compare by shallow equality:
 
 ```typescript
-import { useShallow } from 'zustand/react/shallow';
+import { useShallow } from "zustand/react/shallow";
 
 // Without useShallow: re-renders on every store update (new object each time)
 // With useShallow: only re-renders when the values inside change
@@ -262,7 +265,7 @@ const { nodes, relationships } = useStore(
       nodes: tabState?.nodes ?? [],
       relationships: tabState?.relationships ?? [],
     };
-  })
+  }),
 );
 ```
 
@@ -334,15 +337,15 @@ const visibleEvents = events.filter((e) => !hiddenNodeIds.has(e.nodeId));
 ### DevTools
 
 ```typescript
-import { devtools } from 'zustand/middleware';
+import { devtools } from "zustand/middleware";
 
 const useStore = create<Store>()(
   devtools(
     (set, get) => ({
       // ... store implementation
     }),
-    { name: 'InvestigationStore' }
-  )
+    { name: "InvestigationStore" },
+  ),
 );
 ```
 
@@ -351,7 +354,7 @@ const useStore = create<Store>()(
 Use immer for deeply nested updates (like tab state):
 
 ```typescript
-import { immer } from 'zustand/middleware/immer';
+import { immer } from "zustand/middleware/immer";
 
 const useStore = create<Store>()(
   immer((set) => ({
@@ -364,7 +367,7 @@ const useStore = create<Store>()(
         state.tabStates[tabId].hiddenNodeIds.add(nodeId);
         state.tabStates[tabId].isDirty = true;
       }),
-  }))
+  })),
 );
 ```
 
@@ -373,7 +376,7 @@ const useStore = create<Store>()(
 Persist tab metadata but not full state (too large):
 
 ```typescript
-import { persist } from 'zustand/middleware';
+import { persist } from "zustand/middleware";
 
 const useStore = create<Store>()(
   persist(
@@ -381,7 +384,7 @@ const useStore = create<Store>()(
       // ... store implementation
     }),
     {
-      name: 'finsight-investigation-storage',
+      name: "finsight-investigation-storage",
       partialize: (state) => ({
         tabs: state.tabs,
         activeTabId: state.activeTabId,
@@ -397,8 +400,8 @@ const useStore = create<Store>()(
           state.tabStates = tabStates;
         }
       },
-    }
-  )
+    },
+  ),
 );
 ```
 
@@ -407,9 +410,9 @@ const useStore = create<Store>()(
 Order matters — outermost wraps first:
 
 ```typescript
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
+import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 
 const useStore = create<Store>()(
   devtools(
@@ -417,10 +420,15 @@ const useStore = create<Store>()(
       immer((set, get) => ({
         // ... store implementation
       })),
-      { name: 'storage-key', partialize: (state) => ({ /* ... */ }) }
+      {
+        name: "storage-key",
+        partialize: (state) => ({
+          /* ... */
+        }),
+      },
     ),
-    { name: 'StoreName' }
-  )
+    { name: "StoreName" },
+  ),
 );
 ```
 
@@ -452,10 +460,10 @@ src/stores/
 ### Reset State Between Tests
 
 ```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import useInvestigationStore from './investigation';
+import { describe, it, expect, beforeEach } from "vitest";
+import useInvestigationStore from "./investigation";
 
-describe('InvestigationStore', () => {
+describe("InvestigationStore", () => {
   beforeEach(() => {
     // Reset store to initial state before each test
     useInvestigationStore.setState({
@@ -465,11 +473,11 @@ describe('InvestigationStore', () => {
     });
   });
 
-  it('should add a new tab with default state', () => {
+  it("should add a new tab with default state", () => {
     const tab = {
-      id: 'tab-1',
-      type: 'investigation' as const,
-      title: 'Test Investigation',
+      id: "tab-1",
+      type: "investigation" as const,
+      title: "Test Investigation",
       metadata: {},
       createdAt: new Date(),
       lastAccessedAt: new Date(),
@@ -479,27 +487,27 @@ describe('InvestigationStore', () => {
 
     const state = useInvestigationStore.getState();
     expect(state.tabs).toHaveLength(1);
-    expect(state.activeTabId).toBe('tab-1');
-    expect(state.tabStates['tab-1']).toBeDefined();
-    expect(state.tabStates['tab-1'].nodes).toEqual([]);
+    expect(state.activeTabId).toBe("tab-1");
+    expect(state.tabStates["tab-1"]).toBeDefined();
+    expect(state.tabStates["tab-1"].nodes).toEqual([]);
   });
 
-  it('should clean up state when closing a tab', () => {
+  it("should clean up state when closing a tab", () => {
     const tab = {
-      id: 'tab-1',
-      type: 'investigation' as const,
-      title: 'Test',
+      id: "tab-1",
+      type: "investigation" as const,
+      title: "Test",
       metadata: {},
       createdAt: new Date(),
       lastAccessedAt: new Date(),
     };
 
     useInvestigationStore.getState().addTab(tab);
-    useInvestigationStore.getState().closeTab('tab-1');
+    useInvestigationStore.getState().closeTab("tab-1");
 
     const state = useInvestigationStore.getState();
     expect(state.tabs).toHaveLength(0);
-    expect(state.tabStates['tab-1']).toBeUndefined();
+    expect(state.tabStates["tab-1"]).toBeUndefined();
     expect(state.activeTabId).toBeNull();
   });
 });
@@ -509,13 +517,13 @@ describe('InvestigationStore', () => {
 
 ## Anti-Patterns
 
-| Anti-Pattern | Why It Fails | Fix |
-|---|---|---|
-| `const store = useStore()` | Subscribes to entire store — re-renders on every change | Use a selector: `useStore((s) => s.nodes)` |
-| Creating stores inside components | New store on every render, loses all state | Create stores at module level or in a factory |
-| Forgetting to remove tab state on close | Memory leak — closed tabs keep data in memory | Destructure out the tab: `const { [tabId]: _, ...rest } = state.tabStates` |
+| Anti-Pattern                                | Why It Fails                                              | Fix                                                                             |
+| ------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `const store = useStore()`                  | Subscribes to entire store — re-renders on every change   | Use a selector: `useStore((s) => s.nodes)`                                      |
+| Creating stores inside components           | New store on every render, loses all state                | Create stores at module level or in a factory                                   |
+| Forgetting to remove tab state on close     | Memory leak — closed tabs keep data in memory             | Destructure out the tab: `const { [tabId]: _, ...rest } = state.tabStates`      |
 | `set({ nodes: state.nodes.push(newNode) })` | Mutating state directly — Zustand won't detect the change | Spread into new array: `set({ nodes: [...state.nodes, newNode] })` or use immer |
-| Subscribing to `state.tabStates` | Re-renders when ANY tab changes, not just the active tab | Select only the active tab: `state.tabStates[state.activeTabId]` |
-| Multiple `set()` calls in one action | Each `set()` triggers a re-render | Combine into a single `set()` call |
-| Storing derived state | Stale data if source changes and derived isn't updated | Compute derived values in selectors |
-| Using Zustand when local state suffices | Unnecessary global state, extra complexity | Use `useState` for component-local UI state (open/closed, hover, input values) |
+| Subscribing to `state.tabStates`            | Re-renders when ANY tab changes, not just the active tab  | Select only the active tab: `state.tabStates[state.activeTabId]`                |
+| Multiple `set()` calls in one action        | Each `set()` triggers a re-render                         | Combine into a single `set()` call                                              |
+| Storing derived state                       | Stale data if source changes and derived isn't updated    | Compute derived values in selectors                                             |
+| Using Zustand when local state suffices     | Unnecessary global state, extra complexity                | Use `useState` for component-local UI state (open/closed, hover, input values)  |

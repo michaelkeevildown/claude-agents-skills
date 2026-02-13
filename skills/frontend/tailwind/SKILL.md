@@ -10,6 +10,7 @@ description: Tailwind CSS v4 — utility-first patterns, responsive design, cust
 **shadcn/ui is the primary component framework.** This skill covers the Tailwind CSS utility system that powers shadcn components — use it for layout, responsive design, spacing, theming, and custom styling beyond what shadcn provides out of the box.
 
 Use this skill for:
+
 - Page layout (flex, grid, positioning, spacing)
 - Responsive design (breakpoints, container queries)
 - Theming and design tokens (`@theme` directive, CSS variables)
@@ -85,6 +86,7 @@ The `@theme` directive defines design tokens in CSS. Each token creates both a u
 ```
 
 This generates:
+
 - `font-display` utility class
 - `bg-brand`, `text-brand` color utilities
 - `rounded-lg` using the custom radius
@@ -231,40 +233,52 @@ Common variants: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `
 ### Flexbox
 
 ```tsx
-{/* Horizontal bar with items centered, space between */}
+{
+  /* Horizontal bar with items centered, space between */
+}
 <div className="flex items-center justify-between gap-4">
   <Logo />
   <nav className="flex items-center gap-6">{/* links */}</nav>
   <UserMenu />
-</div>
+</div>;
 
-{/* Vertical stack */}
+{
+  /* Vertical stack */
+}
 <div className="flex flex-col gap-4">
   <Card />
   <Card />
-</div>
+</div>;
 ```
 
 ### Grid
 
 ```tsx
-{/* Equal-width columns */}
+{
+  /* Equal-width columns */
+}
 <div className="grid grid-cols-3 gap-6">
   <Card />
   <Card />
   <Card />
-</div>
+</div>;
 
-{/* Spanning columns */}
+{
+  /* Spanning columns */
+}
 <div className="grid grid-cols-4 gap-6">
   <div className="col-span-3">{/* Main */}</div>
   <div>{/* Sidebar */}</div>
-</div>
+</div>;
 
-{/* Auto-fill responsive grid (no breakpoints needed) */}
+{
+  /* Auto-fill responsive grid (no breakpoints needed) */
+}
 <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
-  {items.map((item) => <Card key={item.id} />)}
-</div>
+  {items.map((item) => (
+    <Card key={item.id} />
+  ))}
+</div>;
 ```
 
 ### Common Recipes
@@ -276,9 +290,7 @@ Common variants: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `
   <header className="sticky top-0 z-10 border-b bg-background px-6 py-3">
     {/* Header */}
   </header>
-  <main className="flex-1 overflow-y-auto p-6">
-    {/* Scrollable content */}
-  </main>
+  <main className="flex-1 overflow-y-auto p-6">{/* Scrollable content */}</main>
 </div>
 ```
 
@@ -289,9 +301,7 @@ Common variants: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `
   <aside className="w-64 shrink-0 border-r bg-muted/40 p-4">
     {/* Sidebar */}
   </aside>
-  <main className="flex-1 overflow-y-auto p-6">
-    {/* Content */}
-  </main>
+  <main className="flex-1 overflow-y-auto p-6">{/* Content */}</main>
 </div>
 ```
 
@@ -309,32 +319,32 @@ Common variants: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `
 
 Unprefixed utilities apply to **all screen sizes**. Prefixed utilities apply at that breakpoint **and above**.
 
-| Prefix | Min-width | Target |
-|--------|-----------|--------|
-| (none) | 0px | All sizes (mobile base) |
-| `sm:` | 640px | Large phones |
-| `md:` | 768px | Tablets |
-| `lg:` | 1024px | Laptops |
-| `xl:` | 1280px | Desktops |
-| `2xl:` | 1536px | Large desktops |
+| Prefix | Min-width | Target                  |
+| ------ | --------- | ----------------------- |
+| (none) | 0px       | All sizes (mobile base) |
+| `sm:`  | 640px     | Large phones            |
+| `md:`  | 768px     | Tablets                 |
+| `lg:`  | 1024px    | Laptops                 |
+| `xl:`  | 1280px    | Desktops                |
+| `2xl:` | 1536px    | Large desktops          |
 
 ### Responsive Stacking to Grid
 
 ```tsx
-{/* Single column on mobile, 2 cols on tablet, 3 cols on desktop */}
+{
+  /* Single column on mobile, 2 cols on tablet, 3 cols on desktop */
+}
 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
   <Card />
   <Card />
   <Card />
-</div>
+</div>;
 ```
 
 ### Responsive Typography
 
 ```tsx
-<h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">
-  Dashboard
-</h1>
+<h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">Dashboard</h1>
 ```
 
 ### Responsive Spacing
@@ -348,15 +358,17 @@ Unprefixed utilities apply to **all screen sizes**. Prefixed utilities apply at 
 ### Show/Hide by Breakpoint
 
 ```tsx
-{/* Mobile navigation toggle — hidden on desktop */}
+{
+  /* Mobile navigation toggle — hidden on desktop */
+}
 <Button className="md:hidden" variant="ghost" size="icon">
   <Menu className="h-5 w-5" />
-</Button>
+</Button>;
 
-{/* Desktop sidebar — hidden on mobile */}
-<aside className="hidden md:block w-64">
-  {/* Sidebar */}
-</aside>
+{
+  /* Desktop sidebar — hidden on mobile */
+}
+<aside className="hidden md:block w-64">{/* Sidebar */}</aside>;
 ```
 
 ### Container Queries
@@ -364,7 +376,9 @@ Unprefixed utilities apply to **all screen sizes**. Prefixed utilities apply at 
 Container queries respond to a parent container's size instead of the viewport:
 
 ```tsx
-{/* Define container */}
+{
+  /* Define container */
+}
 <div className="@container">
   {/* Respond to container size */}
   <div className="flex flex-col @md:flex-row @md:items-center gap-4">
@@ -373,7 +387,7 @@ Container queries respond to a parent container's size instead of the viewport:
       <p className="text-sm @lg:text-base">Name</p>
     </div>
   </div>
-</div>
+</div>;
 ```
 
 Container breakpoints: `@sm` (320px), `@md` (448px), `@lg` (512px), `@xl` (576px), etc.
@@ -394,10 +408,12 @@ Container breakpoints: `@sm` (320px), `@md` (448px), `@lg` (512px), `@xl` (576px
 When using shadcn/ui, dark mode is handled by CSS variables. The `:root` and `.dark` selectors define token values, and utilities like `bg-background`, `text-foreground`, `border-border` automatically switch. **No `dark:` prefix needed for themed elements.**
 
 ```tsx
-{/* These auto-switch between light/dark — no dark: prefix */}
+{
+  /* These auto-switch between light/dark — no dark: prefix */
+}
 <div className="bg-background text-foreground border-border">
   <p className="text-muted-foreground">Auto-themed content</p>
-</div>
+</div>;
 ```
 
 See the shadcn-ui skill for `next-themes` setup and theme toggle implementation.
@@ -407,13 +423,12 @@ See the shadcn-ui skill for `next-themes` setup and theme toggle implementation.
 Use `dark:` only when you need behavior outside the shadcn token system:
 
 ```tsx
-{/* Custom illustration that needs different treatment in dark mode */}
+{
+  /* Custom illustration that needs different treatment in dark mode */
+}
 <div className="bg-blue-50 dark:bg-blue-950">
-  <img
-    className="opacity-100 dark:opacity-80"
-    src="/illustration.svg"
-  />
-</div>
+  <img className="opacity-100 dark:opacity-80" src="/illustration.svg" />
+</div>;
 ```
 
 ### Media Query Strategy
@@ -427,17 +442,21 @@ For system-only dark mode (no toggle), Tailwind uses `prefers-color-scheme` by d
 shadcn components accept `className`. Use `cn()` (from `@/lib/utils`) to merge your utilities with the component's defaults:
 
 ```tsx
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
-{/* Full-width button with left-aligned text */}
+{
+  /* Full-width button with left-aligned text */
+}
 <Button className="w-full justify-start text-left font-normal">
   Select a date
-</Button>
+</Button>;
 
-{/* Card with custom max-width and shadow */}
+{
+  /* Card with custom max-width and shadow */
+}
 <Card className="max-w-lg shadow-lg">
   <CardContent>{/* ... */}</CardContent>
-</Card>
+</Card>;
 ```
 
 `cn()` handles class conflicts — your overrides win over component defaults (e.g., adding `justify-start` replaces the button's default `justify-center`).
@@ -445,45 +464,53 @@ import { Button } from "@/components/ui/button"
 ### Adding Responsive Behavior
 
 ```tsx
-{/* Dialog content that's full-width on mobile, constrained on desktop */}
+{
+  /* Dialog content that's full-width on mobile, constrained on desktop */
+}
 <DialogContent className="w-full max-w-full sm:max-w-lg">
   {/* ... */}
-</DialogContent>
+</DialogContent>;
 
-{/* Sidebar that collapses on mobile */}
+{
+  /* Sidebar that collapses on mobile */
+}
 <SheetContent side="left" className="w-[280px] sm:w-[350px]">
   {/* ... */}
-</SheetContent>
+</SheetContent>;
 ```
 
 ### When to Customize via Utilities vs Component Source
 
-| Scenario | Approach |
-|----------|----------|
-| One-off sizing/spacing tweak | `className` override |
-| Consistent variant across the app | Edit component source in `components/ui/` |
-| New variant (e.g., `variant="warning"`) | Add to component's `cva()` variants |
-| Layout around component | Wrapper div with utilities |
+| Scenario                                | Approach                                  |
+| --------------------------------------- | ----------------------------------------- |
+| One-off sizing/spacing tweak            | `className` override                      |
+| Consistent variant across the app       | Edit component source in `components/ui/` |
+| New variant (e.g., `variant="warning"`) | Add to component's `cva()` variants       |
+| Layout around component                 | Wrapper div with utilities                |
 
 ## Animation and Transitions
 
 ### Transitions
 
 ```tsx
-{/* Smooth hover effect */}
+{
+  /* Smooth hover effect */
+}
 <div className="transition-colors duration-200 hover:bg-muted">
   {/* content */}
-</div>
+</div>;
 
-{/* Transform on hover */}
+{
+  /* Transform on hover */
+}
 <div className="transition-transform duration-300 hover:scale-105">
   {/* content */}
-</div>
+</div>;
 
-{/* Multiple properties */}
-<div className="transition-all duration-200 ease-in-out">
-  {/* content */}
-</div>
+{
+  /* Multiple properties */
+}
+<div className="transition-all duration-200 ease-in-out">{/* content */}</div>;
 ```
 
 Common duration values: `duration-75`, `duration-100`, `duration-150`, `duration-200`, `duration-300`, `duration-500`.
@@ -520,13 +547,23 @@ npm install tw-animate-css
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-up {
-  from { transform: translateY(1rem); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 ```
 
@@ -539,7 +576,7 @@ Usage: `<div className="animate-fade-in">`.
 ```tsx
 // BAD — Tailwind can't scan dynamically built class names
 function Badge({ color }: { color: string }) {
-  return <span className={`bg-${color}-500 text-${color}-50`}>...</span>
+  return <span className={`bg-${color}-500 text-${color}-50`}>...</span>;
 }
 
 // GOOD — use a static lookup map
@@ -547,10 +584,10 @@ const colorStyles = {
   red: "bg-red-500 text-red-50",
   blue: "bg-blue-500 text-blue-50",
   green: "bg-green-500 text-green-50",
-} as const
+} as const;
 
 function Badge({ color }: { color: keyof typeof colorStyles }) {
-  return <span className={colorStyles[color]}>...</span>
+  return <span className={colorStyles[color]}>...</span>;
 }
 ```
 
@@ -637,8 +674,10 @@ Tailwind v4 processes CSS natively through its Rust-based engine. Sass/Less synt
 // BAD — same pattern repeated in 5 places
 <div className="flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-accent">
   ...
-</div>
-{/* ...repeated 4 more times */}
+</div>;
+{
+  /* ...repeated 4 more times */
+}
 
 // GOOD — extract to a component
 function ListItem({ children, ...props }: React.ComponentProps<"div">) {
@@ -646,13 +685,13 @@ function ListItem({ children, ...props }: React.ComponentProps<"div">) {
     <div
       className={cn(
         "flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-accent",
-        props.className
+        props.className,
       )}
       {...props}
     >
       {children}
     </div>
-  )
+  );
 }
 ```
 

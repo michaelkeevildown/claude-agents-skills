@@ -22,6 +22,7 @@ feature-docs/
 ## Getting Started
 
 **Source `feature-docs/new-feature.md`** to create a new feature. It handles both paths:
+
 - **Ideation first**: Walk through exploring, validating, and designing the feature with artifacts saved to `ideation/<feature-name>/`
 - **Skip to ready**: If you already know what you want, go straight to creating a feature doc
 
@@ -106,6 +107,7 @@ context for agents making judgment calls during implementation.
 ```
 
 **Frontmatter fields**:
+
 - `title` (required): Short descriptive name
 - `status` (required): Matches the directory the file is in
 - `priority` (required): `high` (blocking), `medium` (important), `low` (nice to have)
@@ -116,12 +118,12 @@ context for agents making judgment calls during implementation.
 
 Name the functions, fields, error types, and return shapes. The test-writer turns each criterion directly into an assertion.
 
-| Vague (agent has to guess) | Precise (agent can write a test) |
-|---|---|
-| THEN the login works | THEN `authenticate()` returns a `Session` with non-null `token` |
-| THEN an error is shown | THEN it throws `AuthenticationError` with code `"INVALID_CREDENTIALS"` |
-| THEN the data is saved | THEN `authStore.getState().session` contains the new `Session` |
-| THEN the field is removed | THEN the returned object does NOT include a `legacyField` key |
+| Vague (agent has to guess) | Precise (agent can write a test)                                       |
+| -------------------------- | ---------------------------------------------------------------------- |
+| THEN the login works       | THEN `authenticate()` returns a `Session` with non-null `token`        |
+| THEN an error is shown     | THEN it throws `AuthenticationError` with code `"INVALID_CREDENTIALS"` |
+| THEN the data is saved     | THEN `authStore.getState().session` contains the new `Session`         |
+| THEN the field is removed  | THEN the returned object does NOT include a `legacyField` key          |
 
 ### Writing Actionable Out of Scope
 

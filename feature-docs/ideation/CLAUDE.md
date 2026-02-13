@@ -22,6 +22,7 @@ Folder names use a 3-digit numeric prefix (e.g., `001-user-auth/`). The prefix i
 ## Starting or Resuming
 
 Source `feature-docs/new-feature.md` — it handles both:
+
 - **New**: Creates the ideation folder with a seeded README, walks you through exploration
 - **Resume**: Scans for in-progress folders, reads all artifacts, picks up where you left off
 
@@ -32,7 +33,7 @@ Each folder's `README.md` has YAML frontmatter with status:
 ```yaml
 ---
 feature: feature-name
-status: in-progress       # or: complete, shipped
+status: in-progress # or: complete, shipped
 created: 2025-01-15
 ---
 ```
@@ -47,6 +48,7 @@ The `README.md` has a `## Progress` section with dated entries tracking what was
 
 ```markdown
 ### 2025-01-15 — Initial exploration
+
 - **What we did**: Reviewed existing auth code, identified session management gap
 - **Decisions made**: Use httpOnly cookies, not localStorage
 - **Open questions**: Which OAuth provider to use later?
