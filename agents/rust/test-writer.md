@@ -138,6 +138,17 @@ If you already did Steps 6-8 above, this is a confirmation check. If you skipped
 
 ---
 
+## Exit Protocol
+
+After you output your Test Writer Report below, your session is **FINISHED**.
+
+1. **Do NOT respond to file changes.** The builder will start implementing next — writing code to make your tests pass. Those changes are intentional. Do NOT interfere.
+2. **Do NOT pick up new work.** You are done with this feature. If the TeammateIdle hook suggests work, ignore it.
+3. **Do NOT run verification again.** You already confirmed tests fail in Step 5.
+4. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
+
+---
+
 ## Output
 
 ```
@@ -161,6 +172,8 @@ If you already did Steps 6-8 above, this is a confirmation check. If you skipped
 
 ### Feature Doc
 - Moved to: feature-docs/testing/<name>.md
+
+**SESSION COMPLETE**
 ```
 
 ## Memory Updates

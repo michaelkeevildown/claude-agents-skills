@@ -18,9 +18,12 @@ if git diff --quiet HEAD -- . 2>/dev/null && \
 fi
 
 # --- Lifecycle-aware skip ---
-# During testing stage, test-writer references unimplemented APIs — skip verify.
+# Python/Rust TDD: skip during testing (test-writer's unresolved imports poison type checker)
+# Frontend build-first: never skip (builder writes real code, test-writer writes passing tests)
 . "${CLAUDE_PROJECT_DIR}/scripts/lifecycle-stage.sh"
-[ "$LIFECYCLE_STAGE" = "testing" ] && exit 0
+if [ "$PROJECT_STACK" != "frontend" ] && [ "$LIFECYCLE_STAGE" = "testing" ]; then
+  exit 0
+fi
 
 # --- Loop detection ---
 # Track consecutive stop-hook failures to prevent infinite loops where

@@ -40,7 +40,7 @@ created: 2025-01-15
 
 - **in-progress**: Still being explored. The `new-feature.md` prompt will offer to resume this.
 - **complete**: Distilled into a feature doc in `feature-docs/ready/`. This folder is now an archive.
-- **shipped**: Feature completed the full agent teams pipeline (testing → building → review → completed). Implementation is merged or ready for PR.
+- **shipped**: Feature completed the full agent teams pipeline. Implementation is merged or ready for PR.
 
 ## Progress Log
 
@@ -90,7 +90,9 @@ When the feature is clear enough to write testable acceptance criteria:
 3. Review and refine the draft
 4. The final doc is saved to `feature-docs/ready/<feature-name>.md`
 5. This README's status is updated to `complete`
-6. Kick off the test-writer: `@test-writer Pick up feature-docs/ready/<feature-name>.md`
+6. Kick off the pipeline:
+   - Frontend: `@builder Pick up feature-docs/ready/<feature-name>.md`
+   - Python/Rust: `@test-writer Pick up feature-docs/ready/<feature-name>.md`
 
 This folder stays as an archive of the thinking that led to the feature doc.
 

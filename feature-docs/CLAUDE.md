@@ -1,6 +1,9 @@
 # Feature Docs
 
-This directory manages the Agent Teams workflow — a parallel multi-agent development pattern where a test-writer writes failing tests, a builder implements until green, and a reviewer validates quality.
+This directory manages the Agent Teams workflow — a parallel multi-agent development pattern. The pipeline order depends on your stack:
+
+- **Frontend (build-first)**: Builder implements from spec, then test-writer writes passing Playwright E2E tests, then reviewer validates
+- **Python/Rust (TDD)**: Test-writer writes failing tests, then builder implements until green, then reviewer validates
 
 ## Directory Structure
 
@@ -12,10 +15,10 @@ feature-docs/
   implement-feature.md  Source this to implement an existing feature doc
   ideation/             Explore and shape feature ideas (one subfolder per feature)
     CLAUDE.md           Ideation process guide + README template
-  ready/                Distilled feature docs waiting for a test-writer
-  testing/              Test-writer is writing failing tests
-  building/             Builder is implementing until tests pass
-  review/               All tests pass, awaiting reviewer
+  ready/                Distilled feature docs waiting for first agent
+  testing/              Frontend: test-writer writing E2E tests | Python/Rust: test-writer writing failing tests
+  building/             Frontend: builder implementing from spec | Python/Rust: builder implementing until tests pass
+  review/               Implementation + tests complete, awaiting reviewer
   completed/            Reviewer approved, PR ready
 ```
 
@@ -26,15 +29,26 @@ feature-docs/
 - **Ideation first**: Walk through exploring, validating, and designing the feature with artifacts saved to `ideation/<feature-name>/`
 - **Skip to ready**: If you already know what you want, go straight to creating a feature doc
 
-**Source `feature-docs/implement-feature.md`** to implement an existing feature. It scans `ready/` for available work, runs pre-flight checks (completeness, file ownership conflicts), and kicks off the test-writer to start the pipeline.
+**Source `feature-docs/implement-feature.md`** to implement an existing feature. It scans `ready/` for available work, runs pre-flight checks (completeness, file ownership conflicts), detects your stack, and kicks off the first agent (builder for frontend, test-writer for Python/Rust).
 
 ## Lifecycle
 
-1. **Ideation** — Human sources `new-feature.md`, creates `ideation/<feature-name>/`, adds research, code reviews, design notes. No format rules. Status tracked in README.md frontmatter.
-2. **Ready** — Human distills ideation into a single feature doc in `ready/<feature-name>.md` with YAML frontmatter and GIVEN/WHEN/THEN acceptance criteria.
-3. **Testing** — Test-writer reads the feature doc, writes failing tests, commits them on a feature branch, moves the doc here.
-4. **Building** — Builder reads the failing tests, implements code until all pass, runs verify, moves the doc here.
-5. **Review** — Reviewer checks code quality, conventions, and completeness. Moves to `completed/` if approved, back to `building/` if not.
+### Frontend (Build-First)
+
+1. **Ideation** — Human explores and shapes the idea in `ideation/<feature-name>/`
+2. **Ready** — Human distills ideation into a feature doc with GIVEN/WHEN/THEN acceptance criteria
+3. **Building** — Builder picks up from `ready/`, creates feature branch, implements directly from acceptance criteria
+4. **Testing** — Test-writer writes Playwright E2E tests that verify the implementation (tests should PASS)
+5. **Review** — Reviewer checks code quality, conventions, and E2E coverage. Moves to `completed/` if approved.
+6. **Completed** — Feature is done. Branch is ready for PR.
+
+### Python/Rust (TDD)
+
+1. **Ideation** — Human explores and shapes the idea in `ideation/<feature-name>/`
+2. **Ready** — Human distills ideation into a feature doc with GIVEN/WHEN/THEN acceptance criteria
+3. **Testing** — Test-writer reads the feature doc, writes failing tests, commits them on a feature branch
+4. **Building** — Builder reads the failing tests, implements code until all pass, runs verify
+5. **Review** — Reviewer checks code quality, conventions, and completeness. Moves to `completed/` if approved.
 6. **Completed** — Feature is done. Branch is ready for PR.
 
 All agents update `feature-docs/STATUS.md` after each stage transition.
@@ -144,11 +158,14 @@ This prevents a builder from independently arriving at the same "obvious" optimi
 ## Rules for Agents
 
 - **File ownership**: Each feature doc lists `affected-files` in its frontmatter. Do not modify files owned by another in-progress feature. Check `testing/` and `building/` for conflicts before starting.
-- **Test-writer**: Never writes implementation code. Only creates test files.
-- **Builder**: Never modifies test files. If tests are wrong, stop and report.
+- **Builder (frontend)**: Picks up from `ready/`. Creates feature branch, implements from acceptance criteria, moves doc to `building/` then `testing/`.
+- **Builder (Python/Rust)**: Picks up from `testing/`. Implements to make failing tests pass, moves doc to `building/` then `review/`.
+- **Test-writer (frontend)**: Picks up from `testing/`. Writes Playwright E2E tests only (no Vitest). Tests should PASS. Moves doc to `review/`.
+- **Test-writer (Python/Rust)**: Picks up from `ready/`. Creates feature branch, writes failing tests, moves doc to `testing/`.
 - **Reviewer**: Maps to the `code-reviewer` agent. Strictly read-only — reports issues but never fixes them. The coordinator routes fixes to the appropriate agent.
 - **Coordinator** (the session sourcing `implement-feature.md`): Never uses Write, Edit, or sed on implementation or test files. Delegates all code changes to agents — re-invokes the responsible agent with specific error details instead of fixing code directly. May only use `sed` on feature doc `status:` frontmatter fields, move docs between lifecycle directories, and update STATUS.md.
-- **Per-feature sequential** — within a single feature, the pipeline runs one agent at a time: test-writer → builder → reviewer. Do not launch the next agent until the current one has completed. Multiple features may run in parallel if their `affected-files` do not overlap.
+- **Per-feature sequential** — within a single feature, the pipeline runs one agent at a time. Frontend: builder → test-writer → reviewer. Python/Rust: test-writer → builder → reviewer. Do not launch the next agent until the current one has completed. Multiple features may run in parallel if their `affected-files` do not overlap.
+- **Clean shutdown between roles** — after completing a stage and outputting the completion report, agents must STOP. Do not respond to file changes, do not pick up new work. The coordinator launches each role's agents as fresh sessions. Same-role agents may run in parallel (e.g., multiple builders); different-role agents are strictly sequential (all builders finish before any test-writers start).
 - **Moving files IS the status transition** — the `status` field in frontmatter and the directory must stay in sync. This is not optional. The `task-completed.sh` hook blocks task completion if a feature doc's `status:` field does not match its directory.
 - **Progress dashboard**: Update `feature-docs/STATUS.md` after every stage transition. This is the only way the next agent (or the orchestrator) can orient without reading every directory.
 - **Ideation reference**: Feature docs may include `ideation-ref` in frontmatter pointing to the ideation folder for additional context.
@@ -167,9 +184,19 @@ Every agent must complete ALL of these before finishing a task. The `task-comple
 
 The `task-completed.sh` hook scans all feature docs in `ready/`, `testing/`, `building/`, `review/`, and `completed/`. For each doc with a `status:` field, it verifies the value matches the directory name. If any mismatch is found, task completion is blocked with exit code 2. This is not a prompt convention — it is a shell script that runs automatically and cannot be skipped.
 
-**Lifecycle-aware verification**: Both `task-completed.sh` and `stop-hook.sh` source `scripts/lifecycle-stage.sh` to detect the active stage. During the `testing` stage, verification is skipped — test-writer code references unimplemented APIs (causing type errors) and tests are expected to fail. Lifecycle compliance (status/directory sync) is still enforced. The builder runs full verification when it completes.
+**Lifecycle-aware verification**: Both `task-completed.sh` and `stop-hook.sh` source `scripts/lifecycle-stage.sh` to detect the active stage and project stack. For Python/Rust during the `testing` stage, verification is skipped — test-writer code references unimplemented APIs (causing type errors) and tests are expected to fail. For frontend, no stage requires skipping — the builder writes real code and the test-writer writes passing tests. Lifecycle compliance (status/directory sync) is always enforced regardless of stack.
 
 ## Kickoff Commands
+
+### Frontend (Build-First)
+
+```
+@builder Pick up feature-docs/ready/NNN-<feature-name>.md
+@test-writer Pick up feature-docs/testing/NNN-<feature-name>.md
+@code-reviewer Review feature-docs/review/NNN-<feature-name>.md
+```
+
+### Python/Rust (TDD)
 
 ```
 @test-writer Pick up feature-docs/ready/NNN-<feature-name>.md

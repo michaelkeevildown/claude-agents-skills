@@ -125,6 +125,17 @@ If you already did Steps 3, 6, 7, and 8 above, this is a confirmation check. If 
 
 ---
 
+## Exit Protocol
+
+After you output your Builder Report below, your session is **FINISHED**.
+
+1. **Do NOT respond to file changes.** The reviewer will start examining files next — those changes are intentional. Do not react to them.
+2. **Do NOT pick up new work.** You are done with this feature. If the TeammateIdle hook suggests work, ignore it.
+3. **Do NOT run verification again.** Your verification already passed in Step 5.
+4. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
+
+---
+
 ## Output
 
 ```
@@ -152,6 +163,8 @@ If you already did Steps 3, 6, 7, and 8 above, this is a confirmation check. If 
 
 ### Notes
 - <any issues encountered, workarounds, or suggestions for the reviewer>
+
+**SESSION COMPLETE**
 ```
 
 ## Memory Updates

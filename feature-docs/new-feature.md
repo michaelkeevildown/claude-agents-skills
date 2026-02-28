@@ -168,13 +168,13 @@ When I say "create the feature" (or similar):
 5. **Check for conflicts**: Read feature docs in `feature-docs/testing/` and `feature-docs/building/` — warn if any `affected-files` overlap
 6. **Save** to `feature-docs/ready/NNN-<feature-name>.md` — use the same numeric prefix from the ideation folder (e.g., if ideation was `003-user-auth/`, the feature doc is `003-user-auth.md`)
 7. **Update the ideation README**: Set `status: complete` in frontmatter, add a final progress entry linking to the ready file
-8. **Tell me the kickoff command**:
+8. **Tell me the kickoff command** (stack-dependent):
 
-```
-@test-writer Pick up feature-docs/ready/NNN-<feature-name>.md
-```
+   **Frontend**: `@builder Pick up feature-docs/ready/NNN-<feature-name>.md`
 
-Or source `feature-docs/implement-feature.md` to run the pipeline with pre-flight checks (file ownership validation, section completeness).
+   **Python/Rust**: `@test-writer Pick up feature-docs/ready/NNN-<feature-name>.md`
+
+   Or source `feature-docs/implement-feature.md` to run the pipeline with pre-flight checks (file ownership validation, section completeness, stack detection).
 
 ---
 
@@ -215,13 +215,13 @@ Before saving, check `feature-docs/testing/` and `feature-docs/building/` for an
 
 **8d — Save and Next Steps**
 
-Write the file to `feature-docs/ready/NNN-<feature-name>.md` where `NNN` is the number from step 8a and the name is derived from the title (lowercase, hyphens). Then tell the exact command to kick off the test-writer:
+Write the file to `feature-docs/ready/NNN-<feature-name>.md` where `NNN` is the number from step 8a and the name is derived from the title (lowercase, hyphens). Then tell the kickoff command (stack-dependent):
 
-```
-@test-writer Pick up feature-docs/ready/NNN-<feature-name>.md
-```
+**Frontend**: `@builder Pick up feature-docs/ready/NNN-<feature-name>.md`
 
-Or source `feature-docs/implement-feature.md` to run the pipeline with pre-flight checks (file ownership validation, section completeness).
+**Python/Rust**: `@test-writer Pick up feature-docs/ready/NNN-<feature-name>.md`
+
+Or source `feature-docs/implement-feature.md` to run the pipeline with pre-flight checks (file ownership validation, section completeness, stack detection).
 
 ---
 

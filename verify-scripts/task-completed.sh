@@ -46,11 +46,12 @@ if [ -d "${FEATURE_DIR}" ]; then
 fi
 
 # --- Lifecycle-aware verify skip ---
-# During testing stage, tests are supposed to fail — skip verify.
+# Python/Rust TDD: skip verify during testing (tests are expected to fail).
+# Frontend build-first: run verify at all stages (no stage has expected failures).
 # Lifecycle compliance already ran above; the builder will verify when it completes.
 . "${PROJECT_DIR}/scripts/lifecycle-stage.sh"
-if [ "$LIFECYCLE_STAGE" = "testing" ]; then
-  echo "Stage: testing — skipping verify (tests expected to fail)" >&2
+if [ "$PROJECT_STACK" != "frontend" ] && [ "$LIFECYCLE_STAGE" = "testing" ]; then
+  echo "Stage: testing (${PROJECT_STACK}) — skipping verify (tests expected to fail)" >&2
   exit 0
 fi
 
