@@ -15,11 +15,13 @@ Reusable Claude Code agent definitions and technology skill documentation, insta
 agents/           Agent definitions (Markdown with YAML frontmatter)
   universal/      Stack-independent agents (installed via --global)
   frontend/       Frontend-specific agents
+  flutter/        Flutter-specific agents
   python/         Python-specific agents
   rust/           Rust-specific agents
 skills/           Technology skill documentation (SKILL.md files)
   global/         Stack-independent skills (symlinked to ~/.claude/skills/)
   frontend/       Frontend skills (8 skills)
+  flutter/        Flutter skills (1 complete, 3 stubs)
   python/         Python skills (3 stubs)
   rust/           Rust skills (2 stubs)
 feature-docs/     Mirrors downstream project structure (copied as-is by setup.sh)
@@ -38,6 +40,7 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 ```bash
 ./setup.sh --global              # Symlink universal agents + global skills to ~/.claude/
 ./setup.sh frontend              # Copy frontend skills/agents into current project
+./setup.sh flutter               # Copy Flutter skills/agents into current project
 ./setup.sh python neo4j          # Python stack + neo4j extras
 ```
 
@@ -53,6 +56,8 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 | component-builder | frontend  | sonnet | 146   | Investigation workspace components with Zustand/NVL integration                   |
 | test-writer       | frontend  | sonnet | 147   | Write failing Vitest/Playwright tests from feature docs                           |
 | builder           | frontend  | opus   | 146   | Implement code to make failing tests pass (React/Zustand)                         |
+| test-writer       | flutter   | sonnet | 147   | Write Flutter widget tests from feature docs                                      |
+| builder           | flutter   | opus   | 146   | Implement Flutter features from acceptance criteria                               |
 | test-writer       | python    | sonnet | 163   | Write failing pytest tests from feature docs                                      |
 | builder           | python    | opus   | 143   | Implement code to make failing pytest tests pass                                  |
 | code-reviewer     | rust      | opus   | 123   | Rust-specific code review — ownership, async safety, error handling, unsafe audit |
@@ -75,16 +80,20 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 | neo4j-driver-js    | frontend | 444   | Neo4j JS driver, sessions, transactions, type handling                               |
 | neo4j-cypher       | global   | 433   | Cypher query patterns, performance, fraud-domain queries                             |
 | neo4j-data-models  | global   | 428   | Graph modeling, fraud detection schemas, best practices                              |
+| material3          | flutter  | 778   | Material 3 theming, ColorScheme, component catalog, forms, accessibility             |
 
 ### Skills — Stubs (need content)
 
-| Skill               | Stack  | Lines |
-| ------------------- | ------ | ----- |
-| fastapi             | python | 18    |
-| testing-pytest      | python | 18    |
-| neo4j-driver-python | python | 18    |
-| testing-rust        | rust   | 18    |
-| neo4j-driver-rust   | rust   | 18    |
+| Skill               | Stack   | Lines |
+| ------------------- | ------- | ----- |
+| flutter             | flutter | 23    |
+| testing-flutter     | flutter | 23    |
+| riverpod            | flutter | 23    |
+| fastapi             | python  | 18    |
+| testing-pytest      | python  | 18    |
+| neo4j-driver-python | python  | 18    |
+| testing-rust        | rust    | 18    |
+| neo4j-driver-rust   | rust    | 18    |
 
 ## Conventions
 
@@ -111,7 +120,7 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 
 ### Stacks
 
-Four stack categories: `frontend`, `python`, `rust`, `global` (universal)
+Five stack categories: `frontend`, `flutter`, `python`, `rust`, `global` (universal)
 
 ## Do NOT
 

@@ -236,6 +236,7 @@ feature-docs/
 title: User Authentication
 status: ready
 priority: high
+depends-on: 004-session-management
 affected-files:
   - src/auth/authenticate.ts
   - src/auth/session.ts
@@ -293,6 +294,45 @@ Every acceptance criterion must be:
 4. **Complete** — covers the happy path, error cases, and edge cases
 
 Vague criteria produce vague tests produce wrong implementations.
+
+### Feature Dependencies
+
+Features can declare a dependency on one other feature using the `depends-on`
+frontmatter field. The value is the filename stem of the dependency (e.g.,
+`005-user-auth`).
+
+**One level per doc**: Each feature declares only its immediate parent. Feature
+006 says `depends-on: 005-session-mgmt`. Feature 005 says `depends-on:
+004-data-layer`. The full chain (006 → 005 → 004) is resolved dynamically at
+check time — no feature stores the entire chain.
+
+**Recursive resolution**: The `scripts/check-deps.sh` script walks the chain
+from the target feature all the way down. If ANY dependency in the chain is not
+in `completed/`, the feature is BLOCKED and must not be picked up.
+
+**Blocking behavior**:
+
+- In `TeammateIdle` hooks: blocked features are skipped. The hook continues
+  searching for unblocked work.
+- In agent pickup (builder/test-writer): agents check dependencies before
+  starting. If blocked, they report to the user and stop.
+- In `implement-feature.md` coordinator flow: the pre-flight check warns the
+  user and asks whether to wait or override.
+
+**Circular dependency detection**: The script tracks visited features and exits
+with an error if a cycle is found (e.g., A → B → A).
+
+**When to use `depends-on`**:
+
+- Feature B cannot function without Feature A's code being merged (runtime dependency)
+- Feature B's acceptance criteria reference outputs from Feature A
+- Feature B modifies files that Feature A creates (sequential file ownership)
+
+**When NOT to use `depends-on`**:
+
+- Features that merely share a domain but are independently testable
+- Priority ordering (use `priority: high/medium/low` instead)
+- Features that could run in parallel with non-overlapping files
 
 | Vague (agent has to guess) | Precise (agent can write a test)                                       |
 | -------------------------- | ---------------------------------------------------------------------- |
@@ -502,9 +542,16 @@ can never be mistaken for `002-user-auth-v2.md`.
 ### Automated Kickoff
 
 Source `feature-docs/implement-feature.md` to scan `ready/` for available
-features, run pre-flight checks (section completeness, file ownership conflicts),
-detect the stack, and kick off the first agent (builder for frontend, test-writer
-for Python/Rust). The `TeammateIdle` hook handles subsequent handoffs automatically.
+features, run pre-flight checks (section completeness, file ownership conflicts,
+dependency chain), detect the stack, and kick off the first agent (builder for
+frontend, test-writer for Python/Rust). The `TeammateIdle` hook handles
+subsequent handoffs automatically.
+
+**Dependency awareness**: Before kicking off any feature, the coordinator checks
+its dependency chain via `scripts/check-deps.sh`. If the feature has unmet
+dependencies, the coordinator warns the user and suggests waiting or proceeding
+with an override. The `TeammateIdle` hook automatically skips blocked features
+when scanning for pending work.
 
 ### Manual Workflow — Frontend (Build-First)
 
@@ -846,3 +893,6 @@ components, services, and tests.
 | Feature docs without numeric prefix                | Similarly-named features (user-auth.md vs user-auth-v2.md) cause agents to read the wrong doc from completed/ or other directories      | Always use `scripts/next-feature-number.sh` to get a unique NNN- prefix at creation time                                                                   |
 | Running verify on test-writer output (Python/Rust) | Type errors on unresolved imports fire on every response; test failures block task completion                                           | Hooks detect `testing` stage and stack via `lifecycle-stage.sh`; skip verification for Python/Rust TDD but not frontend build-first                        |
 | Writing Vitest unit tests in frontend workflow     | Unit tests break on every component refactor; internal APIs are unstable in vibe-coded UIs                                              | Frontend test-writer writes Playwright E2E only; user-visible behavior is the stable contract                                                              |
+| Picking up a feature with unmet dependencies       | Implementation builds on code that doesn't exist yet; tests reference missing APIs; entire feature may need rework                      | Run `scripts/check-deps.sh` before pickup; agents and hooks check automatically                                                                            |
+| Deep dependency chains declared in a single doc    | Stale chain data if intermediate features change; maintenance burden grows with chain length                                            | Each doc declares only its immediate parent (`depends-on: NNN-name`); the script resolves the full chain dynamically from `completed/`                     |
+| Circular dependencies between features             | Pipeline deadlock — neither feature can proceed because each waits for the other                                                        | `check-deps.sh` detects cycles and exits with error; redesign features to break the cycle                                                                  |

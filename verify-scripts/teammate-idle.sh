@@ -18,6 +18,9 @@ fi
 # Detect project stack for flow-aware priority routing
 . "${PROJECT_DIR}/scripts/lifecycle-stage.sh"
 
+# Path to dependency checker (copied alongside this script by setup.sh)
+CHECK_DEPS="${PROJECT_DIR}/scripts/check-deps.sh"
+
 # Stuck detection: warn if a feature has been in building/ for over 30 minutes.
 # Uses the file's modification time as a proxy for when work started.
 STUCK_THRESHOLD=1800  # 30 minutes in seconds
@@ -38,13 +41,17 @@ for doc in "${FEATURE_DIR}"/building/*.md; do
   fi
 done
 
-if [ "${PROJECT_STACK}" = "frontend" ]; then
-  # Frontend (build-first): builder picks up from ready/, test-writer from testing/
+if [ "${PROJECT_STACK}" = "frontend" ] || [ "${PROJECT_STACK}" = "flutter" ]; then
+  # Frontend/Flutter (build-first): builder picks up from ready/, test-writer from testing/
 
   # Priority 1: Features needing E2E tests (test-writer)
   for doc in "${FEATURE_DIR}"/testing/*.md; do
     [ -f "${doc}" ] || continue
     TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
+      echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
+      continue
+    fi
     echo "Pending work found: ${TITLE} needs E2E tests (status: testing)" >&2
     echo "Pick up feature-docs/testing/$(basename "${doc}") — read the feature doc and implementation, then write passing Playwright E2E tests." >&2
     exit 0
@@ -54,17 +61,25 @@ if [ "${PROJECT_STACK}" = "frontend" ]; then
   for doc in "${FEATURE_DIR}"/ready/*.md; do
     [ -f "${doc}" ] || continue
     TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
+      echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
+      continue
+    fi
     echo "Pending work found: ${TITLE} needs implementation (status: ready)" >&2
     echo "Pick up feature-docs/ready/$(basename "${doc}") — read the feature doc and implement from acceptance criteria." >&2
     exit 0
   done
 else
-  # Python/Rust (TDD): test-writer picks up from ready/, builder from testing/
+  # Python/Rust TDD: test-writer picks up from ready/, builder from testing/
 
   # Priority 1: Features with failing tests need a builder
   for doc in "${FEATURE_DIR}"/testing/*.md; do
     [ -f "${doc}" ] || continue
     TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
+      echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
+      continue
+    fi
     echo "Pending work found: ${TITLE} needs implementation (status: testing)" >&2
     echo "Pick up feature-docs/testing/$(basename "${doc}") — read the feature doc and failing tests, then implement until all tests pass." >&2
     exit 0
@@ -74,6 +89,10 @@ else
   for doc in "${FEATURE_DIR}"/ready/*.md; do
     [ -f "${doc}" ] || continue
     TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
+      echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
+      continue
+    fi
     echo "Pending work found: ${TITLE} needs tests (status: ready)" >&2
     echo "Pick up feature-docs/ready/$(basename "${doc}") — read the feature doc and write failing tests for all acceptance criteria." >&2
     exit 0
@@ -84,6 +103,10 @@ fi
 for doc in "${FEATURE_DIR}"/review/*.md; do
   [ -f "${doc}" ] || continue
   TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+  if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
+    echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
+    continue
+  fi
   echo "Pending work found: ${TITLE} needs review (status: review)" >&2
   echo "Review feature-docs/review/$(basename "${doc}") — check code quality, conventions, and test coverage." >&2
   exit 0

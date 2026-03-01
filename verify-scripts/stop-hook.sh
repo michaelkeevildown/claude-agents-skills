@@ -19,9 +19,9 @@ fi
 
 # --- Lifecycle-aware skip ---
 # Python/Rust TDD: skip during testing (test-writer's unresolved imports poison type checker)
-# Frontend build-first: never skip (builder writes real code, test-writer writes passing tests)
+# Frontend/Flutter build-first: never skip (builder writes real code, test-writer writes passing tests)
 . "${CLAUDE_PROJECT_DIR}/scripts/lifecycle-stage.sh"
-if [ "$PROJECT_STACK" != "frontend" ] && [ "$LIFECYCLE_STAGE" = "testing" ]; then
+if { [ "$PROJECT_STACK" = "python" ] || [ "$PROJECT_STACK" = "rust" ]; } && [ "$LIFECYCLE_STAGE" = "testing" ]; then
   exit 0
 fi
 

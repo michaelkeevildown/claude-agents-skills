@@ -2,7 +2,7 @@
 
 This directory manages the Agent Teams workflow — a parallel multi-agent development pattern. The pipeline order depends on your stack:
 
-- **Frontend (build-first)**: Builder implements from spec, then test-writer writes passing Playwright E2E tests, then reviewer validates
+- **Frontend/Flutter (build-first)**: Builder implements from spec, then test-writer writes passing tests (Playwright E2E for frontend, widget tests for Flutter), then reviewer validates
 - **Python/Rust (TDD)**: Test-writer writes failing tests, then builder implements until green, then reviewer validates
 
 ## Directory Structure
@@ -16,8 +16,8 @@ feature-docs/
   ideation/             Explore and shape feature ideas (one subfolder per feature)
     CLAUDE.md           Ideation process guide + README template
   ready/                Distilled feature docs waiting for first agent
-  testing/              Frontend: test-writer writing E2E tests | Python/Rust: test-writer writing failing tests
-  building/             Frontend: builder implementing from spec | Python/Rust: builder implementing until tests pass
+  testing/              Frontend/Flutter: test-writer writing tests | Python/Rust: test-writer writing failing tests
+  building/             Frontend/Flutter: builder implementing from spec | Python/Rust: builder implementing until tests pass
   review/               Implementation + tests complete, awaiting reviewer
   completed/            Reviewer approved, PR ready
 ```
@@ -29,17 +29,17 @@ feature-docs/
 - **Ideation first**: Walk through exploring, validating, and designing the feature with artifacts saved to `ideation/<feature-name>/`
 - **Skip to ready**: If you already know what you want, go straight to creating a feature doc
 
-**Source `feature-docs/implement-feature.md`** to implement an existing feature. It scans `ready/` for available work, runs pre-flight checks (completeness, file ownership conflicts), detects your stack, and kicks off the first agent (builder for frontend, test-writer for Python/Rust).
+**Source `feature-docs/implement-feature.md`** to implement an existing feature. It scans `ready/` for available work, runs pre-flight checks (completeness, file ownership conflicts), detects your stack, and kicks off the first agent (builder for frontend/Flutter, test-writer for Python/Rust).
 
 ## Lifecycle
 
-### Frontend (Build-First)
+### Frontend/Flutter (Build-First)
 
 1. **Ideation** — Human explores and shapes the idea in `ideation/<feature-name>/`
 2. **Ready** — Human distills ideation into a feature doc with GIVEN/WHEN/THEN acceptance criteria
 3. **Building** — Builder picks up from `ready/`, creates feature branch, implements directly from acceptance criteria
-4. **Testing** — Test-writer writes Playwright E2E tests that verify the implementation (tests should PASS)
-5. **Review** — Reviewer checks code quality, conventions, and E2E coverage. Moves to `completed/` if approved.
+4. **Testing** — Test-writer writes tests that verify the implementation (Playwright E2E for frontend, widget tests for Flutter). Tests should PASS.
+5. **Review** — Reviewer checks code quality, conventions, and test coverage. Moves to `completed/` if approved.
 6. **Completed** — Feature is done. Branch is ready for PR.
 
 ### Python/Rust (TDD)
@@ -66,6 +66,7 @@ Feature doc filenames use a 3-digit numeric prefix: `NNN-feature-name.md` (e.g.,
 title: Feature Title
 status: ready
 priority: high | medium | low
+depends-on: NNN-dependency-name
 ideation-ref: feature-docs/ideation/feature-name/
 affected-files:
   - src/path/to/file1
@@ -125,6 +126,7 @@ context for agents making judgment calls during implementation.
 - `title` (required): Short descriptive name
 - `status` (required): Matches the directory the file is in
 - `priority` (required): `high` (blocking), `medium` (important), `low` (nice to have)
+- `depends-on` (optional): Filename stem of a feature this one requires to be in `completed/` first (e.g., `005-user-auth`). Only declare the immediate parent — the dependency checker walks the chain recursively at check time.
 - `ideation-ref` (optional): Path to the ideation folder that produced this doc
 - `affected-files` (required): Files this feature creates or modifies — defines ownership
 
@@ -158,18 +160,29 @@ This prevents a builder from independently arriving at the same "obvious" optimi
 ## Rules for Agents
 
 - **File ownership**: Each feature doc lists `affected-files` in its frontmatter. Do not modify files owned by another in-progress feature. Check `testing/` and `building/` for conflicts before starting.
-- **Builder (frontend)**: Picks up from `ready/`. Creates feature branch, implements from acceptance criteria, moves doc to `building/` then `testing/`.
+- **Builder (frontend/Flutter)**: Picks up from `ready/`. Creates feature branch, implements from acceptance criteria, moves doc to `building/` then `testing/`.
 - **Builder (Python/Rust)**: Picks up from `testing/`. Implements to make failing tests pass, moves doc to `building/` then `review/`.
 - **Test-writer (frontend)**: Picks up from `testing/`. Writes Playwright E2E tests only (no Vitest). Tests should PASS. Moves doc to `review/`.
+- **Test-writer (Flutter)**: Picks up from `testing/`. Writes Flutter widget tests. Tests should PASS. Moves doc to `review/`.
 - **Test-writer (Python/Rust)**: Picks up from `ready/`. Creates feature branch, writes failing tests, moves doc to `testing/`.
 - **Reviewer**: Maps to the `code-reviewer` agent. Strictly read-only — reports issues but never fixes them. The coordinator routes fixes to the appropriate agent.
 - **Coordinator** (the session sourcing `implement-feature.md`): Never uses Write, Edit, or sed on implementation or test files. Delegates all code changes to agents — re-invokes the responsible agent with specific error details instead of fixing code directly. May only use `sed` on feature doc `status:` frontmatter fields, move docs between lifecycle directories, and update STATUS.md.
-- **Per-feature sequential** — within a single feature, the pipeline runs one agent at a time. Frontend: builder → test-writer → reviewer. Python/Rust: test-writer → builder → reviewer. Do not launch the next agent until the current one has completed. Multiple features may run in parallel if their `affected-files` do not overlap.
+- **Per-feature sequential** — within a single feature, the pipeline runs one agent at a time. Frontend/Flutter: builder → test-writer → reviewer. Python/Rust: test-writer → builder → reviewer. Do not launch the next agent until the current one has completed. Multiple features may run in parallel if their `affected-files` do not overlap.
 - **Clean shutdown between roles** — after completing a stage and outputting the completion report, agents must STOP. Do not respond to file changes, do not pick up new work. The coordinator launches each role's agents as fresh sessions. Same-role agents may run in parallel (e.g., multiple builders); different-role agents are strictly sequential (all builders finish before any test-writers start).
 - **Moving files IS the status transition** — the `status` field in frontmatter and the directory must stay in sync. This is not optional. The `task-completed.sh` hook blocks task completion if a feature doc's `status:` field does not match its directory.
 - **Progress dashboard**: Update `feature-docs/STATUS.md` after every stage transition. This is the only way the next agent (or the orchestrator) can orient without reading every directory.
 - **Ideation reference**: Feature docs may include `ideation-ref` in frontmatter pointing to the ideation folder for additional context.
 - **Ideation README lifecycle**: Ideation READMEs track three statuses: `in-progress` (exploring), `complete` (distilled into a ready feature doc), `shipped` (feature completed the full pipeline). The coordinator updates ideation README status to `shipped` when the reviewer approves.
+
+### Dependencies
+
+Feature docs may declare a `depends-on` field in frontmatter naming one other feature (by filename stem, e.g., `005-user-auth`). This means the feature cannot be picked up until that dependency is in `completed/`.
+
+**Recursive resolution**: The dependency checker walks the full chain. If feature 007 depends on 006, and 006 depends on 005, then 007 is blocked until both 005 AND 006 are in `completed/`. Each feature only declares its immediate parent — the chain is resolved dynamically at check time.
+
+**Agent responsibility**: Before picking up any feature, verify its dependency chain is clear by running `scripts/check-deps.sh <feature-doc-path>`. If the script exits non-zero, the feature is blocked. Report the blocking dependency to the user and move on to unblocked work.
+
+**Blocked features are skipped, not errored**: In automated hooks (TeammateIdle), blocked features are logged and skipped in favor of unblocked work. When an agent picks up a feature directly, it should report the block and stop.
 
 ### Lifecycle Compliance Checklist
 
@@ -184,11 +197,11 @@ Every agent must complete ALL of these before finishing a task. The `task-comple
 
 The `task-completed.sh` hook scans all feature docs in `ready/`, `testing/`, `building/`, `review/`, and `completed/`. For each doc with a `status:` field, it verifies the value matches the directory name. If any mismatch is found, task completion is blocked with exit code 2. This is not a prompt convention — it is a shell script that runs automatically and cannot be skipped.
 
-**Lifecycle-aware verification**: Both `task-completed.sh` and `stop-hook.sh` source `scripts/lifecycle-stage.sh` to detect the active stage and project stack. For Python/Rust during the `testing` stage, verification is skipped — test-writer code references unimplemented APIs (causing type errors) and tests are expected to fail. For frontend, no stage requires skipping — the builder writes real code and the test-writer writes passing tests. Lifecycle compliance (status/directory sync) is always enforced regardless of stack.
+**Lifecycle-aware verification**: Both `task-completed.sh` and `stop-hook.sh` source `scripts/lifecycle-stage.sh` to detect the active stage and project stack. For Python/Rust during the `testing` stage, verification is skipped — test-writer code references unimplemented APIs (causing type errors) and tests are expected to fail. For frontend/Flutter, no stage requires skipping — the builder writes real code and the test-writer writes passing tests. Lifecycle compliance (status/directory sync) is always enforced regardless of stack.
 
 ## Kickoff Commands
 
-### Frontend (Build-First)
+### Frontend/Flutter (Build-First)
 
 ```
 @builder Pick up feature-docs/ready/NNN-<feature-name>.md

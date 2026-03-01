@@ -156,6 +156,7 @@ When I say "create the feature" (or similar):
    - **Title**: Derived from our discussions
    - **Priority**: Ask me to choose (high / medium / low)
    - **Ideation ref**: Set to `feature-docs/ideation/<feature-name>/`
+   - **Dependencies**: Ask "Does this feature depend on another feature completing first? If yes, which one?" If yes, set `depends-on: NNN-feature-name` in frontmatter. If no, omit the field.
    - **Summary**: Synthesised from all artifacts
    - **Acceptance Criteria**: Extract testable behaviours in GIVEN/WHEN/THEN format. Push back on anything vague — each criterion becomes at least one automated test
    - **Edge Cases**: Pull from failure modes discussed during ideation
@@ -193,6 +194,7 @@ bash scripts/next-feature-number.sh
 Using the format from `feature-docs/CLAUDE.md` (see the "Feature Doc Format" section), fill in every section:
 
 - **Priority**: Infer from conversation context. If genuinely unclear, ask once before drafting.
+- **Dependencies**: If the conversation indicates this feature depends on another (e.g., "this needs the auth feature first"), set `depends-on: NNN-feature-name` in frontmatter. If no dependency was mentioned, omit the field. If unclear, ask once.
 - **Summary**: Synthesise from everything discussed so far.
 - **Acceptance Criteria**: Write testable GIVEN/WHEN/THEN criteria based on the problem and solution discussed. Each criterion becomes at least one automated test — be precise with function names, field names, error types, and return shapes.
 - **Edge Cases**: Infer from the problem domain (failures, timeouts, boundary conditions, concurrent access, invalid inputs).

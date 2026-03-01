@@ -111,6 +111,7 @@ Use this skill when <scope>. Covers <topic list>.
 | ----------- | --------------------- | --------------------------------------------- |
 | `global/`   | Stack-independent     | neo4j-cypher, neo4j-data-models, git-workflow |
 | `frontend/` | Frontend technologies | react, shadcn-ui, tailwind, zustand-state     |
+| `flutter/`  | Flutter technologies  | material3, flutter, testing-flutter, riverpod |
 | `python/`   | Python technologies   | fastapi, testing-pytest                       |
 | `rust/`     | Rust technologies     | testing-rust, neo4j-driver-rust               |
 

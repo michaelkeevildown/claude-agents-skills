@@ -10,7 +10,7 @@ Usage:
   ./setup.sh --global              Install global agents and skills to ~/.claude/
   ./setup.sh <stack> [extra...]    Setup project-local skills for a stack
 
-Stacks: frontend, python, rust
+Stacks: frontend, flutter, python, rust
 
 Examples:
   ./setup.sh --global
@@ -66,7 +66,7 @@ setup_project() {
 
   local stack_dir="${REPO_DIR}/skills/${stack}"
   if [ ! -d "${stack_dir}" ]; then
-    echo "Error: Unknown stack '${stack}'. Available: frontend, python, rust"
+    echo "Error: Unknown stack '${stack}'. Available: frontend, flutter, python, rust"
     exit 1
   fi
 
@@ -161,7 +161,7 @@ setup_project() {
   fi
 
   # Copy agent teams hook scripts and utilities if they exist
-  for hook_script in task-completed.sh teammate-idle.sh stop-hook.sh next-feature-number.sh lifecycle-stage.sh; do
+  for hook_script in task-completed.sh teammate-idle.sh stop-hook.sh next-feature-number.sh lifecycle-stage.sh check-deps.sh; do
     local hook_file="${REPO_DIR}/verify-scripts/${hook_script}"
     if [ -f "${hook_file}" ]; then
       mkdir -p "${project_dir}/scripts"

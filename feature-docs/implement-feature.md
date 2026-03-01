@@ -82,7 +82,28 @@ After I select a feature:
 >
 > What would you like to do?
 
-5. **Check ideation README** — if the feature doc has an `ideation-ref` field, read the ideation README. If its status is still `in-progress` (meaning the distillation step forgot to update it), notify and fix:
+5. **Check dependencies** — read the feature doc's `depends-on` frontmatter field. If it declares a dependency, run the dependency check:
+
+   ```bash
+   bash scripts/check-deps.sh feature-docs/ready/<filename>.md
+   ```
+
+   If the check fails (exit non-zero), show the dependency chain:
+
+   > **Dependency not met.**
+   >
+   > `<feature-title>` depends on `<dep-name>`, which is currently in `<stage>/` (not `completed/`).
+   >
+   > Options:
+   >
+   > - **Wait** for the dependency to complete first
+   > - **Proceed anyway** (only if you're sure the dependency isn't needed for this implementation)
+   >
+   > What would you like to do?
+
+   If the user chooses to wait, stop. If they choose to proceed, note the override in the kickoff message.
+
+6. **Check ideation README** — if the feature doc has an `ideation-ref` field, read the ideation README. If its status is still `in-progress` (meaning the distillation step forgot to update it), notify and fix:
 
    > The ideation README for this feature still shows `in-progress` but a ready feature doc exists. Updating to `complete`.
 

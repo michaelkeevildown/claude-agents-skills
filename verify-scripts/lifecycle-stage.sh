@@ -2,13 +2,13 @@
 # Detects the active lifecycle stage and project stack from feature-docs/.
 # Source this script; it sets:
 #   LIFECYCLE_STAGE: testing | building | review | none
-#   PROJECT_STACK:   frontend | python | rust | unknown
+#   PROJECT_STACK:   frontend | flutter | python | rust | unknown
 #
 # Permissive stage logic (for verification skipping):
 #   Python/Rust (TDD): testing > building > review
 #     — test-writer's unresolved imports poison the type checker
-#   Frontend (build-first): no stage needs skipping
-#     — builder writes real code, test-writer writes passing E2E tests
+#   Frontend/Flutter (build-first): no stage needs skipping
+#     — builder writes real code, test-writer writes passing tests
 
 _PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-${PROJECT_DIR:-$(pwd)}}"
 _FEATURE_DIR="${_PROJECT_ROOT}/feature-docs"
@@ -17,6 +17,8 @@ _FEATURE_DIR="${_PROJECT_ROOT}/feature-docs"
 PROJECT_STACK="unknown"
 if [ -f "${_PROJECT_ROOT}/package.json" ]; then
   PROJECT_STACK="frontend"
+elif [ -f "${_PROJECT_ROOT}/pubspec.yaml" ]; then
+  PROJECT_STACK="flutter"
 elif [ -f "${_PROJECT_ROOT}/Cargo.toml" ]; then
   PROJECT_STACK="rust"
 elif [ -f "${_PROJECT_ROOT}/pyproject.toml" ] || [ -f "${_PROJECT_ROOT}/setup.py" ]; then
@@ -26,8 +28,8 @@ fi
 LIFECYCLE_STAGE="none"
 
 if [ -d "${_FEATURE_DIR}" ]; then
-  if [ "${PROJECT_STACK}" = "frontend" ]; then
-    # Frontend (build-first): builder goes first, no permissiveness needed.
+  if [ "${PROJECT_STACK}" = "frontend" ] || [ "${PROJECT_STACK}" = "flutter" ]; then
+    # Frontend/Flutter (build-first): builder goes first, no permissiveness needed.
     # Scan building > testing > review for informational stage detection.
     for _stage in building testing review; do
       _dir="${_FEATURE_DIR}/${_stage}"

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "teammateMode": "tmux",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/guard-bash.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r fp; if echo \"$fp\" | grep -qE '\\.dart$'; then dart format \"$fp\" 2>/dev/null; fi; }"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/stop-hook.sh"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/task-completed.sh"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/teammate-idle.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

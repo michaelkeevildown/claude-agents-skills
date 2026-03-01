@@ -37,7 +37,18 @@ Read the feature doc from `feature-docs/ready/`. Extract:
 
 Read all feature docs in `feature-docs/testing/` and `feature-docs/building/`. If any `affected-files` overlap with the current feature, report the conflict to the user and stop.
 
-### 3. Create the Feature Branch
+### 3. Check Dependencies
+
+Read the `depends-on` field from the feature doc's frontmatter. If it declares a dependency:
+
+1. Run the dependency check:
+   ```bash
+   bash scripts/check-deps.sh feature-docs/ready/<name>.md
+   ```
+2. If the check exits non-zero, report the blocking dependency to the user and **STOP** — do not proceed with test writing. The blocking feature must reach `completed/` first.
+3. If the check exits 0, all dependencies are satisfied. Continue to the next step.
+
+### 4. Create the Feature Branch
 
 Create a branch following git-workflow conventions:
 
@@ -45,7 +56,7 @@ Create a branch following git-workflow conventions:
 git checkout -b feat/<feature-name>
 ```
 
-### 4. Write Failing Tests
+### 5. Write Failing Tests
 
 For each acceptance criterion, write one or more tests:
 
@@ -81,7 +92,7 @@ fn empty_email_returns_validation_error() {
 
 Reference the implementation module paths even though they may not exist yet. Tests must fail because the implementation is missing. If the compiler cannot resolve the module, create a minimal skeleton with the expected types and function signatures that return `todo!()`.
 
-### 5. Verify Tests Fail
+### 6. Verify Tests Fail
 
 Run the test suite and confirm every new test fails:
 
@@ -91,7 +102,7 @@ cargo test 2>&1 | tail -30
 
 If any new test passes without implementation, the test is too weak — rewrite it.
 
-### 6. Move the Feature Doc
+### 7. Move the Feature Doc
 
 Update the feature doc status and move it:
 
@@ -100,7 +111,7 @@ sed -i '' 's/status: ready/status: testing/' feature-docs/ready/<name>.md
 mv feature-docs/ready/<name>.md feature-docs/testing/
 ```
 
-### 7. Update Progress Dashboard
+### 8. Update Progress Dashboard
 
 Update `feature-docs/STATUS.md` (create if missing) with current status:
 
@@ -114,7 +125,7 @@ Update `feature-docs/STATUS.md` (create if missing) with current status:
 
 Remove any prior entry for this feature. Keep entries for other in-progress features.
 
-### 8. Commit
+### 9. Commit
 
 Commit the test files and the moved feature doc:
 
@@ -134,7 +145,7 @@ git commit -m "test(<scope>): add failing tests for <feature-name>"
 - [ ] **STATUS.md UPDATED**: `feature-docs/STATUS.md` has a current entry for this feature showing `testing` status
 - [ ] **Feature doc COMMITTED**: The moved feature doc is included in your git commit (not just the test files)
 
-If you already did Steps 6-8 above, this is a confirmation check. If you skipped any of them, go back and do them NOW before producing your report.
+If you already did Steps 7-9 above, this is a confirmation check. If you skipped any of them, go back and do them NOW before producing your report.
 
 ---
 
@@ -144,7 +155,7 @@ After you output your Test Writer Report below, your session is **FINISHED**.
 
 1. **Do NOT respond to file changes.** The builder will start implementing next — writing code to make your tests pass. Those changes are intentional. Do NOT interfere.
 2. **Do NOT pick up new work.** You are done with this feature. If the TeammateIdle hook suggests work, ignore it.
-3. **Do NOT run verification again.** You already confirmed tests fail in Step 5.
+3. **Do NOT run verification again.** You already confirmed tests fail in Step 6.
 4. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
 
 ---

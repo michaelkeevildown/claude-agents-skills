@@ -85,21 +85,24 @@ What to persist after each task. Always include:
 | ------------ | ------------------------ | --------------------- |
 | `universal/` | Stack-independent agents | `./setup.sh --global` |
 | `frontend/`  | Frontend-specific agents | `./setup.sh frontend` |
+| `flutter/`   | Flutter-specific agents  | `./setup.sh flutter`  |
 | `python/`    | Python-specific agents   | `./setup.sh python`   |
 | `rust/`      | Rust-specific agents     | `./setup.sh rust`     |
 
 ## Existing Agents
 
-| File                            | Model  | Tools                               | Workflows                           |
-| ------------------------------- | ------ | ----------------------------------- | ----------------------------------- |
-| `universal/code-reviewer.md`    | opus   | Read, Grep, Glob, Bash              | 1 (review checklist)                |
-| `universal/planner.md`          | sonnet | Read, Grep, Glob, Bash              | 1 (structured plan)                 |
-| `frontend/frontend-engineer.md` | opus   | Read, Grep, Glob, Bash, Write, Edit | 3 (UI review, optimize, scaffold)   |
-| `frontend/component-builder.md` | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (investigation components)        |
-| `frontend/test-writer.md`       | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs) |
-| `frontend/builder.md`           | opus   | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass)      |
-| `python/test-writer.md`         | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs) |
-| `python/builder.md`             | opus   | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass)      |
-| `rust/code-reviewer.md`         | opus   | Read, Grep, Glob, Bash              | 1 (Rust-specific review checklist)  |
-| `rust/test-writer.md`           | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs) |
-| `rust/builder.md`               | opus   | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass)      |
+| File                            | Model  | Tools                               | Workflows                              |
+| ------------------------------- | ------ | ----------------------------------- | -------------------------------------- |
+| `universal/code-reviewer.md`    | opus   | Read, Grep, Glob, Bash              | 1 (review checklist)                   |
+| `universal/planner.md`          | sonnet | Read, Grep, Glob, Bash              | 1 (structured plan)                    |
+| `frontend/frontend-engineer.md` | opus   | Read, Grep, Glob, Bash, Write, Edit | 3 (UI review, optimize, scaffold)      |
+| `frontend/component-builder.md` | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (investigation components)           |
+| `frontend/test-writer.md`       | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs)    |
+| `frontend/builder.md`           | opus   | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass)         |
+| `python/test-writer.md`         | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs)    |
+| `python/builder.md`             | opus   | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass)         |
+| `flutter/test-writer.md`        | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (widget tests from feature docs)     |
+| `flutter/builder.md`            | opus   | Read, Grep, Glob, Bash, Write, Edit | 1 (implement from acceptance criteria) |
+| `rust/code-reviewer.md`         | opus   | Read, Grep, Glob, Bash              | 1 (Rust-specific review checklist)     |
+| `rust/test-writer.md`           | sonnet | Read, Grep, Glob, Bash, Write, Edit | 1 (failing tests from feature docs)    |
+| `rust/builder.md`               | opus   | Read, Grep, Glob, Bash, Write, Edit | 1 (implement until tests pass)         |
