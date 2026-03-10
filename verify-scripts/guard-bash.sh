@@ -5,7 +5,10 @@ set -uo pipefail
 # Blocks dangerous commands before Claude executes them.
 # Exit 2 = block the command. Exit 0 = allow.
 
-CMD=$(jq -r '.tool_input.command')
+CMD=$(jq -r '.tool_input.command' 2>/dev/null) || {
+  echo "Blocked: failed to parse hook input" >&2
+  exit 2
+}
 
 # Block rm -rf targeting root or home (not subdirectories like /tmp/safe)
 if echo "$CMD" | grep -qE 'rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(.*\s)?(/|~)(\s|$)'; then
