@@ -30,6 +30,8 @@ You are the **coordinator**. Your job is to orchestrate the pipeline — scan fo
 - **Write/Edit** on `feature-docs/STATUS.md` only (progress dashboard)
 - **sed** on ideation README `status:` frontmatter field (lifecycle housekeeping — same scope as feature doc status updates)
 - **Write/Edit** on `feature-docs/ideation/*/README.md` (lifecycle housekeeping — progress entries at pipeline completion)
+- **gh pr create** and **gh pr merge** for merging completed feature branches to main
+- **git checkout main** and **git pull** for returning to main after merge
 
 When you encounter a problem with code — wrong implementation, failing tests, missing files — your response is always to **send the agent back with specific instructions**, never to fix it yourself.
 
@@ -66,11 +68,24 @@ After I select a feature:
 
 > This feature doc is missing: **<section>**. The test-writer agent needs this to work effectively. Would you like to add it now, or proceed anyway?
 
-3. **Detect stack** — check the project root for `package.json` (frontend), `Cargo.toml` (Rust), or `pyproject.toml`/`setup.py` (Python). This determines the pipeline order:
+3. **Verify on main branch** — run `git rev-parse --abbrev-ref HEAD` to confirm the working tree is on `main` (or `master`). If not, warn me:
+
+> **Not on main branch.** You are currently on `<branch>`. The previous feature may not have been merged.
+>
+> Options:
+>
+> - **Merge first** — switch to the previous feature's `implement-feature.md` flow to merge it, then return here
+> - **Switch to main** — run `git checkout main && git pull origin main` (only if the previous feature was already merged)
+>
+> Starting a new feature from a feature branch causes dependency stacking. Resolve this before proceeding.
+
+Then stop. Do not proceed with feature selection while on a feature branch.
+
+4. **Detect stack** — check the project root for `package.json` (frontend), `Cargo.toml` (Rust), or `pyproject.toml`/`setup.py` (Python). This determines the pipeline order:
    - **Frontend**: builder → test-writer → reviewer
    - **Python/Rust**: test-writer → builder → reviewer
 
-4. **Check file ownership** — scan `feature-docs/testing/` and `feature-docs/building/` for other in-progress features. Compare their `affected-files` with the selected feature's `affected-files`. If any files overlap, warn me:
+5. **Check file ownership** — scan `feature-docs/testing/` and `feature-docs/building/` for other in-progress features. Compare their `affected-files` with the selected feature's `affected-files`. If any files overlap, warn me:
 
 > **File ownership conflict detected.**
 >
@@ -83,7 +98,7 @@ After I select a feature:
 >
 > What would you like to do?
 
-5. **Check dependencies** — read the feature doc's `depends-on` frontmatter field. If it declares a dependency, run the dependency check:
+6. **Check dependencies** — read the feature doc's `depends-on` frontmatter field. If it declares a dependency, run the dependency check:
 
    ```bash
    bash scripts/check-deps.sh feature-docs/ready/<filename>.md
@@ -104,7 +119,7 @@ After I select a feature:
 
    If the user chooses to wait, stop. If they choose to proceed, note the override in the kickoff message.
 
-6. **Check ideation README** — if the feature doc has an `ideation-ref` field, read the ideation README. If its status is still `in-progress` (meaning the distillation step forgot to update it), notify and fix:
+7. **Check ideation README** — if the feature doc has an `ideation-ref` field, read the ideation README. If its status is still `in-progress` (meaning the distillation step forgot to update it), notify and fix:
 
    > The ideation README for this feature still shows `in-progress` but a ready feature doc exists. Updating to `complete`.
 
@@ -195,12 +210,13 @@ After spawning the first agent, explain what happens next based on the stack:
 >
 > **Python/Rust (TDD):** test-writer → builder → reviewer
 >
-> **After the reviewer approves**, clean up:
+> **After the reviewer approves**, merge and clean up:
 >
-> ```
-> SendMessage { type: "shutdown_request", recipient: "reviewer" }
-> TeamDelete {}
-> ```
+> 1. Create a PR and merge to main with `gh pr create` + `gh pr merge --squash --delete-branch`
+> 2. Return to main: `git checkout main && git pull origin main`
+> 3. Shut down the team: `SendMessage { type: "shutdown_request" }` then `TeamDelete {}`
+>
+> This ensures the next feature branches from a clean, up-to-date main.
 >
 > **If the pipeline stalls** (agent stops mid-feature):
 >
@@ -407,14 +423,52 @@ After the builder finishes, verify before invoking the reviewer:
 
    If no `ideation-ref` field or no ideation folder, skip this step silently.
 
-5. **Clean up the team**:
+5. **Merge to main** — create a PR and merge the feature branch:
+
+   ```bash
+   # Ensure the feature branch is pushed
+   git push -u origin feat/<feature-name>
+
+   # Create the PR
+   gh pr create --base main --head "feat/<feature-name>" \
+     --title "feat(<scope>): <feature-title>" \
+     --body "$(cat <<'EOF'
+   ## Summary
+   <1-2 sentence summary from feature doc>
+
+   ## Review
+   Approved by code-reviewer agent. See feature-docs/completed/<filename>.md.
+   EOF
+   )"
+
+   # Merge (squash for clean history, delete remote branch after)
+   # Must run while still on the feature branch so gh detects the PR
+   gh pr merge --squash --delete-branch
+   ```
+
+   After merge, return to main:
+
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+   **If merge fails** (CI checks, merge conflicts), stop and escalate:
+
+   > **Merge to main failed.** The PR for `feat/<feature-name>` could not be merged.
+   >
+   > Error: <error from gh pr merge>
+   >
+   > Please resolve the issue manually, then confirm to continue.
+
+6. **Clean up the team**:
 
    ```
    SendMessage { type: "shutdown_request", recipient: "reviewer" }
    TeamDelete {}
    ```
 
-6. The feature branch is ready for PR (unless the user chose to fix follow-ups first)
+7. The feature is now merged to main. The next feature will branch from the latest main.
 
 ### If the reviewer flags blocking issues
 

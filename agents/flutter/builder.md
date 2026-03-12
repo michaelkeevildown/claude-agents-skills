@@ -41,9 +41,11 @@ Read all feature docs in `feature-docs/building/` and `feature-docs/testing/`. I
 
 ### 3. Create the Feature Branch
 
-Create a branch following git-workflow conventions:
+Ensure you are on main with the latest changes, then create a branch:
 
 ```bash
+git checkout main
+git pull origin main
 git checkout -b feat/<feature-name>
 ```
 

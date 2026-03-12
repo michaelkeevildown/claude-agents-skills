@@ -591,7 +591,9 @@ Test-writer picks up     →  status: testing     (feature-docs/testing/)
 Test-writer finishes     →  status: review      (feature-docs/review/)
   └─ E2E tests pass, verify clean
 Reviewer validates       →  status: done        (feature-docs/completed/)
-  └─ PR ready for merge
+  └─ Approved by reviewer
+Coordinator merges       →  PR created and merged to main
+  └─ Returns to main, ready for next feature
 ```
 
 ### Python/Rust (TDD)
@@ -607,7 +609,9 @@ Builder picks up         →  status: building    (feature-docs/building/)
 Builder finishes         →  status: review      (feature-docs/review/)
   └─ All tests + verify pass
 Reviewer validates       →  status: done        (feature-docs/completed/)
-  └─ PR ready for merge
+  └─ Approved by reviewer
+Coordinator merges       →  PR created and merged to main
+  └─ Returns to main, ready for next feature
 ```
 
 ### Status Transitions
@@ -642,9 +646,12 @@ stay in sync. Moving the file IS the status transition.
 Each feature gets its own branch: `feat/<feature-name>` (following git-workflow
 skill conventions).
 
-- The first agent creates the branch (builder for frontend, test-writer for Python/Rust)
-- Both agents commit on the same branch
-- Reviewer reviews the branch, then the branch is PR'd to main
+- The first agent checks out main and pulls before creating the branch
+- All agents commit on the same branch
+- Reviewer reviews the branch
+- After reviewer approval, the coordinator creates a PR (`gh pr create`) and merges it (`gh pr merge --squash --delete-branch`)
+- The coordinator returns to main (`git checkout main && git pull`) before the next feature starts
+- This ensures each new feature branches from the latest main, not from a previous unmerged feature
 
 ### Naming Convention
 
@@ -716,7 +723,16 @@ Agent {
   mode: "auto"
 }
 
-# 8. Wait for reviewer, then clean up
+# 8. Wait for reviewer, then merge and clean up
+# Create PR and merge to main
+gh pr create --base main --head "feat/user-auth" --title "feat(auth): user authentication" --body "..."
+gh pr merge --squash --delete-branch
+
+# Return to main
+git checkout main
+git pull origin main
+
+# Clean up the team
 SendMessage { type: "shutdown_request", recipient: "reviewer" }
 TeamDelete {}
 ```
@@ -761,7 +777,16 @@ Agent {
   mode: "auto"
 }
 
-# 8. Wait for reviewer, then clean up
+# 8. Wait for reviewer, then merge and clean up
+# Create PR and merge to main
+gh pr create --base main --head "feat/config" --title "feat(config): configuration system" --body "..."
+gh pr merge --squash --delete-branch
+
+# Return to main
+git checkout main
+git pull origin main
+
+# Clean up the team
 SendMessage { type: "shutdown_request", recipient: "reviewer" }
 TeamDelete {}
 ```
@@ -1185,3 +1210,5 @@ components, services, and tests.
 | Circular dependencies between features             | Pipeline deadlock — neither feature can proceed because each waits for the other                                                                              | `check-deps.sh` detects cycles and exits with error; redesign features to break the cycle                                                                  |
 | Spawning agents without TeamCreate                 | No team lifecycle, no SendMessage, no shared task tracking — agents run in isolation                                                                          | Create a team first with `TeamCreate`, spawn agents with `Agent` tool, coordinate with `SendMessage`                                                       |
 | Forgetting TeamDelete after pipeline               | Orphaned team config persists in `~/.claude/teams/`; stale task lists accumulate                                                                              | Always `shutdown_request` all teammates then `TeamDelete` after the pipeline completes                                                                     |
+| Starting next feature while on a feature branch    | New feature branches from previous feature instead of main; creates dependency stacking where features can't be merged independently                          | Pre-flight check in implement-feature.md verifies `git rev-parse --abbrev-ref HEAD` returns `main`; refuse to start until on main                          |
+| Skipping merge step after reviewer approval        | Feature branch sits unmerged; next feature branches from stale state; causes cascading dependency chain across features                                       | Coordinator creates PR with `gh pr create`, merges with `gh pr merge --squash --delete-branch`, then returns to main                                       |

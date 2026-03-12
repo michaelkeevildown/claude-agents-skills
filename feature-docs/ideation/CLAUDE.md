@@ -40,7 +40,7 @@ created: 2025-01-15
 
 - **in-progress**: Still being explored. The `new-feature.md` prompt will offer to resume this.
 - **complete**: Distilled into a feature doc in `feature-docs/ready/`. This folder is now an archive.
-- **shipped**: Feature completed the full agent teams pipeline. Implementation is merged or ready for PR.
+- **shipped**: Feature completed the full agent teams pipeline. Implementation is merged to main.
 
 ## Progress Log
 

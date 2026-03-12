@@ -50,9 +50,11 @@ Read the `depends-on` field from the feature doc's frontmatter. If it declares a
 
 ### 4. Create the Feature Branch
 
-Create a branch following git-workflow conventions:
+Ensure you are on main with the latest changes, then create a branch:
 
 ```bash
+git checkout main
+git pull origin main
 git checkout -b feat/<feature-name>
 ```
 

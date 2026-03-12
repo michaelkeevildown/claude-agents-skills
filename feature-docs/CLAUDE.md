@@ -19,7 +19,7 @@ feature-docs/
   testing/              Frontend/Flutter: test-writer writing tests | Python/Rust: test-writer writing failing tests
   building/             Frontend/Flutter: builder implementing from spec | Python/Rust: builder implementing until tests pass
   review/               Implementation + tests complete, awaiting reviewer
-  completed/            Reviewer approved, PR ready
+  completed/            Reviewer approved, merged to main
 ```
 
 ## Getting Started
@@ -40,7 +40,7 @@ feature-docs/
 3. **Building** — Builder picks up from `ready/`, creates feature branch, implements directly from acceptance criteria
 4. **Testing** — Test-writer writes tests that verify the implementation (Playwright E2E for frontend, widget tests for Flutter). Tests should PASS.
 5. **Review** — Reviewer checks code quality, conventions, and test coverage. Moves to `completed/` if approved.
-6. **Completed** — Feature is done. Branch is ready for PR.
+6. **Completed** — Feature is done. Coordinator creates PR and merges to main.
 
 ### Python/Rust (TDD)
 
@@ -49,7 +49,7 @@ feature-docs/
 3. **Testing** — Test-writer reads the feature doc, writes failing tests, commits them on a feature branch
 4. **Building** — Builder reads the failing tests, implements code until all pass, runs verify
 5. **Review** — Reviewer checks code quality, conventions, and completeness. Moves to `completed/` if approved.
-6. **Completed** — Feature is done. Branch is ready for PR.
+6. **Completed** — Feature is done. Coordinator creates PR and merges to main.
 
 All agents update `feature-docs/STATUS.md` after each stage transition.
 
@@ -166,7 +166,7 @@ This prevents a builder from independently arriving at the same "obvious" optimi
 - **Test-writer (Flutter)**: Picks up from `testing/`. Writes Flutter widget tests. Tests should PASS. Moves doc to `review/`.
 - **Test-writer (Python/Rust)**: Picks up from `ready/`. Creates feature branch, writes failing tests, moves doc to `testing/`. Also supports **fix mode**: when re-invoked with a bounce file, fixes only the cited defective tests, verifies they still fail correctly, and deletes the bounce file.
 - **Reviewer**: Maps to the `code-reviewer` agent. Strictly read-only — reports issues but never fixes them. The coordinator routes fixes to the appropriate agent.
-- **Coordinator** (the session sourcing `implement-feature.md`): Never uses Write, Edit, or sed on implementation or test files. Manages the team lifecycle (`TeamCreate`, `Agent`, `SendMessage`, `TeamDelete`) and delegates all code changes to agents — re-spawns the responsible agent with specific error details instead of fixing code directly. May only use `sed` on feature doc `status:` frontmatter fields, move docs between lifecycle directories, and update STATUS.md.
+- **Coordinator** (the session sourcing `implement-feature.md`): Never uses Write, Edit, or sed on implementation or test files. Manages the team lifecycle (`TeamCreate`, `Agent`, `SendMessage`, `TeamDelete`) and delegates all code changes to agents — re-spawns the responsible agent with specific error details instead of fixing code directly. May only use `sed` on feature doc `status:` frontmatter fields, move docs between lifecycle directories, and update STATUS.md. After reviewer approval, creates a PR with `gh pr create` and merges with `gh pr merge --squash --delete-branch`, then returns to main with `git checkout main && git pull`. The next feature must not start until the previous feature is merged to main.
 - **Per-feature sequential** — within a single feature, the pipeline runs one agent at a time. Frontend/Flutter: builder → test-writer → reviewer. Python/Rust: test-writer → builder → reviewer. Do not launch the next agent until the current one has completed. Multiple features may run in parallel if their `affected-files` do not overlap.
 - **Clean shutdown between roles** — after completing a stage and outputting the completion report, agents must STOP. If you receive a `shutdown_request` message, complete your current work and stop. The coordinator sends `shutdown_request` then spawns fresh `Agent` calls for the next role. Same-role agents may run in parallel (e.g., multiple builders); different-role agents are strictly sequential (all builders finish before any test-writers start).
 - **Moving files IS the status transition** — the `status` field in frontmatter and the directory must stay in sync. This is not optional. The `task-completed.sh` hook blocks task completion if a feature doc's `status:` field does not match its directory.
@@ -233,4 +233,4 @@ Agent { team_name: "feat-<name>", name: "reviewer", subagent_type: "code-reviewe
         prompt: "Review feature-docs/review/NNN-<name>.md", mode: "auto" }
 ```
 
-After pipeline completes: `SendMessage { type: "shutdown_request", recipient: "reviewer" }` then `TeamDelete {}`
+After pipeline completes: merge to main (`gh pr create` + `gh pr merge --squash --delete-branch`), return to main (`git checkout main && git pull`), then `SendMessage { type: "shutdown_request", recipient: "reviewer" }` and `TeamDelete {}`
