@@ -111,6 +111,15 @@ End with a summary:
 - Verdict: APPROVE / REQUEST CHANGES / NEEDS DISCUSSION
 ```
 
+## Exit Protocol
+
+After you output your review findings below, your session is **FINISHED**.
+
+1. **Do NOT modify any files.** You are strictly read-only.
+2. **Do NOT pick up new work.** You are done with this review. If the TeammateIdle hook suggests work, ignore it.
+3. **If you receive a `shutdown_request` message**, complete your current work and stop.
+4. **Output your review and STOP.** The last line of your output must be `**SESSION COMPLETE**`. After that line, produce no further output.
+
 ## Memory Updates
 
 After completing each review, update your agent memory with:

@@ -90,9 +90,7 @@ When the feature is clear enough to write testable acceptance criteria:
 3. Review and refine the draft
 4. The final doc is saved to `feature-docs/ready/<feature-name>.md`
 5. This README's status is updated to `complete`
-6. Kick off the pipeline:
-   - Frontend: `@builder Pick up feature-docs/ready/<feature-name>.md`
-   - Python/Rust: `@test-writer Pick up feature-docs/ready/<feature-name>.md`
+6. Kick off the pipeline: source `feature-docs/implement-feature.md` (creates team, runs pre-flight checks, spawns the first agent)
 
 This folder stays as an archive of the thinking that led to the feature doc.
 

@@ -171,11 +171,7 @@ When I say "create the feature" (or similar):
 7. **Update the ideation README**: Set `status: complete` in frontmatter, add a final progress entry linking to the ready file
 8. **Tell me the kickoff command** (stack-dependent):
 
-   **Frontend**: `@builder Pick up feature-docs/ready/NNN-<feature-name>.md`
-
-   **Python/Rust**: `@test-writer Pick up feature-docs/ready/NNN-<feature-name>.md`
-
-   Or source `feature-docs/implement-feature.md` to run the pipeline with pre-flight checks (file ownership validation, section completeness, stack detection).
+   Or source `feature-docs/implement-feature.md` to run the pipeline with pre-flight checks (team creation, file ownership validation, section completeness, stack detection).
 
 ---
 
@@ -219,11 +215,7 @@ Before saving, check `feature-docs/testing/` and `feature-docs/building/` for an
 
 Write the file to `feature-docs/ready/NNN-<feature-name>.md` where `NNN` is the number from step 8a and the name is derived from the title (lowercase, hyphens). Then tell the kickoff command (stack-dependent):
 
-**Frontend**: `@builder Pick up feature-docs/ready/NNN-<feature-name>.md`
-
-**Python/Rust**: `@test-writer Pick up feature-docs/ready/NNN-<feature-name>.md`
-
-Or source `feature-docs/implement-feature.md` to run the pipeline with pre-flight checks (file ownership validation, section completeness, stack detection).
+Source `feature-docs/implement-feature.md` to run the pipeline with pre-flight checks (team creation, file ownership validation, section completeness, stack detection).
 
 ---
 

@@ -76,6 +76,15 @@ If no issues found at a given priority level, skip that section entirely.
 - If you find issues, report them in your review output. The coordinator routes fixes to the appropriate agent (test-writer for test gaps, builder for implementation issues).
 - Your value comes from independence — if you fix code yourself, you lose the ability to objectively review it.
 
+## Exit Protocol
+
+After you output your review findings below, your session is **FINISHED**.
+
+1. **Do NOT modify any files.** You are strictly read-only.
+2. **Do NOT pick up new work.** You are done with this review. If the TeammateIdle hook suggests work, ignore it.
+3. **If you receive a `shutdown_request` message**, complete your current work and stop.
+4. **Output your review and STOP.** The last line of your output must be `**SESSION COMPLETE**`. After that line, produce no further output.
+
 ## Memory Updates
 
 After completing each review, update your agent memory with:

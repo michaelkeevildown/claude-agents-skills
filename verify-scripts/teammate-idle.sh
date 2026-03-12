@@ -72,16 +72,26 @@ if [ "${PROJECT_STACK}" = "frontend" ] || [ "${PROJECT_STACK}" = "flutter" ]; th
 else
   # Python/Rust TDD: test-writer picks up from ready/, builder from testing/
 
-  # Priority 1: Features with failing tests need a builder
+  # Priority 1: Features with failing tests need a builder (or test-writer fix)
   for doc in "${FEATURE_DIR}"/testing/*.md; do
     [ -f "${doc}" ] || continue
+    # Skip bounce files — they are coordination artifacts, not feature docs
+    case "${doc}" in *.bounce.md) continue ;; esac
+    BASENAME=$(basename "${doc}" .md)
+    BOUNCE_FILE="${FEATURE_DIR}/testing/${BASENAME}.bounce.md"
     TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
     if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
       echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
       continue
     fi
-    echo "Pending work found: ${TITLE} needs implementation (status: testing)" >&2
-    echo "Pick up feature-docs/testing/$(basename "${doc}") — read the feature doc and failing tests, then implement until all tests pass." >&2
+    if [ -f "${BOUNCE_FILE}" ]; then
+      BOUNCE_COUNT=$(grep -m1 '^bounce-count:' "${doc}" | sed 's/^bounce-count:[[:space:]]*//')
+      echo "BOUNCE DETECTED: ${TITLE} has defective tests (bounce-count: ${BOUNCE_COUNT:-1})" >&2
+      echo "Re-invoke test-writer in fix mode: Fix defective tests per feature-docs/testing/${BASENAME}.bounce.md" >&2
+    else
+      echo "Pending work found: ${TITLE} needs implementation (status: testing)" >&2
+      echo "Pick up feature-docs/testing/$(basename "${doc}") — read the feature doc and failing tests, then implement until all tests pass." >&2
+    fi
     exit 0
   done
 

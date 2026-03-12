@@ -23,7 +23,8 @@ You are the **coordinator**. Your job is to orchestrate the pipeline — scan fo
 ### What You May Do
 
 - **Read, Grep, Glob** on any file (read-only inspection is always fine)
-- **Task** to invoke agents (`@test-writer`, `@builder`, `@code-reviewer`)
+- **TeamCreate**, **Agent**, **SendMessage**, **TeamDelete** for team lifecycle
+- **TaskCreate**/**TaskUpdate** for tracking work items
 - **sed** on feature doc `status:` frontmatter field only (lifecycle housekeeping)
 - **mv** to move feature docs between lifecycle directories
 - **Write/Edit** on `feature-docs/STATUS.md` only (progress dashboard)
@@ -120,39 +121,57 @@ Check if a feature branch `feat/<feature-name>` already exists (run `git branch 
 
 ## Step 4 — Kickoff
 
-**If pre-flight checks passed with no warnings** (no missing sections, no file ownership conflicts, no existing branch from a previous attempt), skip confirmation and go straight to the kickoff command.
+**If pre-flight checks passed with no warnings** (no missing sections, no file ownership conflicts, no existing branch from a previous attempt), skip confirmation and go straight to creating the team and spawning the first agent.
+
+**If any warnings were raised** (missing sections, file conflicts, or branch already exists), show the plan and ask for confirmation before proceeding.
+
+**Create the team:**
+
+```
+TeamCreate { team_name: "feat-<feature-name>" }
+```
 
 **Frontend (build-first):**
 
 > **Kicking off:**
 >
 > - **Feature**: <title>
-> - **Agent**: @builder (builds first, then test-writer writes E2E tests)
+> - **First agent**: builder (builds first, then test-writer writes E2E tests)
 > - **Branch**: `feat/<feature-name>` (will be created by builder)
 > - **Affected files**: <list from frontmatter>
->
-> ```
-> @builder Pick up feature-docs/ready/<filename>.md
-> ```
+
+```
+Agent {
+  team_name: "feat-<feature-name>",
+  name: "builder",
+  subagent_type: "builder",
+  prompt: "Pick up feature-docs/ready/<filename>.md",
+  mode: "auto"
+}
+```
 
 **Python/Rust (TDD):**
 
 > **Kicking off:**
 >
 > - **Feature**: <title>
-> - **Agent**: @test-writer
+> - **First agent**: test-writer (writes failing tests first)
 > - **Branch**: `feat/<feature-name>` (will be created by test-writer)
 > - **Affected files**: <list from frontmatter>
->
-> ```
-> @test-writer Pick up feature-docs/ready/<filename>.md
-> ```
 
-**If any warnings were raised** (missing sections, file conflicts, or branch already exists), show the plan and ask for confirmation before providing the kickoff command. Use the stack-appropriate agent and action in the plan.
+```
+Agent {
+  team_name: "feat-<feature-name>",
+  name: "test-writer",
+  subagent_type: "test-writer",
+  prompt: "Pick up feature-docs/ready/<filename>.md",
+  mode: "auto"
+}
+```
 
 ## Step 5 — What Happens Next
 
-After I kick off the agent, explain what happens next based on the stack:
+After spawning the first agent, explain what happens next based on the stack:
 
 > The first agent is now working on **<feature title>**.
 >
@@ -160,17 +179,28 @@ After I kick off the agent, explain what happens next based on the stack:
 >
 > - The `Stop` hook runs `scripts/fast-verify.sh` after each agent response (if code changed)
 > - The `TaskCompleted` hook runs the full verify pipeline before any task can be marked done
-> - The `TeammateIdle` hook logs pending work but does not auto-assign — you control when to launch the next role's agents
+> - The `TeammateIdle` hook fires when a teammate finishes — logs pending work for your awareness
 >
-> **Manual handoff — Frontend (build-first):**
+> **Handoff between stages:**
 >
-> - After builder finishes: `@test-writer Pick up feature-docs/testing/<filename>.md`
-> - After test-writer finishes: `@code-reviewer Review feature-docs/review/<filename>.md`
+> When the current agent finishes (TeammateIdle fires), shut it down and spawn the next:
 >
-> **Manual handoff — Python/Rust (TDD):**
+> ```
+> SendMessage { type: "shutdown_request", recipient: "<current-agent>" }
+> ```
 >
-> - After test-writer finishes: `@builder Pick up feature-docs/testing/<filename>.md`
-> - After builder finishes: `@code-reviewer Review feature-docs/review/<filename>.md`
+> Then verify lifecycle compliance (Step 6), and spawn the next agent with `Agent`.
+>
+> **Frontend (build-first):** builder → test-writer → reviewer
+>
+> **Python/Rust (TDD):** test-writer → builder → reviewer
+>
+> **After the reviewer approves**, clean up:
+>
+> ```
+> SendMessage { type: "shutdown_request", recipient: "reviewer" }
+> TeamDelete {}
+> ```
 >
 > **If the pipeline stalls** (agent stops mid-feature):
 >
@@ -183,9 +213,9 @@ Whether the pipeline runs via TeammateIdle hooks or manual orchestration, **veri
 
 **Critical: Per-feature sequential.** Within a single feature, only one agent works at a time. Do NOT launch the next agent until the current agent has **completed its task and gone idle**. Launching the builder while the test-writer is still running causes file conflicts. Multiple features may run in parallel if their `affected-files` don't overlap.
 
-**Fresh sessions between roles.** When transitioning from one role to the next (e.g., builder → test-writer), verify all agents of the current role have fully terminated before launching the next role. Never reuse an idle session from the previous role — launch fresh `@agent` invocations. The Exit Protocol in agent definitions ensures agents stop after their report, but confirm they are no longer active before proceeding.
+**Clean shutdown between roles.** When transitioning from one role to the next (e.g., builder → test-writer), send `shutdown_request` to all agents of the current role and verify they have fully terminated before spawning the next role. The Exit Protocol in agent definitions ensures agents stop after their report, but confirm they are no longer active before proceeding.
 
-**Same-role parallelism.** You may launch multiple agents of the same role simultaneously. For example, launch 3 builders to work on different pieces of a feature, or launch builders for multiple non-overlapping features. All builders must finish before any test-writers start.
+**Same-role parallelism.** You may spawn multiple `Agent` calls of the same role simultaneously. For example, launch 3 builders to work on different pieces of a feature, or launch builders for multiple non-overlapping features. All builders must finish before any test-writers start.
 
 ### Frontend: Between builder and test-writer
 
@@ -201,7 +231,16 @@ After the builder finishes, verify before invoking the test-writer:
      ```
 2. **Check STATUS.md**: `grep '<feature-name>' feature-docs/STATUS.md`
    - If no entry exists or still says `building`, update to `testing`
-3. **Then launch**: `@test-writer Pick up feature-docs/testing/<filename>.md`
+3. **Then spawn**:
+   ```
+   Agent {
+     team_name: "feat-<feature-name>",
+     name: "test-writer",
+     subagent_type: "test-writer",
+     prompt: "Pick up feature-docs/testing/<filename>.md",
+     mode: "auto"
+   }
+   ```
 
 ### Frontend: Between test-writer and reviewer
 
@@ -216,7 +255,16 @@ After the test-writer finishes, verify before invoking the reviewer:
      mv feature-docs/testing/<filename>.md feature-docs/review/
      ```
 2. **Check STATUS.md**: reflects `review` status
-3. **Then launch**: `@code-reviewer Review feature-docs/review/<filename>.md`
+3. **Then spawn**:
+   ```
+   Agent {
+     team_name: "feat-<feature-name>",
+     name: "reviewer",
+     subagent_type: "code-reviewer",
+     prompt: "Review feature-docs/review/<filename>.md",
+     mode: "auto"
+   }
+   ```
 
 ### Python/Rust: Between test-writer and builder
 
@@ -232,7 +280,72 @@ After the test-writer finishes, verify before invoking the builder:
      ```
 2. **Check STATUS.md**: `grep '<feature-name>' feature-docs/STATUS.md`
    - If no entry exists, add one showing `testing` status
-3. **Then launch**: `@builder Pick up feature-docs/testing/<filename>.md`
+3. **Then spawn**:
+   ```
+   Agent {
+     team_name: "feat-<feature-name>",
+     name: "builder",
+     subagent_type: "builder",
+     prompt: "Pick up feature-docs/testing/<filename>.md",
+     mode: "auto"
+   }
+   ```
+
+### Python/Rust: Builder Bounce-Back Detection
+
+After the builder finishes (TeammateIdle or manual check), check whether it bounced back defective tests instead of completing implementation.
+
+1. **Check where the feature doc is**: `ls feature-docs/testing/<filename>.md`
+   - If the doc is in `testing/` (not `review/`), the builder may have bounced
+   - If the doc is in `review/`, the builder completed normally — skip to "Between builder and reviewer"
+2. **Check for a bounce file**: `ls feature-docs/testing/<filename>.bounce.md`
+   - If NO bounce file exists, the builder stalled mid-work — see "If the pipeline stalls mid-stage"
+
+**If a bounce file exists:**
+
+1. Read the bounce file to understand what tests are defective
+2. Check the `bounce-count` field in the feature doc frontmatter. If >= 3, escalate:
+
+   > The builder has bounced tests back **<N>** times for **<feature title>**.
+   > This likely indicates an ambiguity in the feature doc's acceptance criteria,
+   > not just a test mechanics issue. Remaining defects:
+   >
+   > - [defects from bounce file]
+   >
+   > Options:
+   >
+   > - **Revise the feature doc** — clarify the acceptance criteria and restart
+   > - **Override** — tell the builder to proceed despite the defects
+   > - **Abandon** — move the doc back to `ready/` and revisit later
+
+3. If bounce-count < 3, re-invoke the test-writer in fix mode:
+
+   ```
+   Agent {
+     team_name: "feat-<feature-name>",
+     name: "test-writer",
+     subagent_type: "test-writer",
+     prompt: "Fix defective tests per feature-docs/testing/<filename>.bounce.md",
+     mode: "auto"
+   }
+   ```
+
+4. After the test-writer completes, verify the bounce file was deleted:
+   `ls feature-docs/testing/<filename>.bounce.md` should fail (file deleted)
+
+5. Re-invoke the builder:
+
+   ```
+   Agent {
+     team_name: "feat-<feature-name>",
+     name: "builder",
+     subagent_type: "builder",
+     prompt: "Pick up feature-docs/testing/<filename>.md — tests have been fixed after bounce-back.",
+     mode: "auto"
+   }
+   ```
+
+6. Continue with normal "Between builder and reviewer" flow
 
 ### Python/Rust: Between builder and reviewer
 
@@ -248,7 +361,16 @@ After the builder finishes, verify before invoking the reviewer:
      ```
 2. **Check STATUS.md**: `grep '<feature-name>' feature-docs/STATUS.md`
    - If the entry still says `building`, update it to `review`
-3. **Then launch**: `@code-reviewer Review feature-docs/review/<filename>.md`
+3. **Then spawn**:
+   ```
+   Agent {
+     team_name: "feat-<feature-name>",
+     name: "reviewer",
+     subagent_type: "code-reviewer",
+     prompt: "Review feature-docs/review/<filename>.md",
+     mode: "auto"
+   }
+   ```
 
 ### After reviewer approves
 
@@ -285,7 +407,14 @@ After the builder finishes, verify before invoking the reviewer:
 
    If no `ideation-ref` field or no ideation folder, skip this step silently.
 
-5. The feature branch is ready for PR (unless the user chose to fix follow-ups first)
+5. **Clean up the team**:
+
+   ```
+   SendMessage { type: "shutdown_request", recipient: "reviewer" }
+   TeamDelete {}
+   ```
+
+6. The feature branch is ready for PR (unless the user chose to fix follow-ups first)
 
 ### If the reviewer flags blocking issues
 
@@ -303,14 +432,17 @@ Read the review report and classify each issue:
 1. **Verify the doc location**: `ls feature-docs/building/<filename>.md`
    - If the reviewer didn't move it back, move it: `sed` the status to `building`, `mv` to `feature-docs/building/`
 2. **Check STATUS.md** reflects `building` status — update if the reviewer did not
-3. **Re-invoke the builder** with the specific issues:
+3. **Spawn the builder** with the specific issues:
    ```
-   @builder The reviewer found issues with feature-docs/building/<filename>.md:
-   - [specific issue 1 from review]
-   - [specific issue 2 from review]
-   Fix these and move the doc back to review/ when tests pass.
+   Agent {
+     team_name: "feat-<feature-name>",
+     name: "builder",
+     subagent_type: "builder",
+     prompt: "The reviewer found issues with feature-docs/building/<filename>.md:\n- [specific issue 1]\n- [specific issue 2]\nFix these and move the doc back to review/ when tests pass.",
+     mode: "auto"
+   }
    ```
-4. **Wait for the builder to complete**, then re-invoke the reviewer (follow the "Between builder and reviewer" steps above)
+4. **Wait for the builder to complete**, then re-spawn the reviewer (follow the "Between builder and reviewer" steps above)
 
 **Test-gap rework cycle:**
 
@@ -320,12 +452,15 @@ For **Python/Rust**: move the doc back to `ready/`, re-invoke the test-writer to
 
 1. Move the doc to the appropriate directory (`testing/` for frontend, `ready/` for Python/Rust)
 2. **Update STATUS.md** to reflect the new status
-3. **Re-invoke the test-writer** with the specific gaps:
+3. **Spawn the test-writer** with the specific gaps:
    ```
-   @test-writer The reviewer found test gaps in feature-docs/<dir>/<filename>.md:
-   - [missing test coverage for X]
-   - [wrong expectation in Y test]
-   Add or fix tests for these issues.
+   Agent {
+     team_name: "feat-<feature-name>",
+     name: "test-writer",
+     subagent_type: "test-writer",
+     prompt: "The reviewer found test gaps in feature-docs/<dir>/<filename>.md:\n- [missing test coverage for X]\n- [wrong expectation in Y test]\nAdd or fix tests for these issues.",
+     mode: "auto"
+   }
    ```
 4. **Wait for the test-writer to complete**, then continue the pipeline for your stack
 

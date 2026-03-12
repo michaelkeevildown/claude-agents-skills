@@ -152,7 +152,8 @@ After you output your Test Writer Report below, your session is **FINISHED**.
 1. **Do NOT respond to file changes.** The reviewer or other agents may start working next — those changes are intentional. Do not react to them.
 2. **Do NOT pick up new work.** You are done with this feature. If the TeammateIdle hook suggests work, ignore it.
 3. **Do NOT run verification again.** Your verification already passed in Step 5.
-4. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
+4. **If you receive a `shutdown_request` message**, complete your current work and stop.
+5. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
 
 ---
 

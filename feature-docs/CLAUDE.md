@@ -161,14 +161,14 @@ This prevents a builder from independently arriving at the same "obvious" optimi
 
 - **File ownership**: Each feature doc lists `affected-files` in its frontmatter. Do not modify files owned by another in-progress feature. Check `testing/` and `building/` for conflicts before starting.
 - **Builder (frontend/Flutter)**: Picks up from `ready/`. Creates feature branch, implements from acceptance criteria, moves doc to `building/` then `testing/`.
-- **Builder (Python/Rust)**: Picks up from `testing/`. Implements to make failing tests pass, moves doc to `building/` then `review/`.
+- **Builder (Python/Rust)**: Picks up from `testing/`. Audits test quality before implementing. If tests are defective (wrong assertions, missing `pytest.raises`/`assert!(matches!(...))`, contradicts feature doc), creates a bounce file (`<name>.bounce.md`) and moves doc back to `testing/` — never writes production code to work around a bad test. If tests pass audit, implements to make them pass, moves doc to `building/` then `review/`.
 - **Test-writer (frontend)**: Picks up from `testing/`. Writes Playwright E2E tests only (no Vitest). Tests should PASS. Moves doc to `review/`.
 - **Test-writer (Flutter)**: Picks up from `testing/`. Writes Flutter widget tests. Tests should PASS. Moves doc to `review/`.
-- **Test-writer (Python/Rust)**: Picks up from `ready/`. Creates feature branch, writes failing tests, moves doc to `testing/`.
+- **Test-writer (Python/Rust)**: Picks up from `ready/`. Creates feature branch, writes failing tests, moves doc to `testing/`. Also supports **fix mode**: when re-invoked with a bounce file, fixes only the cited defective tests, verifies they still fail correctly, and deletes the bounce file.
 - **Reviewer**: Maps to the `code-reviewer` agent. Strictly read-only — reports issues but never fixes them. The coordinator routes fixes to the appropriate agent.
-- **Coordinator** (the session sourcing `implement-feature.md`): Never uses Write, Edit, or sed on implementation or test files. Delegates all code changes to agents — re-invokes the responsible agent with specific error details instead of fixing code directly. May only use `sed` on feature doc `status:` frontmatter fields, move docs between lifecycle directories, and update STATUS.md.
+- **Coordinator** (the session sourcing `implement-feature.md`): Never uses Write, Edit, or sed on implementation or test files. Manages the team lifecycle (`TeamCreate`, `Agent`, `SendMessage`, `TeamDelete`) and delegates all code changes to agents — re-spawns the responsible agent with specific error details instead of fixing code directly. May only use `sed` on feature doc `status:` frontmatter fields, move docs between lifecycle directories, and update STATUS.md.
 - **Per-feature sequential** — within a single feature, the pipeline runs one agent at a time. Frontend/Flutter: builder → test-writer → reviewer. Python/Rust: test-writer → builder → reviewer. Do not launch the next agent until the current one has completed. Multiple features may run in parallel if their `affected-files` do not overlap.
-- **Clean shutdown between roles** — after completing a stage and outputting the completion report, agents must STOP. Do not respond to file changes, do not pick up new work. The coordinator launches each role's agents as fresh sessions. Same-role agents may run in parallel (e.g., multiple builders); different-role agents are strictly sequential (all builders finish before any test-writers start).
+- **Clean shutdown between roles** — after completing a stage and outputting the completion report, agents must STOP. If you receive a `shutdown_request` message, complete your current work and stop. The coordinator sends `shutdown_request` then spawns fresh `Agent` calls for the next role. Same-role agents may run in parallel (e.g., multiple builders); different-role agents are strictly sequential (all builders finish before any test-writers start).
 - **Moving files IS the status transition** — the `status` field in frontmatter and the directory must stay in sync. This is not optional. The `task-completed.sh` hook blocks task completion if a feature doc's `status:` field does not match its directory.
 - **Progress dashboard**: Update `feature-docs/STATUS.md` after every stage transition. This is the only way the next agent (or the orchestrator) can orient without reading every directory.
 - **Ideation reference**: Feature docs may include `ideation-ref` in frontmatter pointing to the ideation folder for additional context.
@@ -201,18 +201,36 @@ The `task-completed.sh` hook scans all feature docs in `ready/`, `testing/`, `bu
 
 ## Kickoff Commands
 
+Create a team first, then spawn agents sequentially (shut down each before spawning the next):
+
+```
+TeamCreate { team_name: "feat-<feature-name>" }
+```
+
 ### Frontend/Flutter (Build-First)
 
 ```
-@builder Pick up feature-docs/ready/NNN-<feature-name>.md
-@test-writer Pick up feature-docs/testing/NNN-<feature-name>.md
-@code-reviewer Review feature-docs/review/NNN-<feature-name>.md
+Agent { team_name: "feat-<name>", name: "builder", subagent_type: "builder",
+        prompt: "Pick up feature-docs/ready/NNN-<name>.md", mode: "auto" }
+
+Agent { team_name: "feat-<name>", name: "test-writer", subagent_type: "test-writer",
+        prompt: "Pick up feature-docs/testing/NNN-<name>.md", mode: "auto" }
+
+Agent { team_name: "feat-<name>", name: "reviewer", subagent_type: "code-reviewer",
+        prompt: "Review feature-docs/review/NNN-<name>.md", mode: "auto" }
 ```
 
 ### Python/Rust (TDD)
 
 ```
-@test-writer Pick up feature-docs/ready/NNN-<feature-name>.md
-@builder Pick up feature-docs/testing/NNN-<feature-name>.md
-@code-reviewer Review feature-docs/review/NNN-<feature-name>.md
+Agent { team_name: "feat-<name>", name: "test-writer", subagent_type: "test-writer",
+        prompt: "Pick up feature-docs/ready/NNN-<name>.md", mode: "auto" }
+
+Agent { team_name: "feat-<name>", name: "builder", subagent_type: "builder",
+        prompt: "Pick up feature-docs/testing/NNN-<name>.md", mode: "auto" }
+
+Agent { team_name: "feat-<name>", name: "reviewer", subagent_type: "code-reviewer",
+        prompt: "Review feature-docs/review/NNN-<name>.md", mode: "auto" }
 ```
+
+After pipeline completes: `SendMessage { type: "shutdown_request", recipient: "reviewer" }` then `TeamDelete {}`

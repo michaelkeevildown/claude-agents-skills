@@ -139,7 +139,8 @@ After you output your Builder Report below, your session is **FINISHED**.
 1. **Do NOT respond to file changes.** The test-writer will start modifying files next — those changes are intentional. Do not "fix" them.
 2. **Do NOT pick up new work.** You are done with this feature. If the TeammateIdle hook suggests work, ignore it.
 3. **Do NOT run verification again.** Your verification already passed in Step 6.
-4. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
+4. **If you receive a `shutdown_request` message**, complete your current work and stop.
+5. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
 
 ---
 
@@ -162,7 +163,7 @@ After you output your Builder Report below, your session is **FINISHED**.
 
 ### Feature Doc
 - Moved to: feature-docs/testing/<name>.md
-- Next: @test-writer will write widget tests
+- Next: test-writer will write widget tests
 
 ### Notes
 - <any issues encountered, workarounds, or suggestions for the test-writer>

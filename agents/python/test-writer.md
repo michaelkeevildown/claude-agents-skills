@@ -144,9 +144,104 @@ git commit -m "test(<scope>): add failing tests for <feature-name>"
 
 ---
 
+## Fix Mode (Bounce-Back)
+
+When you are invoked with a prompt referencing a bounce file (e.g., "Fix defective tests per `<name>.bounce.md`"), follow this process **instead of** the normal Process section above.
+
+### 1. Read the Bounce File
+
+Read `feature-docs/testing/<name>.bounce.md`. For each defective test listed:
+
+- Read the **Defect** description — what the builder found wrong
+- Read the **Feature doc says** quote — this is the source of truth
+- Read the **Fix** suggestion from the builder — use as guidance, not gospel
+
+### 2. Re-read the Feature Doc
+
+Read the feature doc in `feature-docs/testing/`. The acceptance criteria are the oracle — tests must match them exactly. If the builder's suggested fix contradicts the feature doc, the feature doc wins.
+
+### 3. Fix the Defective Tests
+
+For each test listed in the bounce file:
+
+1. Open the test file
+2. Apply the fix — ensure the test correctly asserts what the acceptance criterion specifies
+3. Do NOT change what the test is testing (the acceptance criterion) — only fix HOW it tests
+4. Do NOT add new tests — only fix the ones cited in the bounce file
+
+Common fixes:
+
+- Add missing `pytest.raises(ExceptionType)` context manager
+- Change weak assertions (`assert result is not None`) to specific assertions (`assert result.token == "expected"`)
+- Fix import paths to match the module structure implied by `affected-files`
+- Fix expected values to match the feature doc's specification
+
+### 4. Verify Tests Still Fail
+
+Run the test suite to confirm all tests still fail for the right reason (missing implementation, not test errors):
+
+```bash
+pytest tests/ --tb=short --no-header -q 2>&1 | tail -20
+```
+
+If a test fails due to a test-side error (SyntaxError, ImportError in the test file itself), fix it.
+
+### 5. Delete the Bounce File
+
+```bash
+rm feature-docs/testing/<name>.bounce.md
+```
+
+### 6. Update STATUS.md
+
+```markdown
+## <feature-name> — testing (fix applied)
+
+- **Agent**: test-writer (bounce-back fix)
+- **Tests**: <N> tests, all failing (expected — awaiting builder)
+- **Fixed**: <list of tests that were corrected>
+```
+
+### 7. Commit the Fix
+
+```bash
+git add tests/ feature-docs/
+git commit -m "fix(<scope>): correct defective tests for <feature-name>"
+```
+
+### 8. Output the Fix Report
+
+Use the **Test Writer Report — Bounce-Back Fix** format below, then follow the Exit Protocol.
+
+```
+## Test Writer Report — Bounce-Back Fix
+
+**Feature**: <feature-name>
+**Branch**: feat/<feature-name>
+
+### Tests Fixed
+- `<test-file>::<TestClass>::<test>` — <what was fixed>
+
+### Test Results
+- Total: <N> tests
+- Failing: <N> (expected — no implementation yet)
+
+### Feature Doc
+- Location: feature-docs/testing/<name>.md
+- Bounce file: DELETED
+
+**SESSION COMPLETE**
+```
+
+**Note**: The `bounce-count` field remains in the feature doc frontmatter — it is only cleared by the builder when it successfully completes implementation.
+
+---
+
 ## COMPLETION GATE — MANDATORY
 
 **You are NOT done until every item below is checked. The `task-completed.sh` hook will REJECT your task if the feature doc is in the wrong directory. Skipping these steps breaks the entire pipeline — the builder will never find your feature doc.**
+
+**Note**: If you followed Fix Mode (Bounce-Back) instead, the Completion Gate does not apply — the fix report is your final output.
 
 - [ ] **Feature doc MOVED**: The `.md` file is in `feature-docs/testing/`, NOT still in `feature-docs/ready/`
 - [ ] **Status field UPDATED**: The frontmatter says `status: testing` (not `status: ready`)
@@ -164,7 +259,8 @@ After you output your Test Writer Report below, your session is **FINISHED**.
 1. **Do NOT respond to file changes.** The builder will start implementing next — writing code to make your tests pass. Those changes are intentional. Do NOT interfere.
 2. **Do NOT pick up new work.** You are done with this feature. If the TeammateIdle hook suggests work, ignore it.
 3. **Do NOT run verification again.** You already confirmed tests fail in Step 6.
-4. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
+4. **If you receive a `shutdown_request` message**, complete your current work and stop.
+5. **Output your report and STOP.** The last line of your report must be `**SESSION COMPLETE**`. After that line, produce no further output.
 
 ---
 
