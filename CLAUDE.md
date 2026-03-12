@@ -22,7 +22,7 @@ skills/           Technology skill documentation (SKILL.md files)
   global/         Stack-independent skills (symlinked to ~/.claude/skills/)
   frontend/       Frontend skills (8 skills)
   flutter/        Flutter skills (1 complete, 3 stubs)
-  python/         Python skills (3 stubs)
+  python/         Python skills (1 complete, 3 stubs)
   rust/           Rust skills (2 stubs)
 feature-docs/     Mirrors downstream project structure (copied as-is by setup.sh)
   CLAUDE.md            Lifecycle guide + feature doc format, auto-discovered by Claude
@@ -81,6 +81,7 @@ setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
 | neo4j-cypher       | global   | 433   | Cypher query patterns, performance, fraud-domain queries                             |
 | neo4j-data-models  | global   | 428   | Graph modeling, fraud detection schemas, best practices                              |
 | material3          | flutter  | 778   | Material 3 theming, ColorScheme, component catalog, forms, accessibility             |
+| langgraph          | python   | 902   | State graphs, tool orchestration, reasoning loops, HITL, memory, streaming           |
 
 ### Skills — Stubs (need content)
 
