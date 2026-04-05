@@ -509,7 +509,7 @@ with an error if a cycle is found (e.g., A → B → A).
 
 **Shared constraints**:
 
-- Never modifies test files — if tests are wrong, stop and report to the user
+- Never modifies test files — if tests are wrong, stop and report to the coordinator
 - Must run `scripts/verify.sh` after implementation
 - Only touches files listed in the feature doc's `affected-files`
 - Commits implementation with `feat(<scope>): implement <feature-name>`
@@ -572,7 +572,8 @@ through prompt instructions.
 - Never uses Write, Edit, or sed on test files
 - Never uses Write, Edit, or sed on any implementation/source file
 - When code needs fixing, re-invokes the responsible agent with specific error details
-- When tests are wrong, reports to the user or re-invokes the test-writer
+- When tests are wrong, re-invokes the test-writer with specific error details
+- Review→fix→re-review cycle is fully autonomous — never asks the user for permission to fix reviewer issues. Routes fixes to the responsible agent immediately. Only escalates after 6 rework cycles (circuit breaker).
 
 ## 7. Feature Doc Lifecycle
 
