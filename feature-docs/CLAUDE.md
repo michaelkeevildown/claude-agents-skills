@@ -166,9 +166,9 @@ This prevents a builder from independently arriving at the same "obvious" optimi
 - **Test-writer (Flutter)**: Picks up from `testing/`. Writes Flutter widget tests. Tests should PASS. Moves doc to `review/`.
 - **Test-writer (Python/Rust)**: Picks up from `ready/`. Creates feature branch, writes failing tests, moves doc to `testing/`. Also supports **fix mode**: when re-invoked with a bounce file, fixes only the cited defective tests, verifies they still fail correctly, and deletes the bounce file.
 - **Reviewer**: Maps to the `code-reviewer` agent. Strictly read-only — reports issues but never fixes them. The coordinator routes fixes to the appropriate agent.
-- **Coordinator** (the session sourcing `implement-feature.md`): Never uses Write, Edit, or sed on implementation or test files. Manages the team lifecycle (`TeamCreate`, `Agent`, `SendMessage`, `TeamDelete`) and delegates all code changes to agents — re-spawns the responsible agent with specific error details instead of fixing code directly. May only use `sed` on feature doc `status:` frontmatter fields, move docs between lifecycle directories, and update STATUS.md. After reviewer approval, creates a PR with `gh pr create` and merges with `gh pr merge --squash --delete-branch`, then returns to main with `git checkout main && git pull`. The next feature must not start until the previous feature is merged to main.
+- **Coordinator** (the session sourcing `implement-feature.md`): Never uses Write, Edit, or sed on implementation or test files. Manages the team lifecycle by giving natural-language instructions to the lead session (create team, spawn teammates, request shutdowns, clean up) and delegates all code changes to agents — re-spawns the responsible agent with specific error details instead of fixing code directly. May only use `sed` on feature doc `status:` frontmatter fields, move docs between lifecycle directories, and update STATUS.md. After reviewer approval, creates a PR with `gh pr create` and merges with `gh pr merge --squash --delete-branch`, then returns to main with `git checkout main && git pull`. The next feature must not start until the previous feature is merged to main.
 - **Per-feature sequential** — within a single feature, the pipeline runs one agent at a time. Frontend/Flutter: builder → test-writer → reviewer. Python/Rust: test-writer → builder → reviewer. Do not launch the next agent until the current one has completed. Multiple features may run in parallel if their `affected-files` do not overlap.
-- **Clean shutdown between roles** — after completing a stage and outputting the completion report, agents must STOP. If you receive a `shutdown_request` message, complete your current work and stop. The coordinator sends `shutdown_request` then spawns fresh `Agent` calls for the next role. Same-role agents may run in parallel (e.g., multiple builders); different-role agents are strictly sequential (all builders finish before any test-writers start).
+- **Clean shutdown between roles** — after completing a stage and outputting the completion report, agents must STOP. If the lead asks you to shut down, complete your current work and stop. The coordinator asks the lead to shut down each finished teammate, then asks the lead to spawn fresh teammates for the next role. Same-role agents may run in parallel (e.g., multiple builders); different-role agents are strictly sequential (all builders finish before any test-writers start).
 - **Moving files IS the status transition** — the `status` field in frontmatter and the directory must stay in sync. This is not optional. The `task-completed.sh` hook blocks task completion if a feature doc's `status:` field does not match its directory.
 - **Progress dashboard**: Update `feature-docs/STATUS.md` after every stage transition. This is the only way the next agent (or the orchestrator) can orient without reading every directory.
 - **Ideation reference**: Feature docs may include `ideation-ref` in frontmatter pointing to the ideation folder for additional context.
@@ -201,36 +201,48 @@ The `task-completed.sh` hook scans all feature docs in `ready/`, `testing/`, `bu
 
 ## Kickoff Commands
 
-Create a team first, then spawn agents sequentially (shut down each before spawning the next):
+Agent teams are coordinated via natural-language instructions to the lead session. Create the team first, then spawn each teammate in turn (shut down the current one before spawning the next).
 
-```
-TeamCreate { team_name: "feat-<feature-name>" }
+```text
+Create an agent team named feat-<name>.
 ```
 
 ### Frontend/Flutter (Build-First)
 
-```
-Agent { team_name: "feat-<name>", name: "builder", subagent_type: "builder",
-        prompt: "Pick up feature-docs/ready/NNN-<name>.md", mode: "auto" }
+```text
+Spawn a teammate named builder using the builder agent type with this prompt:
+"Pick up feature-docs/ready/NNN-<name>.md". Run it in auto mode.
 
-Agent { team_name: "feat-<name>", name: "test-writer", subagent_type: "test-writer",
-        prompt: "Pick up feature-docs/testing/NNN-<name>.md", mode: "auto" }
+# After the builder finishes and goes idle:
+Ask the builder teammate to shut down.
 
-Agent { team_name: "feat-<name>", name: "reviewer", subagent_type: "code-reviewer",
-        prompt: "Review feature-docs/review/NNN-<name>.md", mode: "auto" }
+Spawn a teammate named test-writer using the test-writer agent type with this
+prompt: "Pick up feature-docs/testing/NNN-<name>.md". Run it in auto mode.
+
+# After the test-writer finishes and goes idle:
+Ask the test-writer teammate to shut down.
+
+Spawn a teammate named reviewer using the code-reviewer agent type with this
+prompt: "Review feature-docs/review/NNN-<name>.md". Run it in auto mode.
 ```
 
 ### Python/Rust (TDD)
 
+```text
+Spawn a teammate named test-writer using the test-writer agent type with this
+prompt: "Pick up feature-docs/ready/NNN-<name>.md". Run it in auto mode.
+
+# After the test-writer finishes and goes idle:
+Ask the test-writer teammate to shut down.
+
+Spawn a teammate named builder using the builder agent type with this prompt:
+"Pick up feature-docs/testing/NNN-<name>.md". Run it in auto mode.
+
+# After the builder finishes and goes idle:
+Ask the builder teammate to shut down.
+
+Spawn a teammate named reviewer using the code-reviewer agent type with this
+prompt: "Review feature-docs/review/NNN-<name>.md". Run it in auto mode.
 ```
-Agent { team_name: "feat-<name>", name: "test-writer", subagent_type: "test-writer",
-        prompt: "Pick up feature-docs/ready/NNN-<name>.md", mode: "auto" }
 
-Agent { team_name: "feat-<name>", name: "builder", subagent_type: "builder",
-        prompt: "Pick up feature-docs/testing/NNN-<name>.md", mode: "auto" }
-
-Agent { team_name: "feat-<name>", name: "reviewer", subagent_type: "code-reviewer",
-        prompt: "Review feature-docs/review/NNN-<name>.md", mode: "auto" }
-```
-
-After pipeline completes: merge to main (`gh pr create` + `gh pr merge --squash --delete-branch`), return to main (`git checkout main && git pull`), then `SendMessage { type: "shutdown_request", recipient: "reviewer" }` and `TeamDelete {}`
+After pipeline completes: merge to main (`gh pr create` + `gh pr merge --squash --delete-branch`), return to main (`git checkout main && git pull`), then ask the reviewer teammate to shut down and clean up the team.

@@ -147,54 +147,52 @@ The workflow splits into:
 
 ## 3. Team Lifecycle
 
+Agent teams are coordinated through **natural-language instructions to the
+lead session**, not explicit tool calls. The lead handles team mechanics
+internally — creating the team config at `~/.claude/teams/{team-name}/`,
+spawning teammates in tmux panes, and managing the shared task list at
+`~/.claude/tasks/{team-name}/`.
+
 ### Step 1 — Create a Team
 
-One team per feature or work unit. Creates config at `~/.claude/teams/{team-name}/`
-and task list at `~/.claude/tasks/{team-name}/`.
+One team per feature or work unit. Tell the lead session:
 
-```
-TeamCreate { team_name: "feat-user-auth" }
+```text
+Create an agent team named feat-user-auth.
 ```
 
 ### Step 2 — Spawn Teammates
 
-Use the `Agent` tool with `team_name` to add teammates. Each spawned teammate
-appears in its own tmux pane automatically.
+Ask the lead to spawn each teammate by name and agent type. With
+`teammateMode: "tmux"`, each teammate appears in its own tmux pane
+automatically.
 
-```
-Agent {
-  team_name: "feat-user-auth",
-  name: "test-writer",
-  subagent_type: "test-writer",
-  prompt: "Pick up feature-docs/ready/003-user-auth.md",
-  mode: "auto"
-}
+```text
+Spawn a teammate named test-writer using the test-writer agent type with this
+prompt: "Pick up feature-docs/ready/003-user-auth.md". Run it in auto mode.
 ```
 
-| Parameter       | Required | Purpose                                                             |
-| --------------- | -------- | ------------------------------------------------------------------- |
-| `team_name`     | Yes      | Which team this teammate joins                                      |
-| `name`          | Yes      | Human-readable name for messaging and task assignment               |
-| `subagent_type` | Yes      | Agent type — custom agents from `.claude/agents/` or built-in types |
-| `prompt`        | Yes      | The task description / instructions                                 |
-| `mode`          | No       | Permission mode (`"auto"` for autonomous, `"plan"` for approval)    |
+A spawn instruction should include:
+
+| Element         | Purpose                                                                               |
+| --------------- | ------------------------------------------------------------------------------------- |
+| Team name       | Which team the teammate joins (the team you just created)                             |
+| Teammate name   | Human-readable name for messaging and task assignment (e.g. `test-writer`, `builder`) |
+| Agent type      | Subagent type — custom agents from `.claude/agents/` or built-in types                |
+| Task prompt     | The task description / instructions the teammate should pick up                       |
+| Permission mode | `auto` for autonomous operation, `plan` to require plan approval before changes       |
 
 ### Step 3 — Coordinate with Tasks
 
-Create structured work items that teammates can claim and track:
+Ask the lead to add structured work items to the shared task list. Teammates can claim them, mark them in_progress, and complete them. Tasks support dependencies — a task with unresolved dependencies cannot be claimed until those dependencies are completed.
 
-```
-TaskCreate {
-  subject: "Write failing tests for auth module",
-  description: "Read feature doc acceptance criteria, write pytest tests..."
-}
-```
+```text
+Add a task to the shared task list: "Write failing tests for auth module".
+Description: read the feature doc acceptance criteria and write pytest tests
+covering each one. Assign it to test-writer.
 
-Assign and track:
-
-```
-TaskUpdate { taskId: "1", owner: "test-writer", status: "in_progress" }
-TaskUpdate { taskId: "2", addBlockedBy: ["1"] }
+Add a task: "Implement auth module to make tests pass". Block it on the
+previous task.
 ```
 
 ### Step 4 — Communicate
@@ -222,21 +220,20 @@ SendMessage {
 
 ### Step 5 — Shut Down and Clean Up
 
-Gracefully terminate each teammate, then delete the team:
+Gracefully terminate each teammate, then ask the lead to clean up the team:
 
-```
-SendMessage {
-  type: "shutdown_request",
-  recipient: "test-writer",
-  content: "All tasks complete, shutting down."
-}
+```text
+Ask the test-writer teammate to shut down.
 ```
 
 After all teammates have shut down:
 
+```text
+Clean up the team.
 ```
-TeamDelete {}
-```
+
+The lead checks for active teammates before cleanup and refuses if any are
+still running, so always shut them down first.
 
 ## 4. Ideation Phase (Pre-Ready)
 
@@ -560,8 +557,9 @@ through prompt instructions.
 **Allowed operations**:
 
 - Read, Grep, Glob, and read-only Bash on any file
-- `TeamCreate`, `Agent`, `SendMessage`, `TeamDelete` for team lifecycle
-- `TaskCreate`/`TaskUpdate` for tracking work items
+- Natural-language instructions to the lead session for team lifecycle (create team, spawn teammates, request shutdowns, clean up)
+- `SendMessage` for explicit teammate-to-teammate routing when natural-language delegation isn't enough
+- The shared task list for tracking work items (the lead manages it on the coordinator's behalf)
 - `sed` on feature doc frontmatter (`status:` field only)
 - `mv` to move feature docs between lifecycle directories
 - Write/Edit on `feature-docs/STATUS.md` only
@@ -686,110 +684,98 @@ when scanning for pending work.
 
 ### Sequential Pipeline — Frontend (Build-First)
 
-```
-# 1. Create team
-TeamCreate { team_name: "feat-user-auth" }
+Coordinator instructions to the lead session, in order:
 
-# 2. Spawn builder
-Agent {
-  team_name: "feat-user-auth",
-  name: "builder",
-  subagent_type: "builder",
-  prompt: "Pick up feature-docs/ready/001-user-auth.md",
-  mode: "auto"
-}
+```text
+# 1. Create the team
+Create an agent team named feat-user-auth.
 
-# 3. Wait for builder to finish (TeammateIdle notification)
-# 4. Shut down builder
-SendMessage { type: "shutdown_request", recipient: "builder" }
+# 2. Spawn the builder
+Spawn a teammate named builder using the builder agent type with this prompt:
+"Pick up feature-docs/ready/001-user-auth.md". Run it in auto mode.
+
+# 3. Wait for the builder to finish (TeammateIdle notification)
+# 4. Shut it down
+Ask the builder teammate to shut down.
 
 # 5. Spawn test-writer for E2E tests
-Agent {
-  team_name: "feat-user-auth",
-  name: "test-writer",
-  subagent_type: "test-writer",
-  prompt: "Pick up feature-docs/testing/001-user-auth.md",
-  mode: "auto"
-}
+Spawn a teammate named test-writer using the test-writer agent type with this
+prompt: "Pick up feature-docs/testing/001-user-auth.md". Run it in auto mode.
 
 # 6. Wait for test-writer to finish
-# 7. Shut down test-writer, spawn reviewer
-SendMessage { type: "shutdown_request", recipient: "test-writer" }
+# 7. Shut it down, then spawn the reviewer
+Ask the test-writer teammate to shut down.
 
-Agent {
-  team_name: "feat-user-auth",
-  name: "reviewer",
-  subagent_type: "code-reviewer",
-  prompt: "Review feature-docs/review/001-user-auth.md",
-  mode: "auto"
-}
+Spawn a teammate named reviewer using the code-reviewer agent type with this
+prompt: "Review feature-docs/review/001-user-auth.md". Run it in auto mode.
 
-# 8. Wait for reviewer, then merge and clean up
-# Create PR and merge to main
+# 8. Wait for the reviewer, then merge and clean up
+```
+
+After the reviewer approves, create the PR and merge to main:
+
+```bash
 gh pr create --base main --head "feat/user-auth" --title "feat(auth): user authentication" --body "..."
 gh pr merge --squash --delete-branch
 
 # Return to main
 git checkout main
 git pull origin main
+```
 
-# Clean up the team
-SendMessage { type: "shutdown_request", recipient: "reviewer" }
-TeamDelete {}
+Then clean up the team:
+
+```text
+Ask the reviewer teammate to shut down.
+Clean up the team.
 ```
 
 ### Sequential Pipeline — Python/Rust (TDD)
 
-```
-# 1. Create team
-TeamCreate { team_name: "feat-config" }
+Coordinator instructions to the lead session, in order:
 
-# 2. Spawn test-writer (writes failing tests first)
-Agent {
-  team_name: "feat-config",
-  name: "test-writer",
-  subagent_type: "test-writer",
-  prompt: "Pick up feature-docs/ready/003-config.md",
-  mode: "auto"
-}
+```text
+# 1. Create the team
+Create an agent team named feat-config.
+
+# 2. Spawn the test-writer (writes failing tests first)
+Spawn a teammate named test-writer using the test-writer agent type with this
+prompt: "Pick up feature-docs/ready/003-config.md". Run it in auto mode.
 
 # 3. Wait for test-writer to finish (TeammateIdle notification)
-# 4. Shut down test-writer
-SendMessage { type: "shutdown_request", recipient: "test-writer" }
+# 4. Shut it down
+Ask the test-writer teammate to shut down.
 
-# 5. Spawn builder
-Agent {
-  team_name: "feat-config",
-  name: "builder",
-  subagent_type: "builder",
-  prompt: "Pick up feature-docs/testing/003-config.md",
-  mode: "auto"
-}
+# 5. Spawn the builder
+Spawn a teammate named builder using the builder agent type with this prompt:
+"Pick up feature-docs/testing/003-config.md". Run it in auto mode.
 
 # 6. Wait for builder to finish
-# 7. Shut down builder, spawn reviewer
-SendMessage { type: "shutdown_request", recipient: "builder" }
+# 7. Shut it down, then spawn the reviewer
+Ask the builder teammate to shut down.
 
-Agent {
-  team_name: "feat-config",
-  name: "reviewer",
-  subagent_type: "code-reviewer",
-  prompt: "Review feature-docs/review/003-config.md",
-  mode: "auto"
-}
+Spawn a teammate named reviewer using the code-reviewer agent type with this
+prompt: "Review feature-docs/review/003-config.md". Run it in auto mode.
 
-# 8. Wait for reviewer, then merge and clean up
-# Create PR and merge to main
+# 8. Wait for the reviewer, then merge and clean up
+```
+
+After the reviewer approves, create the PR and merge to main:
+
+```bash
 gh pr create --base main --head "feat/config" --title "feat(config): configuration system" --body "..."
 gh pr merge --squash --delete-branch
 
 # Return to main
 git checkout main
 git pull origin main
+```
 
-# Clean up the team
-SendMessage { type: "shutdown_request", recipient: "reviewer" }
-TeamDelete {}
+Then clean up the team:
+
+```text
+Ask the reviewer teammate to shut down.
+Clean up the team.
 ```
 
 ### Python/Rust: Test Bounce-Back (builder → test-writer → builder)
@@ -814,28 +800,20 @@ If a bounce file exists:
 
 2. **Re-invoke the test-writer in fix mode**:
 
-   ```
-   Agent {
-     team_name: "feat-<feature-name>",
-     name: "test-writer",
-     subagent_type: "test-writer",
-     prompt: "Fix defective tests per feature-docs/testing/<filename>.bounce.md",
-     mode: "auto"
-   }
+   ```text
+   Spawn a teammate named test-writer using the test-writer agent type with
+   this prompt: "Fix defective tests per feature-docs/testing/<filename>.bounce.md".
+   Run it in auto mode.
    ```
 
 3. **Wait for the test-writer to complete**, then re-invoke the builder:
 
-   ```
-   SendMessage { type: "shutdown_request", recipient: "test-writer" }
+   ```text
+   Ask the test-writer teammate to shut down.
 
-   Agent {
-     team_name: "feat-<feature-name>",
-     name: "builder",
-     subagent_type: "builder",
-     prompt: "Pick up feature-docs/testing/<filename>.md — tests have been fixed after bounce-back.",
-     mode: "auto"
-   }
+   Spawn a teammate named builder using the builder agent type with this
+   prompt: "Pick up feature-docs/testing/<filename>.md — tests have been
+   fixed after bounce-back." Run it in auto mode.
    ```
 
 **Circuit breaker**: When bounce-count reaches 3, escalate to the user. Do not
@@ -844,11 +822,11 @@ doc's acceptance criteria.
 
 ### Concurrency Rules
 
-- **Same-role parallelism is allowed.** The coordinator may launch multiple `Agent`
-  calls simultaneously, each working on a different piece or a different feature.
+- **Same-role parallelism is allowed.** The coordinator may ask the lead to spawn
+  multiple teammates simultaneously, each working on a different piece or a different feature.
 - **Cross-role parallelism is forbidden.** Builders and testers must never run at
   the same time. Complete ALL agents of one role before starting the next role.
-- **Clean shutdown between roles.** Send `shutdown_request` to each teammate and
+- **Clean shutdown between roles.** Ask the lead to shut down each teammate and
   verify all agents of the current role have fully stopped before spawning the
   next role. Teammates finish their current turn before exiting.
 
@@ -862,24 +840,16 @@ Python/Rust). If features share files, run them **sequentially** to avoid confli
 
 Spawn multiple teammates to explore in parallel:
 
-```
-TeamCreate { team_name: "investigate-perf" }
+```text
+Create an agent team named investigate-perf.
 
-Agent {
-  team_name: "investigate-perf",
-  name: "db-investigator",
-  subagent_type: "general-purpose",
-  prompt: "Investigate database query performance in src/db/",
-  mode: "auto"
-}
+Spawn a teammate named db-investigator using the general-purpose agent type
+with this prompt: "Investigate database query performance in src/db/". Run it
+in auto mode.
 
-Agent {
-  team_name: "investigate-perf",
-  name: "api-investigator",
-  subagent_type: "general-purpose",
-  prompt: "Investigate API endpoint latency in src/api/",
-  mode: "auto"
-}
+Spawn a teammate named api-investigator using the general-purpose agent type
+with this prompt: "Investigate API endpoint latency in src/api/". Run it in
+auto mode.
 ```
 
 ### TeammateIdle Hook
@@ -1209,7 +1179,7 @@ components, services, and tests.
 | Picking up a feature with unmet dependencies       | Implementation builds on code that doesn't exist yet; tests reference missing APIs; entire feature may need rework                                            | Run `scripts/check-deps.sh` before pickup; agents and hooks check automatically                                                                            |
 | Deep dependency chains declared in a single doc    | Stale chain data if intermediate features change; maintenance burden grows with chain length                                                                  | Each doc declares only its immediate parent (`depends-on: NNN-name`); the script resolves the full chain dynamically from `completed/`                     |
 | Circular dependencies between features             | Pipeline deadlock — neither feature can proceed because each waits for the other                                                                              | `check-deps.sh` detects cycles and exits with error; redesign features to break the cycle                                                                  |
-| Spawning agents without TeamCreate                 | No team lifecycle, no SendMessage, no shared task tracking — agents run in isolation                                                                          | Create a team first with `TeamCreate`, spawn agents with `Agent` tool, coordinate with `SendMessage`                                                       |
-| Forgetting TeamDelete after pipeline               | Orphaned team config persists in `~/.claude/teams/`; stale task lists accumulate                                                                              | Always `shutdown_request` all teammates then `TeamDelete` after the pipeline completes                                                                     |
+| Spawning teammates without first creating a team   | No team lifecycle, no shared task tracking, no inter-agent messaging — teammates run in isolation                                                             | Instruct the lead to create a team first, then spawn each teammate, then clean up the team when done                                                       |
+| Forgetting to clean up the team after pipeline     | Orphaned team config persists in `~/.claude/teams/`; stale task lists accumulate                                                                              | Always ask the lead to shut down each teammate and then clean up the team after the pipeline completes                                                     |
 | Starting next feature while on a feature branch    | New feature branches from previous feature instead of main; creates dependency stacking where features can't be merged independently                          | Pre-flight check in implement-feature.md verifies `git rev-parse --abbrev-ref HEAD` returns `main`; refuse to start until on main                          |
 | Skipping merge step after reviewer approval        | Feature branch sits unmerged; next feature branches from stale state; causes cascading dependency chain across features                                       | Coordinator creates PR with `gh pr create`, merges with `gh pr merge --squash --delete-branch`, then returns to main                                       |

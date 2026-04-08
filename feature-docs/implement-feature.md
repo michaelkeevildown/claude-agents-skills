@@ -23,7 +23,7 @@ You are the **coordinator**. Your job is to orchestrate the pipeline — scan fo
 ### What You May Do
 
 - **Read, Grep, Glob** on any file (read-only inspection is always fine)
-- **TeamCreate**, **Agent** (with `team_name`), **TaskCreate/TaskUpdate**, and **SendMessage** to spawn and coordinate agents in visible tmux panes (see "Agent Invocation via Native Teams" below)
+- Instruct the lead session to create a team, spawn teammates, manage the shared task list, and (when needed) send messages between teammates — all via natural-language prompts (see "Agent Invocation via Native Teams" below)
 - **sed** on feature doc `status:` frontmatter field only (lifecycle housekeeping)
 - **mv** to move feature docs between lifecycle directories
 - **Write/Edit** on `feature-docs/STATUS.md` only (progress dashboard)
@@ -51,54 +51,44 @@ This enables native agent teams with automatic tmux pane visibility.
 
 ### Team Lifecycle
 
-1. **Create a team** — use `TeamCreate` once at the start of a feature pipeline:
+Agent teams are coordinated through natural-language instructions to the lead session. The lead handles all the mechanics internally.
 
-   ```
-   TeamCreate { team_name: "feat-<feature-name>" }
-   ```
+1. **Create a team** — once at the start of a feature pipeline, tell the lead:
 
-2. **Spawn teammates** — use the `Agent` tool with `team_name` and `name` parameters. Each teammate appears in its own tmux pane automatically:
-
-   ```
-   Agent {
-     team_name: "feat-<feature-name>",
-     name: "<role>",                        // e.g. "test-writer", "builder", "reviewer"
-     subagent_type: "<agent-name>",         // matches .claude/agents/<agent-name>.md
-     prompt: "Pick up feature-docs/ready/<filename>.md",
-     mode: "auto"                           // autonomous operation
-   }
+   ```text
+   Create an agent team named feat-<feature-name>.
    ```
 
-3. **Coordinate with tasks** — use `TaskCreate` to define work items and `TaskUpdate` to assign/complete them. Teammates share the task list at `~/.claude/tasks/feat-<feature-name>/`.
+2. **Spawn teammates** — ask the lead to spawn each teammate by name and agent type. Each teammate appears in its own tmux pane automatically:
 
-4. **Communicate** — use `SendMessage` to message teammates directly. Messages are delivered automatically — no polling needed. The `TeammateIdle` hook fires when a teammate finishes its turn.
+   ```text
+   Spawn a teammate named <role> using the <agent-name> agent type with this
+   prompt: "Pick up feature-docs/ready/<filename>.md". Run it in auto mode.
+   ```
 
-5. **Shut down** — when all work is done, use `SendMessage` with `type: "shutdown_request"` to each teammate, then `TeamDelete` to clean up.
+   - `<role>` is the human-readable name (e.g. `test-writer`, `builder`, `reviewer`)
+   - `<agent-name>` matches a definition in `.claude/agents/<agent-name>.md`
+
+3. **Coordinate with tasks** — the lead manages a shared task list at `~/.claude/tasks/feat-<feature-name>/`. Ask the lead to add tasks, assign them, and mark them complete.
+
+4. **Communicate** — ask the lead to relay messages between teammates, or have teammates use `SendMessage` directly. Messages are delivered automatically — no polling needed. The `TeammateIdle` hook fires when a teammate finishes its turn.
+
+5. **Shut down** — when all work is done, ask the lead to shut down each teammate, then ask it to clean up the team.
 
 ### Spawning Each Role
 
 **Test-writer or builder** (have `.claude/agents/` definitions):
 
-```
-Agent {
-  team_name: "feat-<feature-name>",
-  name: "test-writer",
-  subagent_type: "test-writer",
-  prompt: "Pick up feature-docs/ready/<filename>.md",
-  mode: "auto"
-}
+```text
+Spawn a teammate named test-writer using the test-writer agent type with this
+prompt: "Pick up feature-docs/ready/<filename>.md". Run it in auto mode.
 ```
 
-**Code-reviewer** (no agent definition — use general-purpose with custom prompt):
+**Code-reviewer** (uses the `code-reviewer` subagent type):
 
-```
-Agent {
-  team_name: "feat-<feature-name>",
-  name: "reviewer",
-  subagent_type: "code-reviewer",
-  prompt: "Review feature-docs/review/<filename>.md",
-  mode: "auto"
-}
+```text
+Spawn a teammate named reviewer using the code-reviewer agent type with this
+prompt: "Review feature-docs/review/<filename>.md". Run it in auto mode.
 ```
 
 ### Monitoring Completion
@@ -241,20 +231,15 @@ Then stop. The user needs to re-enter from the worktree session.
 >
 > First, create the team:
 >
-> ```
-> TeamCreate { team_name: "feat-<feature-name>" }
+> ```text
+> Create an agent team named feat-<feature-name>.
 > ```
 >
 > Then spawn the builder:
 >
-> ```
-> Agent {
->   team_name: "feat-<feature-name>",
->   name: "builder",
->   subagent_type: "builder",
->   prompt: "Pick up feature-docs/ready/<filename>.md",
->   mode: "auto"
-> }
+> ```text
+> Spawn a teammate named builder using the builder agent type with this
+> prompt: "Pick up feature-docs/ready/<filename>.md". Run it in auto mode.
 > ```
 
 **Python (MVP — build-first + CLI validation):**
@@ -268,20 +253,15 @@ Then stop. The user needs to re-enter from the worktree session.
 >
 > First, create the team:
 >
-> ```
-> TeamCreate { team_name: "feat-<feature-name>" }
+> ```text
+> Create an agent team named feat-<feature-name>.
 > ```
 >
 > Then spawn the builder:
 >
-> ```
-> Agent {
->   team_name: "feat-<feature-name>",
->   name: "builder",
->   subagent_type: "builder",
->   prompt: "Pick up feature-docs/ready/<filename>.md",
->   mode: "auto"
-> }
+> ```text
+> Spawn a teammate named builder using the builder agent type with this
+> prompt: "Pick up feature-docs/ready/<filename>.md". Run it in auto mode.
 > ```
 
 **If any warnings were raised** (missing sections, file conflicts), show the plan and ask for confirmation before providing the kickoff command. Use the stack-appropriate agent and action in the plan.
@@ -324,7 +304,7 @@ Whether the pipeline runs via TeammateIdle hooks or manual orchestration, **veri
 
 **Critical: Per-feature sequential.** Within a single feature, only one agent works at a time. Do NOT launch the next agent until the current agent has **completed its task and gone idle**. Launching the builder while the test-writer is still running causes file conflicts. Multiple features run in parallel via **separate worktrees** — each feature's worktree provides full isolation, so no `affected-files` overlap checks are needed across features.
 
-**Fresh sessions between roles.** When transitioning from one role to the next (e.g., builder → test-writer), verify all teammates of the current role have completed and gone idle before spawning the next role. Use `SendMessage` with `type: "shutdown_request"` to terminate finished teammates before spawning new ones.
+**Fresh sessions between roles.** When transitioning from one role to the next (e.g., builder → test-writer), verify all teammates of the current role have completed and gone idle before spawning the next role. Ask the lead to shut down finished teammates before spawning new ones.
 
 **Same-role parallelism.** You may launch multiple agents of the same role simultaneously. For example, launch 3 builders to work on different pieces of a feature, or launch builders for multiple non-overlapping features. All builders must finish before any test-writers start.
 
