@@ -13,4 +13,11 @@
 # --vendor in each consumer, commit there, restart Claude Code if an agent changed. See
 # skills/engineering/README.md.
 
-/Users/mdown/Projects/personal/personal-plan    Lumen (github: michaelkeevildown/lumen-app). Origin of the pack. Vendors all 5 pack skills + the 4 dependency skills (create-issue, git-workflow, bash-pipefail-safety, regression-proof-red-green) + whichever reviewer agents its manifest's reviewers table names; also keeps project-local skills (migrate, restart-mcp, promote, pickup, design-pull, capability-gaps, analyze-conversations) and the whole coaching domain in the same .claude/skills/, so a vendor run must never wipe that directory. Manifest at .claude/PROJECT.md; gate shims at .claude/scripts/{gate,ui-gate}.sh; drift checker at tools/scripts/skills-drift.sh, wired into tools/scripts/quality-gate.sh.
+# This file is the TEMPLATE. Copy it to `consumers.txt` (gitignored) and add your own rows:
+#
+#     cp consumers.txt.example consumers.txt
+#
+# The real list stays out of git deliberately: it names private repos and local paths, and it is
+# operational to one machine rather than useful to a reader of the pack.
+
+# <path-or-slug>    <what the repo is; anything the pack must know about it>

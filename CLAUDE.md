@@ -34,7 +34,7 @@ feature-docs/     Mirrors downstream project structure (copied as-is by setup.sh
   ready/               Example feature doc
 hooks/            .claude/settings.json templates per stack
 verify-scripts/   Stack-specific verify + fast-verify scripts, hook scripts
-consumers.txt     Repos that vendor skills/engineering/ (re-run --vendor there after a fix here)
+consumers.txt     Repos that vendor skills/engineering/ (gitignored, local; see consumers.txt.example)
 setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
                              | ./setup.sh --vendor <target> [--dry-run] [--force]
 ```

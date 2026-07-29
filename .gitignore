@@ -1,1 +1,4 @@
 node_modules/
+
+# Local propagation registry: names private repos + local paths (see consumers.txt.example)
+consumers.txt

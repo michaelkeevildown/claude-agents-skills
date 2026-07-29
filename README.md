@@ -34,7 +34,7 @@ That's it. Your project now has skills in `.claude/skills/`, agents in `.claude/
 ~/path/to/claude-agents-skills/setup.sh --vendor ~/your-project
 ```
 
-Files are **copied**, per file, never symlinked and never over a directory you own, and a `.vendored.lock` records a sha256 plus the upstream commit they came from. Full contract, manifest reference and propagation flow: [skills/engineering/README.md](skills/engineering/README.md). Consumer repos are listed in [consumers.txt](consumers.txt) so a fix upstream can actually be pushed out to all of them.
+Files are **copied**, per file, never symlinked and never over a directory you own, and a `.vendored.lock` records a sha256 plus the upstream commit they came from. Full contract, manifest reference and propagation flow: [skills/engineering/README.md](skills/engineering/README.md). Consumer repos are listed in your own `consumers.txt` (gitignored, since it names private repos and local paths -- copy [consumers.txt.example](consumers.txt.example) to start one) so a fix upstream can actually be pushed out to all of them.
 
 ## What You Get: Day-to-Day Usage
 

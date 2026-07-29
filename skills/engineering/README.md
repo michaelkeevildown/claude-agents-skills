@@ -172,7 +172,7 @@ Two more things the skills look for that are _not_ rows in the bindings table:
   so in the task prompt, have each reviewer record `ANCHORS: none - universal lenses only` in its
   verdict, and repeat that narrowing in the PR body. A narrowed review must never read as a full one.
 - **Project guards** in the manifest prose: rules a skill must obey _in this repo_ (for example "never
-  restructure the coaching domain for an engineering reason"). They live in the consumer repo
+  restructure the product domain for an engineering reason"). They live in the consumer repo
   precisely so a repo without that domain vendors the same skills and carries none of it.
 
 ### Never "stop and ask the human"
@@ -352,7 +352,7 @@ The consumer repo owns the drift checker and wires it into its own gate. Contrac
 recorded digest (and `0` when the lock is absent, since a repo that vendors nothing is legitimate),
 exit `1` on drift naming each changed / missing / malformed path, exit `2` on a usage error or no
 sha256 tool on PATH. It must never touch the network, so it has no fail-open path. The reference
-implementation is Lumen's `tools/scripts/skills-drift.sh`.
+implementation is the reference `tools/scripts/skills-drift.sh` shipped by the pack's origin repo.
 
 ## The lock file
 
@@ -373,7 +373,9 @@ commit its copies came from.
 
 There is no live link between a consumer and this repo, by design (a copy is the only thing that
 survives `git clone` + `reset --hard` on a box with no `~/.claude`). Propagation is therefore an
-explicit step, and `consumers.txt` in the repo root is the list of who needs it:
+explicit step, and `consumers.txt` in the repo root is the list of who needs it (gitignored -- copy
+`consumers.txt.example` to start one; the real list names private repos and local paths, so it stays
+out of git):
 
 1. **Edit upstream.** Change `skills/engineering/**` here, never in a consumer.
 2. **Commit** in this repo. The commit SHA is what lands in each consumer's lock as `source_commit`,
