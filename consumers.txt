@@ -1,0 +1,16 @@
+# consumers.txt - repos that VENDOR the engineering pack (skills/engineering/).
+#
+# A vendored file is a COPY. There is no live link back to this repo, so a fix here reaches a
+# consumer only when someone re-runs `./setup.sh --vendor <path>` there. This file is that list: a
+# repo missing from it does not get fixes, which is the exact failure mode the file prevents.
+#
+# Add a row the first time you vendor into a repo. Keep it to one line per consumer:
+#
+#     <path-or-slug>    <one-line note: what the repo is, anything the pack must know about it>
+#
+# Blank lines and lines beginning with `#` are ignored. Nothing parses this file today; it is for
+# the human (or agent) doing a propagation sweep. Propagation flow: edit upstream, commit, re-run
+# --vendor in each consumer, commit there, restart Claude Code if an agent changed. See
+# skills/engineering/README.md.
+
+/Users/mdown/Projects/personal/personal-plan    Lumen (github: michaelkeevildown/lumen-app). Origin of the pack. Vendors all 5 pack skills + the 4 dependency skills (create-issue, git-workflow, bash-pipefail-safety, regression-proof-red-green) + whichever reviewer agents its manifest's reviewers table names; also keeps project-local skills (migrate, restart-mcp, promote, pickup, design-pull, capability-gaps, analyze-conversations) and the whole coaching domain in the same .claude/skills/, so a vendor run must never wipe that directory. Manifest at .claude/PROJECT.md; gate shims at .claude/scripts/{gate,ui-gate}.sh; drift checker at tools/scripts/skills-drift.sh, wired into tools/scripts/quality-gate.sh.

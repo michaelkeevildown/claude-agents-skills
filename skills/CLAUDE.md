@@ -107,13 +107,32 @@ Use this skill when <scope>. Covers <topic list>.
 
 ## Directory Placement
 
-| Directory   | When to use           | Example skills                                |
-| ----------- | --------------------- | --------------------------------------------- |
-| `global/`   | Stack-independent     | neo4j-cypher, neo4j-data-models, git-workflow |
-| `frontend/` | Frontend technologies | react, shadcn-ui, tailwind, zustand-state     |
-| `flutter/`  | Flutter technologies  | material3, flutter, testing-flutter, riverpod |
-| `python/`   | Python technologies   | fastapi, testing-pytest                       |
-| `rust/`     | Rust technologies     | testing-rust, neo4j-driver-rust               |
+| Directory      | When to use                                                                                                                                                                                                                                                                                                                                                                   | Example skills                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `engineering/` | Portable **workflow** skills vendored into consumer repos. Different rules: they document a procedure, not a technology, so no anti-patterns table is required, and they must contain **no repo specifics** (every label, path and command resolves from the consumer's `.claude/PROJECT.md`). See `engineering/README.md`.                                                   | implement-issue, epic, triage, kickoff, quality-gate                                            |
+| `global/`      | Stack-independent. Also the home of the engineering pack's **dependency skills** (`issue-authoring` → installs as `create-issue`, `git-workflow`, `bash-pipefail-safety`, `regression-proof-red-green`): they are ordinary stack-independent skills that `--global` symlinks into `~/.claude/skills/`, and `--vendor` additionally copies into a consumer alongside the pack. | neo4j-cypher, neo4j-data-models, git-workflow, bash-pipefail-safety, regression-proof-red-green |
+| `frontend/`    | Frontend technologies                                                                                                                                                                                                                                                                                                                                                         | react, shadcn-ui, tailwind, zustand-state                                                       |
+| `flutter/`     | Flutter technologies                                                                                                                                                                                                                                                                                                                                                          | material3, flutter, testing-flutter, riverpod                                                   |
+| `python/`      | Python technologies                                                                                                                                                                                                                                                                                                                                                           | fastapi, testing-pytest                                                                         |
+| `rust/`        | Rust technologies                                                                                                                                                                                                                                                                                                                                                             | testing-rust, neo4j-driver-rust                                                                 |
+
+### One-off: re-link the two newly moved globals
+
+`bash-pipefail-safety/` and `regression-proof-red-green/` were authored straight into
+`~/.claude/skills/` and only landed here later, so on a machine that predates the move those two are
+still **real directories** under `~/.claude/skills/` while every other global there is a symlink into
+this checkout. That is a silent-divergence hazard: an edit here does not reach the interactive
+session, and an edit there is invisible to `--vendor`.
+
+The fix is one command, and it is safe to re-run:
+
+```bash
+./setup.sh --global    # rm -rf's each stale directory and re-links it into this checkout
+```
+
+Check with `ls -la ~/.claude/skills/`: every entry should be an `l`, pointing at
+`skills/global/<name>/`. Do this before editing either skill, so the edit lands in the copy that
+`--vendor` ships.
 
 ## Reference Skills
 

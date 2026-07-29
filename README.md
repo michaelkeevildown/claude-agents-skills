@@ -27,6 +27,15 @@ Need Neo4j skills in a Python project? Add extras:
 
 That's it. Your project now has skills in `.claude/skills/`, agents in `.claude/agents/`, hooks in `.claude/settings.json`, and verify scripts in `scripts/`. Open Claude Code and everything is loaded automatically.
 
+**Step 3 (optional): vendor the engineering pack.** Five workflow skills (`implement-issue`, `epic`, `triage`, `kickoff`, `quality-gate`) plus three reviewer agents that take work from "an idea someone described" to "a merged PR behind a green gate", with no repo specifics baked in. They read one file in your repo, `.claude/PROJECT.md`, for every label, branch prefix, path and command.
+
+```bash
+~/path/to/claude-agents-skills/setup.sh --vendor ~/your-project --dry-run
+~/path/to/claude-agents-skills/setup.sh --vendor ~/your-project
+```
+
+Files are **copied**, per file, never symlinked and never over a directory you own, and a `.vendored.lock` records a sha256 plus the upstream commit they came from. Full contract, manifest reference and propagation flow: [skills/engineering/README.md](skills/engineering/README.md). Consumer repos are listed in [consumers.txt](consumers.txt) so a fix upstream can actually be pushed out to all of them.
+
 ## What You Get: Day-to-Day Usage
 
 ### Skills make Claude write code your way
@@ -38,20 +47,21 @@ You don't reference skills manually. Claude reads them automatically when they'r
 <details>
 <summary>All 12 skills (+ 5 stubs)</summary>
 
-| Skill              | Stack    | What it teaches Claude                               |
-| ------------------ | -------- | ---------------------------------------------------- |
-| react              | frontend | Components, hooks, TypeScript, state, performance    |
-| testing-playwright | frontend | E2E testing, page objects, fixtures, ARIA snapshots  |
-| shadcn-ui          | frontend | Component composition, theming, forms                |
-| nvl                | frontend | Neo4j graph visualization, styling, layout           |
-| tailwind           | frontend | Tailwind v4 CSS-first config, responsive, animations |
-| zustand-state      | frontend | Stores, selectors, middleware, multi-view sync       |
-| react-patterns     | frontend | React 19 patterns, TypeScript strict, architecture   |
-| neo4j-driver-js    | frontend | Neo4j JS driver, sessions, transactions              |
-| agent-teams        | global   | Multi-agent workflow, feature doc lifecycle          |
-| git-workflow       | global   | Branching, commits, PR workflow, rebase vs merge     |
-| neo4j-cypher       | global   | Cypher query patterns, performance, fraud-domain     |
-| neo4j-data-models  | global   | Graph modeling, fraud detection schemas              |
+| Skill              | Stack    | What it teaches Claude                                     |
+| ------------------ | -------- | ---------------------------------------------------------- |
+| react              | frontend | Components, hooks, TypeScript, state, performance          |
+| testing-playwright | frontend | E2E testing, page objects, fixtures, ARIA snapshots        |
+| shadcn-ui          | frontend | Component composition, theming, forms                      |
+| nvl                | frontend | Neo4j graph visualization, styling, layout                 |
+| tailwind           | frontend | Tailwind v4 CSS-first config, responsive, animations       |
+| zustand-state      | frontend | Stores, selectors, middleware, multi-view sync             |
+| react-patterns     | frontend | React 19 patterns, TypeScript strict, architecture         |
+| neo4j-driver-js    | frontend | Neo4j JS driver, sessions, transactions                    |
+| agent-teams        | global   | Multi-agent workflow, feature doc lifecycle                |
+| issue-authoring    | global   | Implementable GitHub Issues, GIVEN/WHEN/THEN, epic linkage |
+| git-workflow       | global   | Branching, commits, PR workflow, rebase vs merge           |
+| neo4j-cypher       | global   | Cypher query patterns, performance, fraud-domain           |
+| neo4j-data-models  | global   | Graph modeling, fraud detection schemas                    |
 
 Stubs waiting for content: `fastapi`, `testing-pytest`, `neo4j-driver-python`, `testing-rust`, `neo4j-driver-rust`
 

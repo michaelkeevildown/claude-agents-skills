@@ -19,6 +19,8 @@ agents/           Agent definitions (Markdown with YAML frontmatter)
   python/         Python-specific agents
   rust/           Rust-specific agents
 skills/           Technology skill documentation (SKILL.md files)
+  engineering/    Portable engineering pack, VENDORED (copied) into consumer repos via --vendor
+                  5 workflow skills + agents/ (3 reviewers) + README.md (manifest contract)
   global/         Stack-independent skills (symlinked to ~/.claude/skills/)
   frontend/       Frontend skills (8 skills)
   flutter/        Flutter skills (1 complete, 3 stubs)
@@ -32,8 +34,22 @@ feature-docs/     Mirrors downstream project structure (copied as-is by setup.sh
   ready/               Example feature doc
 hooks/            .claude/settings.json templates per stack
 verify-scripts/   Stack-specific verify + fast-verify scripts, hook scripts
+consumers.txt     Repos that vendor skills/engineering/ (re-run --vendor there after a fix here)
 setup.sh          Installer: ./setup.sh --global | ./setup.sh <stack> [extras]
+                             | ./setup.sh --vendor <target> [--dry-run] [--force]
 ```
+
+## Vendoring vs the other two install modes
+
+Three modes, three mechanics, and the difference matters:
+
+| Mode       | Mechanic                                 | Why                                                                                                                                                         |
+| ---------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--global` | **symlink** into `~/.claude/`            | one machine, stays in sync with this checkout                                                                                                               |
+| `<stack>`  | **copy** whole skill dirs into a project | per-project customisation is expected                                                                                                                       |
+| `--vendor` | **copy per file** + a sha256 lock        | the target may be a CI box that runs `git clone` + `git reset --hard` + `claude -p` with no `~/.claude`, so symlinks, submodules and plugins all fail there |
+
+Two rules `--vendor` must never lose: it copies **per file** and never removes a target directory (a consumer's `.claude/skills/` also holds that project's own skills), and it **preserves `# override:` declarations** in `.vendored.lock` and refuses to overwrite a file declared as one. See `skills/engineering/README.md`.
 
 ## Setup
 
