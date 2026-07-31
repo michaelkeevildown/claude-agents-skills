@@ -31,9 +31,145 @@ Four **dependency skills** ride along from `skills/global/` (see "What rides alo
 there rather than in the pack because they are ordinary stack-independent skills that `--global` also
 installs into `~/.claude/skills/` for interactive work.
 
+## Set up a new repo
+
+`--vendor` (below) copies the pack in. It does **not** set a repo up: afterwards someone still has to
+write `.claude/PROJECT.md`, add the `@.claude/PROJECT.md` import to the root `CLAUDE.md`, and create
+`.claude/scripts/gate.sh`. `--bootstrap` does those three, then hands off to `--vendor`. Run it from
+inside the repo you want set up:
+
+```bash
+git clone https://github.com/michaelkeevildown/claude-agents-skills ~/.claude-agents-skills 2>/dev/null || git -C ~/.claude-agents-skills pull --ff-only
+~/.claude-agents-skills/setup.sh --bootstrap .
+```
+
+Both lines work whether or not the clone already exists: `clone` fails harmlessly when the directory
+is there, and the `pull --ff-only` brings it up to date instead. The target defaults to `.`, so an
+explicit path is only needed when running from elsewhere. `--dry-run` prints everything it would do
+and writes nothing; `--force` proceeds over uncommitted changes under `.claude/`.
+
+What it does, in order:
+
+1. **Refuses safely.** A missing directory or a non-repo is an error with a non-zero exit and a note
+   saying what to do instead. It also runs `--vendor`'s uncommitted-`.claude/` guard **before** it
+   writes anything, so it cannot eat an in-progress edit.
+2. **Detects the repo's facts, with the evidence for each**, so a wrong guess is visible rather than
+   silent: `repo.slug` and `tracker` from `git remote get-url origin` (both the `git@host:owner/repo`
+   and `https://host/owner/repo` spellings), `repo.default_branch` from
+   `git symbolic-ref refs/remotes/origin/HEAD` and falling back to main/master then to the current
+   branch, `ui.enabled` **only** on real evidence of a web UI (a `web/` directory, a vite/next config,
+   an `index.html`) and `false` otherwise, and `gate.command` in this documented precedence:
+
+   | #   | Evidence                                                                                                       | Delegate                                                                                                            |
+   | --- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+   | 1   | `.claude/scripts/gate.sh` already exists                                                                       | left alone; it already owns the delegate                                                                            |
+   | 2a  | **a workflow CI definition** (`.github/workflows/*.yml`, `.gitlab-ci.yml`, `.circleci/config.yml`)             | the **union of every required job's** `run:`/`script:` commands, de-duplicated, in workflow order, joined with `&&` |
+   | 2b  | **a host-build declaration** (`netlify.toml` `[build] command`, `vercel.json` `buildCommand`)                  | that build command; a `vercel.json` with no `buildCommand` means the framework default, i.e. `npm run build`        |
+   | 3   | `scripts/verify.sh`                                                                                            | `bash scripts/verify.sh`                                                                                            |
+   | 4   | `package.json` script, in order `verify` > `check` > `ci` > `test:ci` > `test:coverage` > `test:unit` > `test` | `npm run <it>`, else composed from lint + the best test script                                                      |
+   | 5   | `Makefile` `check`, else `test` target                                                                         | `make check` / `make test`                                                                                          |
+   | 6   | `Cargo.toml`                                                                                                   | `cargo fmt --check && clippy && test`                                                                               |
+   | 7   | `pyproject.toml`                                                                                               | ruff (when mentioned) + pytest, under uv/poetry when a lockfile says so                                             |
+   | 8   | `pubspec.yaml`                                                                                                 | `dart analyze` + `flutter test` / `dart test`                                                                       |
+   | 9   | a verify-ish command in `.claude/settings.json`                                                                | that command                                                                                                        |
+
+   **Rule 2 outranks everything below it because it is not a guess.** A CI workflow, and equally a
+   `netlify.toml` or `vercel.json`, is the repo writing down what it means by green; rules 4-8 read
+   what the repo is BUILT with, never what it is CHECKED with, and that gap is how a heuristic ships
+   a false green. Files rank above the settings hook because a file **is** the gate whereas a hook
+   merely mentions one. **Nothing matched means no command is invented.**
+
+   **Rule 2a is a union, never a pick.** A workflow with a `verify` job and a `migrations` job has
+   TWO required checks, and a shim replaying only the first certifies exactly the tree the second
+   exists to reject. So every job goes in that (a) belongs to a workflow which runs on `push` or
+   `pull_request` -- a `workflow_dispatch`/`schedule`-only workflow is a button or a cron, not a
+   green-tree check, and the whole file is passed over -- and (b) is not named as a ship/report step
+   (`deploy`, `release`, `publish`, `notify`, `codeql`, ... are **dropped**, and named as dropped).
+
+   The reader is a targeted line scan (bash 3.2, no `yq`) handling single-line and `run: |` block
+   steps, and it never discards a job in silence:
+   - **Unreadable job -> a loud TODO naming it and why.** A `${{ }}` expression, a heredoc, shell
+     control flow, a `working-directory:` step or more than fifteen commands means "cannot read this
+     confidently". The jobs that _were_ read still form the gate, and the ones that were not are
+     reported in the evidence line, in the bootstrap summary, in the shim header **and** in
+     `PROJECT.md`. You are never told "the repo's own CI is its own answer" when half of it went
+     unread.
+   - **Standalone script rescue.** Before giving up on such a job, any command that is purely an
+     invocation of a repo-local `.sh` (no shell syntax around it, and the file must really exist) is
+     salvaged into the gate. That is how TrueBalance's `migrations` job -- set up by a heredoc against
+     a postgres service -- still contributes `./scripts/check-schema-sync.sh`, the check its own header
+     documents as standalone-runnable with no database.
+   - **Jobs that need infrastructure are read, not faked.** A `services:` block, or a command needing
+     a live database or a compose stack (`supabase`, `psql`, `alembic`, `prisma`, `docker compose up`,
+     ...), is recorded as a **prerequisite** rather than put in the gate; the job's ordinary commands
+     still go in. The prerequisite list is written into `PROJECT.md` under `gate.prereq` so a red leg
+     caused by a service that was never started is recognisable as a could-not-run in disguise.
+
+   Whatever rule fires, the candidate then passes four post-checks before it is allowed out:
+   - **Watch-mode guard.** A gate that never exits is a hang, not a gate. `--watch`, `--watchAll`
+     (without `=false`), `nodemon`, bare `vitest`, bare `vite`, `next dev`, `npm start`, `cargo
+watch` and a bare `jest` whose config sets `watch: true` are all refused. `vite build` and
+     `vite optimize` are not watch mode and are allowed. A watch-mode `package.json` script is passed
+     over at selection time so the non-watch sibling (`test:ci`) wins; a bare `vitest` in the
+     delegate itself is rewritten to `vitest run`; anything else **downgrades to a TODO**.
+   - **Completeness check.** The delegate is resolved (package scripts expanded recursively,
+     repo-local `.sh` bodies and Makefile recipes read) and compared against the checks the repo
+     evidently has.
+     - **A `tsconfig.json` means the gate MUST compile** -- `tsc`/`vue-tsc`/`svelte-check`/
+       `astro check`/a `typecheck` or `check` script/`next build`; `vite build` and `tsup` strip types
+       rather than check them and deliberately do not count.
+     - **A build artefact means the gate MUST build.** A `build` script _plus_ a framework config
+       (astro/next/nuxt/vite/sveltekit/remix/gatsby/angular/rollup/webpack) is a repo whose output has
+       to build, so `npm run build` is composed on when the delegate never builds. A gate that
+       type-checks but never builds is not a gate for a site that has to build: `astro check` returns
+       0 on a tree whose build has been broken for weeks.
+     - A missing compile, build, test or lint leg is composed on from a script that provides it (or
+       `npx --no-install tsc --noEmit` when TypeScript is a declared dependency), and when a compile
+       or test leg cannot be composed safely the **whole candidate is thrown away** and the gate
+       becomes a TODO with a loud warning naming exactly what was missing. A missing linter warns
+       rather than blocks.
+   - **Exit-2 warning.** A repo-local delegate script carrying a bare `exit 2` collides with this
+     contract's COULD NOT RUN code, so **that delegate reports RED as COULD NOT RUN**. The code is
+     deliberately not remapped (that direction is safe -- a failure is never read as green); the
+     collision is printed in the bootstrap summary and written as a line under the `### gate` section
+     of the generated `PROJECT.md`.
+   - **tsc exit-2 normalisation.** `tsc --noEmit` exits **2** (`DiagnosticsPresent_OutputsGenerated`)
+     on a COLD run of a project with `"incremental": true`, because writing the `.tsbuildinfo` counts
+     as generating output, and **1** once that cache is warm. `*.tsbuildinfo` is gitignored, so cold
+     is the default state of every fresh clone, worktree and CI runner. Both codes mean diagnostics
+     were present -- RED -- but 2 is this contract's COULD NOT RUN code, so an ordinary type error
+     would report "nothing was proved" exactly where builds happen. Any leg bootstrap **resolved to
+     tsc itself** (a composed `npx --no-install tsc --noEmit`, or a selected script whose value is
+     exactly `tsc --noEmit`) is therefore wrapped in a `gate_tsc` helper in the generated shim that
+     folds 2 onto 1. **Only those legs.** A third-party delegate's 2 is never remapped: for
+     `scripts/verify.sh` a 2 may genuinely mean could-not-run, which is what the exit-2 warning above
+     is for.
+
+   Every warning, every skipped CI job and any refusal is printed in the bootstrap summary **and**
+   written into `PROJECT.md`, so they survive the session that ran the bootstrap.
+
+3. **Scaffolds `.claude/PROJECT.md`** with the detected values as **Markdown tables in the body**
+   (never frontmatter, see "The manifest contract"), plus the degrade rules and the reviewers table.
+   Anything undetected is written as a **TODO** and repeated in a TODO section at the top of the file.
+4. **Injects `@.claude/PROJECT.md`** near the top of the root `CLAUDE.md`, creating a minimal one if
+   there is none, with a sentence saying what it is and why the bindings live in the body.
+5. **Scaffolds `.claude/scripts/gate.sh`** (chmod +x) delegating to the detected command and honouring
+   the exit contract below. When no gate was detected the scaffold **exits 2 (could-not-run) and never
+   0** -- a stub that returned green is the worst possible failure here, so the unfilled state is
+   could-not-run by construction.
+6. **Vendors the pack** through the same `--vendor` path, which is why the reviewer agents the fresh
+   manifest declares are installed on the first run.
+7. **Prints a numbered summary**: what it detected and from what evidence, what it created versus
+   skipped, and the remaining manual steps -- fill in every TODO, and **restart Claude Code**, because
+   the agent registry loads at boot and a newly vendored reviewer is not spawnable until it does.
+
+Every step is idempotent. An existing `PROJECT.md`, `gate.sh` or `CLAUDE.md` import is left **exactly**
+as it is and reported as skipped: bootstrap never edits a file it did not write, and never deletes
+anything.
+
 ## Install
 
-From the shared repo:
+Into a repo that is already set up (or one you intend to set up by hand), from the shared repo:
 
 ```bash
 ./setup.sh --vendor /path/to/your-repo            # copy the pack in, write the lock

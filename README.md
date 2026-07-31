@@ -36,6 +36,41 @@ That's it. Your project now has skills in `.claude/skills/`, agents in `.claude/
 
 Files are **copied**, per file, never symlinked and never over a directory you own, and a `.vendored.lock` records a sha256 plus the upstream commit they came from. Full contract, manifest reference and propagation flow: [skills/engineering/README.md](skills/engineering/README.md). Consumer repos are listed in your own `consumers.txt` (gitignored, since it names private repos and local paths -- copy [consumers.txt.example](consumers.txt.example) to start one) so a fix upstream can actually be pushed out to all of them.
 
+## Set up a new repo
+
+`--vendor` copies the pack in but leaves you three things to remember: write `.claude/PROJECT.md`, import it from `CLAUDE.md`, and create `.claude/scripts/gate.sh`. `--bootstrap` does all three and then vendors. Run this **from inside the repo**:
+
+```bash
+git clone https://github.com/michaelkeevildown/claude-agents-skills ~/.claude-agents-skills 2>/dev/null || git -C ~/.claude-agents-skills pull --ff-only
+~/.claude-agents-skills/setup.sh --bootstrap .
+```
+
+Both lines are safe whether or not you already have the clone: the `clone` fails harmlessly when the directory is there and the `pull --ff-only` brings it up to date instead. Add `--dry-run` to the second line to see everything it would do while writing nothing.
+
+It detects your repo's real facts and prints the **evidence** for each one, so a wrong guess is visible rather than silent: `repo.slug` and `tracker` from `git remote get-url origin`, `repo.default_branch` from `origin/HEAD`, and `ui.enabled` only on real evidence of a web UI.
+
+`gate.command` is the one where a wrong answer is dangerous rather than untidy, so it is worked out in a fixed precedence and then checked. **Your CI is read first**, in two forms:
+
+| #   | Evidence                                                                                       | Delegate                                                                         |
+| --- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 1   | `.claude/scripts/gate.sh` already exists                                                       | left alone -- it already owns the delegate                                       |
+| 2a  | a workflow CI definition (`.github/workflows/*.yml`, `.gitlab-ci.yml`, `.circleci/config.yml`) | the **union of every required job's** commands, de-duplicated, in workflow order |
+| 2b  | a host-build declaration (`netlify.toml` `[build] command`, `vercel.json` `buildCommand`)      | that build -- for a site on Netlify or Vercel it is what every push is judged by |
+| 3   | `scripts/verify.sh`                                                                            | `bash scripts/verify.sh`                                                         |
+| 4   | a `package.json` script, `verify` > `check` > `ci` > `test:ci` > `test`                        | `npm run <it>`, else lint + the best test script                                 |
+| 5-8 | `Makefile` target, `Cargo.toml`, `pyproject.toml`, `pubspec.yaml`                              | that ecosystem's standard gate                                                   |
+| 9   | a verify-ish command your `.claude/settings.json` already names                                | that command                                                                     |
+
+Rule 2 is not a guess -- it is your repo writing down what it means by green -- and **it is a union, never a pick**. A workflow with a `verify` job and a `migrations` job has two required checks, and replaying only the first certifies exactly the tree the second exists to reject. Jobs named `deploy`/`release`/`notify` are dropped (and said to be dropped); a workflow that only runs on `workflow_dispatch` or `schedule` is a button or a cron and is passed over entirely. A job that **cannot** be read confidently (a `${{ }}` expression, a heredoc, shell control flow) never disappears quietly: any repo-local `.sh` it invokes is salvaged into the gate, and the job itself comes back as a **loud TODO** naming it and why, in the summary, in the shim header and in `PROJECT.md`. A job that needs a database or a service container is read too -- its infrastructure is recorded as a **prerequisite** rather than pretended into coverage.
+
+Whatever it lands on is then put through a **completeness check** against the checks your repo evidently has. A repo with a `tsconfig.json` must compile inside its gate. A repo that produces a build artefact -- a `build` script plus a framework config (astro/next/nuxt/vite/sveltekit) -- must **build** inside it, because a gate that type-checks but never builds is not a gate for a site that has to build. Missing legs are composed on, and where that cannot be done safely the whole candidate is **thrown away** in favour of a TODO. That is the point: a gate that never compiles reports **green on a tree with a type error**, and every caller downstream reads a 0 as proof. It also refuses watch-mode commands (a gate that never exits is a hang, not a gate), and warns when your delegate script uses `exit 2`, which collides with the pack's could-not-run code.
+
+One exit code is normalised rather than warned about: **`tsc`'s 2**. `tsc --noEmit` exits 2 on a cold run of an incremental project (writing the `.tsbuildinfo` counts as generating output) and 1 once that cache is warm -- and the cache is gitignored, so cold is the default state of a fresh clone. Both mean diagnostics were present, i.e. red, so any leg bootstrap can see _is_ tsc gets its 2 folded onto 1 in the generated shim. Only those legs: a third-party delegate's 2 is left alone, because there it may really mean it could not run.
+
+Anything it cannot detect becomes a loud **TODO** rather than a guess, and if it cannot work out your gate command the scaffolded `gate.sh` **exits 2 (could-not-run), never 0** -- a stub that reported green would be the worst possible failure here. Every step is idempotent: an existing `PROJECT.md`, `gate.sh` or `CLAUDE.md` import is left exactly as it is and reported as skipped.
+
+Then **restart Claude Code**: the agent registry is read at boot, so a freshly vendored reviewer agent is not spawnable until you do.
+
 ## What You Get: Day-to-Day Usage
 
 ### Skills make Claude write code your way
