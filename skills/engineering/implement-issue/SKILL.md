@@ -207,10 +207,9 @@ merge, and teardown — so when it runs the per-sub-issue Procedure it runs **on
    - **Open / update the ONE final `<epic-branch>→<main>` PR (idempotent).** If no open PR with head
      `<epic-branch>` and base `<main>` exists, open it **as a draft**; else refresh its body. Its body
      carries the closing keyword **repeated per number** — `Closes #<sub-a>, Closes #<sub-b>, …,
-Closes #<N>` (one `Closes` per in-scope sub **and** the epic) so merging it later closes every sub
-     - the epic atomically. **Do NOT** write the shorthand `Closes #a #b #N`: the tracker auto-closes
-       ONLY the first `#` after a single `Closes`, which would orphan every later sub + the epic. Keep it
-       a **draft** while any sub is still unbuilt/unmerged into the branch.
+Closes #<N>` (one `Closes` per in-scope sub **and** the epic) so merging it later closes every sub - the epic atomically. **Do NOT** write the shorthand `Closes #a #b #N`: the tracker auto-closes
+     ONLY the first `#` after a single `Closes`, which would orphan every later sub + the epic. Keep it
+     a **draft** while any sub is still unbuilt/unmerged into the branch.
 5. **Recompute readiness and go again** — readiness in epic mode = every dep is `CLOSED` **OR** that
    dep's sub-PR is already merged into `<epic-branch>` (the sub-issue itself stays open until the final
    PR, so a `CLOSED`-only check would deadlock the chain). The branch-merge you just landed satisfies
@@ -394,241 +393,249 @@ relevant section over verbatim as an input in its own right:**
   issue comment and the PR body. Missing anchors are a narrowed review, not a failed one; a review
   that quietly ran fewer lenses passing as a full one is the failure.
 
-1. **`/kickoff`** — capability-audit the issue against existing skills, agents, and the `CLAUDE.md`s
-   before writing code, so you don't rebuild something that exists. Present the plan, get the go.
-   (**Epic mode:** the "get the go" is suspended — kickoff self-audits, posts the plan as a comment,
-   and proceeds automatically; pause only for a genuine owner-only design question.)
-   → **Log:** comment the agreed plan / scope on the issue so the approach is on record.
-2. **Implement** to the issue's Acceptance Criteria. Follow the repo's own engineering conventions —
-   the root `CLAUDE.md` and any nested `CLAUDE.md` covering the area you're touching (its runner, its
-   layout, its hard lines).
-   → **Log:** comment as each meaningful chunk lands — _what_ was built and the commit SHA(s) — so a
-   half-finished issue shows exactly which Acceptance Criteria are done and which remain.
-3. **Schema / data-migration change?** Author it the project's way (a repo may ship a dedicated
-   migration skill; follow it). The **live apply to a shared or production environment** is a gated,
-   outward-facing step — flag it for the owner, do **not** auto-apply.
-   → **Log:** comment the migration id + whether it's been applied to the shared environment yet (so
-   the gated apply isn't silently forgotten).
-4. **Run the gate** — `<gate>` (`gate.command`). It **must be green** before a PR. Satisfy
-   `gate.prereq` first if the environment doesn't already provide it — in a headless driver container
-   the dependency is often supplied already (e.g. a database the container points the gate at), in
-   which case **skip the prereq**; don't fail on a missing container runtime the gate doesn't need. The
-   gate is the single source of truth for "green": read its output rather than assuming which legs it
-   runs. It may include a **patch-coverage leg that hard-blocks** when the new/changed lines in the
-   diff fall below its threshold — add tests for the lines it lists, or mark a genuinely unreachable
-   one with the language's no-cover pragma.
-   → **Log:** comment the gate result **whether it passes or fails** — the pass summary on green; the
-   failing test/error/uncovered lines on red so a blocked issue shows _why_ it's blocked.
+1.  **`/kickoff`** — capability-audit the issue against existing skills, agents, and the `CLAUDE.md`s
+    before writing code, so you don't rebuild something that exists. Present the plan, get the go.
+    (**Epic mode:** the "get the go" is suspended — kickoff self-audits, posts the plan as a comment,
+    and proceeds automatically; pause only for a genuine owner-only design question.)
+    → **Log:** comment the agreed plan / scope on the issue so the approach is on record.
+2.  **Implement** to the issue's Acceptance Criteria. Follow the repo's own engineering conventions —
+    the root `CLAUDE.md` and any nested `CLAUDE.md` covering the area you're touching (its runner, its
+    layout, its hard lines).
+    → **Log:** comment as each meaningful chunk lands — _what_ was built and the commit SHA(s) — so a
+    half-finished issue shows exactly which Acceptance Criteria are done and which remain.
+3.  **Schema / data-migration change?** Author it the project's way (a repo may ship a dedicated
+    migration skill; follow it). The **live apply to a shared or production environment** is a gated,
+    outward-facing step — flag it for the owner, do **not** auto-apply.
+    → **Log:** comment the migration id + whether it's been applied to the shared environment yet (so
+    the gated apply isn't silently forgotten).
+4.  **Run the gate** — `<gate>` (`gate.command`). It **must be green** before a PR. Satisfy
+    `gate.prereq` first if the environment doesn't already provide it — in a headless driver container
+    the dependency is often supplied already (e.g. a database the container points the gate at), in
+    which case **skip the prereq**; don't fail on a missing container runtime the gate doesn't need. The
+    gate is the single source of truth for "green": read its output rather than assuming which legs it
+    runs. It may include a **patch-coverage leg that hard-blocks** when the new/changed lines in the
+    diff fall below its threshold — add tests for the lines it lists, or mark a genuinely unreachable
+    one with the language's no-cover pragma.
+    → **Log:** comment the gate result **whether it passes or fails** — the pass summary on green; the
+    failing test/error/uncovered lines on red so a blocked issue shows _why_ it's blocked.
 
-   #### UI gate — **fires only when `ui.enabled` AND the diff touches `ui.paths`**
+    #### UI gate — **fires only when `ui.enabled` AND the diff touches `ui.paths`**
 
-   If `ui.enabled` is false or absent, **skip this whole gate** and say in the PR body that no UI gate
-   ran. Never substitute a guess at design conformance.
+    If `ui.enabled` is false or absent, **skip this whole gate** and say in the PR body that no UI gate
+    ran. Never substitute a guess at design conformance.
 
-   If (and only if) this issue's diff touches a path in `ui.paths`, the standard gate is **not
-   sufficient** — the PR must also pass the visual/e2e UI gate **before it can go green or open a PR**.
-   The gate judges the **whole composed page, not just the component this issue touched** —
-   composition regressions (a grid-stretched card left with a dead band, ragged cross-component
-   rhythm) are cross-cutting and have slipped through per-component review before. Run it as the
-   in-review ↔ in-progress rework loop, automated:
-   1. **Run the UI runner** — `<ui-gate>` (`ui.command`: it boots the app, runs the e2e + the
-      layout-lint, and captures multi-viewport screenshots — both the per-component shots AND the
-      whole-page shot). The e2e **fixtures must stretch the grid** (at least one tall component and one
-      long list, so the short components inherit the row height) — a dead-band bug only renders when a
-      component is stretched, and grids typically only stretch at the large breakpoint, so the **wide
-      viewport** shots are the ones composition is judged on.
+    If (and only if) this issue's diff touches a path in `ui.paths`, the standard gate is **not
+    sufficient** — the PR must also pass the visual/e2e UI gate **before it can go green or open a PR**.
+    The gate judges the **whole composed page, not just the component this issue touched** —
+    composition regressions (a grid-stretched card left with a dead band, ragged cross-component
+    rhythm) are cross-cutting and have slipped through per-component review before. Run it as the
+    in-review ↔ in-progress rework loop, automated:
+    1.  **Run the UI runner** — `<ui-gate>` (`ui.command`: it boots the app, runs the e2e + the
+        layout-lint, and captures multi-viewport screenshots — both the per-component shots AND the
+        whole-page shot). The e2e **fixtures must stretch the grid** (at least one tall component and one
+        long list, so the short components inherit the row height) — a dead-band bug only renders when a
+        component is stretched, and grids typically only stretch at the large breakpoint, so the **wide
+        viewport** shots are the ones composition is judged on.
 
-      **Judge on the exit status, never on how the output looks.** Capture the status explicitly
-      rather than inferring it from stdout, because a path-shaped string on stdout is not evidence
-      the gate passed:
+        **Judge on the exit status, never on how the output looks.** Capture the status explicitly
+        rather than inferring it from stdout, because a path-shaped string on stdout is not evidence
+        the gate passed:
 
-      ```bash
-      status=0
-      OUT="$(<ui-gate>)" || status=$?            # status of the runner itself, no pipeline
-      SHOTS="$(printf '%s\n' "$OUT" | tail -n1)" # last stdout line, only meaningful when status is 0
-      ```
+        ```bash
+        status=0
+        OUT_FILE="${TMPDIR:-/tmp}/ui-gate.out"
+        <ui-gate> > "$OUT_FILE" || status=$?        # status of the runner itself, no pipeline
+        SHOTS="$(tail -n1 "$OUT_FILE")"             # last stdout line, only meaningful when status is 0
+        ```
 
-      **Do not fold the `tail` into the status-bearing substitution.** `X="$(<ui-gate> | tail -n1)"`
-      reports `tail`'s status, not the runner's, so unless the calling shell happens to have
-      `pipefail` set it hands you `status=0` with an empty `SHOTS` on a could-not-run: precisely the
-      skip-laundered-into-a-pass this gate exists to stop. Split the pipeline as above and the
-      reading is correct whatever options the shell was started with.
+        **Start the line with the runner, not with a capture.** Redirecting to a scratch file keeps the status
+        honest _and_ leaves the command itself at the head of the line, so a permission allow-rule
+        written against `ui.command` actually matches it. Wrapping it as `OUT="$(<ui-gate>)"` buries the
+        command inside a substitution, and a rule naming the runner then fails to match, so an
+        automated run stops for a prompt that nobody is there to answer.
 
-      | Exit               | Meaning                                                                                                              | What it demands                                                                                                                                                                                                                                                                                                                                 |
-      | ------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-      | `0`                | **PASS.** The runner ran in full and the UI is green. Its **last stdout line is the absolute screenshot directory.** | Hand that directory to `<ui-reviewer>` (item 2) and carry on through the gate.                                                                                                                                                                                                                                                                  |
-      | `2`                | **COULD NOT RUN.** The runner is absent, or a tool it needs is missing. Nothing was proved either way.               | **Record the skip explicitly and carry on with the build.** Comment `no UI gate ran (runner exited 2, could not run)` on the issue and write that same line into the PR body's Test plan. Do **not** spawn `<ui-reviewer>` on a directory that does not exist, do **not** spend a self-heal attempt on it, and **never** let it read as a pass. |
-      | any other non-zero | **RED.** The runner ran and the UI failed (boot, e2e, or layout-lint).                                               | Self-heal per item 4, within `LOOP_MAX_RETRIES`, then the headless-legal terminal action.                                                                                                                                                                                                                                                       |
+        **Do not fold the `tail` into the status-bearing substitution.** `X="$(<ui-gate> | tail -n1)"`
+        reports `tail`'s status, not the runner's, so unless the calling shell happens to have
+        `pipefail` set it hands you `status=0` with an empty `SHOTS` on a could-not-run: precisely the
+        skip-laundered-into-a-pass this gate exists to stop. Split the pipeline as above and the
+        reading is correct whatever options the shell was started with.
 
-      > **This table is the authoritative contract for `ui.command`.** It is stated here, once, and
-      > every repo's own runner implements it. In this repo that runner is
-      > `.claude/scripts/ui-gate.sh`, whose header points back at this table rather than restating
-      > it. If a runner's own docs ever disagree with this table, this table wins and the runner is
-      > the bug.
-      >
-      > **Exit `2` is the code that gets misread, in both directions.** Laundered into a pass, it
-      > ships an unreviewed UI; mistaken for a red, it burns the whole retry budget "fixing" a page
-      > that was never rendered. It is neither: it is a declared skip, and a declared skip is
-      > headless-legal (never a reason to stop and ask, because there is nobody to ask).
+        | Exit               | Meaning                                                                                                              | What it demands                                                                                                                                                                                                                                                                                                                                 |
+        | ------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+        | `0`                | **PASS.** The runner ran in full and the UI is green. Its **last stdout line is the absolute screenshot directory.** | Hand that directory to `<ui-reviewer>` (item 2) and carry on through the gate.                                                                                                                                                                                                                                                                  |
+        | `2`                | **COULD NOT RUN.** The runner is absent, or a tool it needs is missing. Nothing was proved either way.               | **Record the skip explicitly and carry on with the build.** Comment `no UI gate ran (runner exited 2, could not run)` on the issue and write that same line into the PR body's Test plan. Do **not** spawn `<ui-reviewer>` on a directory that does not exist, do **not** spend a self-heal attempt on it, and **never** let it read as a pass. |
+        | any other non-zero | **RED.** The runner ran and the UI failed (boot, e2e, or layout-lint).                                               | Self-heal per item 4, within `LOOP_MAX_RETRIES`, then the headless-legal terminal action.                                                                                                                                                                                                                                                       |
 
-   2. **Spawn the `<ui-reviewer>` agent** (the `reviewers[]` entry whose `when` matches `ui.paths`;
-      **main session only** — a subagent cannot spawn it) on three inputs: the screenshot dir from step
-      1, the project's design spec (the review oracle named in the reviewer's own brief), and **the
-      issue's intent** (its title / body / Acceptance Criteria). **Always instruct it to judge the
-      page-wide Composition lens on the WHOLE-PAGE screenshot — the whole composed page, not just the
-      component the issue touched** — so a composition breach (a stretched component with a dead band,
-      ragged cross-component rhythm) FAILs the gate even when the touched component is itself clean.
-      The issue's intent scopes WHAT must be present; it never narrows the review surface. It returns
-      `VERDICT: PASS` or `VERDICT: FAIL` (the `composition` lens rolls into the verdict — a breach in
-      any lens is a FAIL) with cited violations.
+        > **This table is the authoritative contract for `ui.command`.** It is stated here, once, and
+        > every repo's own runner implements it. In this repo that runner is
+        > `.claude/scripts/ui-gate.sh`, whose header points back at this table rather than restating
+        > it. If a runner's own docs ever disagree with this table, this table wins and the runner is
+        > the bug.
+        >
+        > **Exit `2` is the code that gets misread, in both directions.** Laundered into a pass, it
+        > ships an unreviewed UI; mistaken for a red, it burns the whole retry budget "fixing" a page
+        > that was never rendered. It is neither: it is a declared skip, and a declared skip is
+        > headless-legal (never a reason to stop and ask, because there is nobody to ask).
 
-      **No `<ui-reviewer>` in this repo's `reviewers` table** (no entry whose `when` matches
-      `ui.paths`) is a decision, not an oversight: skip this item, record `no design review ran (no
-such reviewer in this repo)` on the issue and in the PR body, and carry on. Never substitute
-      another reviewer for it, and never claim a design review ran.
+    2.  **Spawn the `<ui-reviewer>` agent** (the `reviewers[]` entry whose `when` matches `ui.paths`;
+        **main session only** — a subagent cannot spawn it) on three inputs: the screenshot dir from step
+        1, the project's design spec (the review oracle named in the reviewer's own brief), and **the
+        issue's intent** (its title / body / Acceptance Criteria). **Always instruct it to judge the
+        page-wide Composition lens on the WHOLE-PAGE screenshot — the whole composed page, not just the
+        component the issue touched** — so a composition breach (a stretched component with a dead band,
+        ragged cross-component rhythm) FAILs the gate even when the touched component is itself clean.
+        The issue's intent scopes WHAT must be present; it never narrows the review surface. It returns
+        `VERDICT: PASS` or `VERDICT: FAIL` (the `composition` lens rolls into the verdict — a breach in
+        any lens is a FAIL) with cited violations.
 
-   3. **Both green** (the runner exited `0` **and** the reviewer returns `VERDICT: PASS`): proceed to
-      commit / PR. Screenshots are **never committed to the repo** — they're transient gate output,
-      uploaded by the CI UI-gate job as an artifact and already reviewed by `<ui-reviewer>`.
-      Comment the reviewer's verdict on the issue for the record.
-   4. **Either fails** (the runner exited non-zero **and not** `2`, **or** the reviewer returns
-      `VERDICT: FAIL`): **do NOT open the PR.** Self-heal — apply the fixes the lint/reviewer cite,
-      re-run the UI gate — for up to `LOOP_MAX_RETRIES` (the driver's loop-guard cap, default 3). Only
-      **escalate** if it's still failing after that (headless-legal terminal action: no PR, blocker
-      comment on the issue, exit non-zero). (This is the in-review ↔ in-progress rework loop below, run
-      automatically.) **A runner exit of `2` is NOT this case:** it could not run, so it is a recorded
-      skip (item 1's table), it consumes no self-heal attempt, and the build carries on.
-      → **Log:** comment the UI-gate outcome each pass — the reviewer verdict on green (screenshots live
-      in the CI artifact, not the repo); the cited violations + which self-heal attempt on red; the
-      explicit `no UI gate ran` line on a skip (`ui.enabled` false/absent, runner exit `2`, or no
-      `<ui-reviewer>`), never phrased as a pass.
+              **No `<ui-reviewer>` in this repo's `reviewers` table** (no entry whose `when` matches
+              `ui.paths`) is a decision, not an oversight: skip this item, record `no design review ran (no
 
-   #### Backend code-correctness gate — **fires for a non-trivial diff under the reviewer's `when` path**
+        such reviewer in this repo)` on the issue and in the PR body, and carry on. Never substitute
+        another reviewer for it, and never claim a design review ran.
 
-   > **Merge is additionally gated by every REQUIRED check the project defines at the merge door.**
-   > This correctness gate and the security gate below run inside THIS author session and gate
-   > **PR-open**. At the merge door the merge poll additionally requires **every** required CI check to
-   > have concluded success — deterministic checks a reviewer cannot vouch for are the point. Never
-   > neuter, skip, or merge around a required check.
+    3.  **Both green** (the runner exited `0` **and** the reviewer returns `VERDICT: PASS`): proceed to
+        commit / PR. Screenshots are **never committed to the repo** — they're transient gate output,
+        uploaded by the CI UI-gate job as an artifact and already reviewed by `<ui-reviewer>`.
+        Comment the reviewer's verdict on the issue for the record.
+    4.  **Either fails** (the runner exited non-zero **and not** `2`, **or** the reviewer returns
+        `VERDICT: FAIL`): **do NOT open the PR.** Self-heal — apply the fixes the lint/reviewer cite,
+        re-run the UI gate — for up to `LOOP_MAX_RETRIES` (the driver's loop-guard cap, default 3). Only
+        **escalate** if it's still failing after that (headless-legal terminal action: no PR, blocker
+        comment on the issue, exit non-zero). (This is the in-review ↔ in-progress rework loop below, run
+        automatically.) **A runner exit of `2` is NOT this case:** it could not run, so it is a recorded
+        skip (item 1's table), it consumes no self-heal attempt, and the build carries on.
+        → **Log:** comment the UI-gate outcome each pass — the reviewer verdict on green (screenshots live
+        in the CI artifact, not the repo); the cited violations + which self-heal attempt on red; the
+        explicit `no UI gate ran` line on a skip (`ui.enabled` false/absent, runner exit `2`, or no
+        `<ui-reviewer>`), never phrased as a pass.
 
-   The deterministic gate proves the changed lines _execute_; it does **not** prove any assertion
-   _observes_ the bug, and on a pure-backend diff `<ui-reviewer>` never fires — so the diff is
-   otherwise graded by nobody but its author (a "nodding loop"). This gate closes that hole: an
-   independent, read-only, **fail-closed** `correctness-reviewer` (the backend twin of
-   `<ui-reviewer>`, and the side-by-side sibling of the security gate) judges the diff before a PR
-   opens. It **fires** when the diff touches the path named in that reviewer's `when` entry in
-   `reviewers[]` (the backend source tree); it **skips** a docs/comment/format-only diff and a pure
-   `ui.paths` diff (which `<ui-reviewer>` owns). Like the UI gate, run it as the in-review ↔
-   in-progress rework loop, automated:
-   1. **Spawn the `correctness-reviewer` agent** (its `reviewers[]` entry by name, exactly as the UI
-      gate spawns `<ui-reviewer>`) **from the
-      orchestrating layer — never the implementing subagent** (it cannot spawn the reviewer, and
-      self-spawning recreates the nodding loop). Hand it **five** inputs: `git diff
+    #### Backend code-correctness gate — **fires for a non-trivial diff under the reviewer's `when` path**
+
+    > **Merge is additionally gated by every REQUIRED check the project defines at the merge door.**
+    > This correctness gate and the security gate below run inside THIS author session and gate
+    > **PR-open**. At the merge door the merge poll additionally requires **every** required CI check to
+    > have concluded success — deterministic checks a reviewer cannot vouch for are the point. Never
+    > neuter, skip, or merge around a required check.
+
+    The deterministic gate proves the changed lines _execute_; it does **not** prove any assertion
+    _observes_ the bug, and on a pure-backend diff `<ui-reviewer>` never fires — so the diff is
+    otherwise graded by nobody but its author (a "nodding loop"). This gate closes that hole: an
+    independent, read-only, **fail-closed** `correctness-reviewer` (the backend twin of
+    `<ui-reviewer>`, and the side-by-side sibling of the security gate) judges the diff before a PR
+    opens. It **fires** when the diff touches the path named in that reviewer's `when` entry in
+    `reviewers[]` (the backend source tree); it **skips** a docs/comment/format-only diff and a pure
+    `ui.paths` diff (which `<ui-reviewer>` owns). Like the UI gate, run it as the in-review ↔
+    in-progress rework loop, automated:
+    1. **Spawn the `correctness-reviewer` agent** (its `reviewers[]` entry by name, exactly as the UI
+       gate spawns `<ui-reviewer>`) **from the
+       orchestrating layer — never the implementing subagent** (it cannot spawn the reviewer, and
+       self-spawning recreates the nodding loop). Hand it **five** inputs: `git diff
 origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **issue intent**
-      (title / body / Acceptance Criteria), and the **project correctness anchors** pasted verbatim
-      from the `## Correctness anchors` section of `.claude/REVIEW-ANCHORS.md` (its lens 1; see
-      "Project review anchors" at the top of this step). If that file or section is absent, say so
-      in the task prompt, require `ANCHORS: none — universal lenses only` in the verdict, and repeat
-      the narrowing in the PR body. For a **bug-fix** diff, also generate the **red-green evidence**
-      first per the `regression-proof-red-green` skill (the test FAILs RED on the pre-fix code, PASSes GREEN on
-      the fix) — the reviewer **verifies** it read-only; it does not produce it. **If that skill is not
-      vendored here the rule stands on its own: run the new test against the pre-fix code and show it
-      FAIL, then against the fix and show it PASS, and paste both outputs.** An assertion never seen
-      to fail proves nothing. Apply that inline and carry on; a missing skill is never a stop.
-      (Greenfield diffs have no revert target — the reviewer asserts behaviour-presence instead; do not
-      demand RED.)
-   2. **Read the verdict.** The reviewer returns the structured `VERDICT: PASS | FAIL` block (PER-LENS
-      NOTES + cited, falsifiable VIOLATIONS) — the same shape as `<ui-reviewer>`. A breach in ANY
-      lens (the repo's hard lines · generic correctness · test-oracle independence) ⇒ FAIL (do **not**
-      average). A missing input / empty diff / red gate / unreachable dependency ⇒ FAIL, never PASS
-      blind.
-   3. **PASS:** proceed to commit / PR. Comment the verdict on the issue for the record.
-   4. **FAIL:** **do NOT open the PR.** Self-heal — apply the cited fixes, re-run the gate + reviewer —
-      for up to `LOOP_MAX_RETRIES` (default 3). Only **escalate** if it's still FAIL after that (no PR,
-      blocker comment on the issue, exit non-zero); never silently open a PR on a still-FAIL verdict.
-      → **Log:** comment the reviewer verdict each pass — PASS (with the per-lens roll-up) on green; the
-      cited violations + which self-heal attempt on FAIL.
+       (title / body / Acceptance Criteria), and the **project correctness anchors** pasted verbatim
+       from the `## Correctness anchors` section of `.claude/REVIEW-ANCHORS.md` (its lens 1; see
+       "Project review anchors" at the top of this step). If that file or section is absent, say so
+       in the task prompt, require `ANCHORS: none — universal lenses only` in the verdict, and repeat
+       the narrowing in the PR body. For a **bug-fix** diff, also generate the **red-green evidence**
+       first per the `regression-proof-red-green` skill (the test FAILs RED on the pre-fix code, PASSes GREEN on
+       the fix) — the reviewer **verifies** it read-only; it does not produce it. **If that skill is not
+       vendored here the rule stands on its own: run the new test against the pre-fix code and show it
+       FAIL, then against the fix and show it PASS, and paste both outputs.** An assertion never seen
+       to fail proves nothing. Apply that inline and carry on; a missing skill is never a stop.
+       (Greenfield diffs have no revert target — the reviewer asserts behaviour-presence instead; do not
+       demand RED.)
+    2. **Read the verdict.** The reviewer returns the structured `VERDICT: PASS | FAIL` block (PER-LENS
+       NOTES + cited, falsifiable VIOLATIONS) — the same shape as `<ui-reviewer>`. A breach in ANY
+       lens (the repo's hard lines · generic correctness · test-oracle independence) ⇒ FAIL (do **not**
+       average). A missing input / empty diff / red gate / unreachable dependency ⇒ FAIL, never PASS
+       blind.
+    3. **PASS:** proceed to commit / PR. Comment the verdict on the issue for the record.
+    4. **FAIL:** **do NOT open the PR.** Self-heal — apply the cited fixes, re-run the gate + reviewer —
+       for up to `LOOP_MAX_RETRIES` (default 3). Only **escalate** if it's still FAIL after that (no PR,
+       blocker comment on the issue, exit non-zero); never silently open a PR on a still-FAIL verdict.
+       → **Log:** comment the reviewer verdict each pass — PASS (with the per-lens roll-up) on green; the
+       cited violations + which self-heal attempt on FAIL.
 
-   #### Stop-condition gate (`goal-checker`) — **fires for EVERY issue, once the gate is green**
+    #### Stop-condition gate (`goal-checker`) — **fires for EVERY issue, once the gate is green**
 
-   The deterministic gate + the design/correctness reviewers prove the change is _well-built_; none of
-   them prove the issue's **Acceptance Criteria were actually implemented** — a green gate means "the
-   tests pass", not "the goal was hit". The `goal-checker` (the `reviewers[]` entry with
-   `when: always`) is the third independent judge: spawned **from the orchestrating layer in a fresh
-   context, separate from the implementer** (never from inside the implementing subagent), on **every**
-   issue once the gate is green. Hand it the issue's `## Acceptance Criteria` GIVEN/WHEN/THEN block,
-   `git diff origin/<main>...HEAD`, and the green gate output. It returns
-   `verdict: done | not-done | broken` (per-AC cited): **`done`** = every AC met AND gate green (the
-   only verdict that permits a merge); **`not-done`** = gate green but ≥ 1 AC unmet; **`broken`** =
-   gate red, a regression, or **no parseable ACs** (it never returns `done` when there's nothing to
-   certify).
-   - **`done`:** proceed to commit / PR; comment the verdict for the record.
-   - **`not-done` / `broken`:** **do NOT open the PR.** Self-heal the cited unmet ACs — re-run the
-     gate + checker — up to `LOOP_MAX_RETRIES`, then **escalate** with the cited ACs (blocker comment
-     on the issue, exit non-zero); never merge a `not-done` / `broken`.
-     → **Log:** comment the checker verdict each pass — `done` (with the per-AC roll-up) or the unmet
-     ACs + which self-heal attempt.
+    The deterministic gate + the design/correctness reviewers prove the change is _well-built_; none of
+    them prove the issue's **Acceptance Criteria were actually implemented** — a green gate means "the
+    tests pass", not "the goal was hit". The `goal-checker` (the `reviewers[]` entry with
+    `when: always`) is the third independent judge: spawned **from the orchestrating layer in a fresh
+    context, separate from the implementer** (never from inside the implementing subagent), on **every**
+    issue once the gate is green. Hand it the issue's `## Acceptance Criteria` GIVEN/WHEN/THEN block,
+    `git diff origin/<main>...HEAD`, and the green gate output. It returns
+    `verdict: done | not-done | broken` (per-AC cited): **`done`** = every AC met AND gate green (the
+    only verdict that permits a merge); **`not-done`** = gate green but ≥ 1 AC unmet; **`broken`** =
+    gate red, a regression, or **no parseable ACs** (it never returns `done` when there's nothing to
+    certify).
+    - **`done`:** proceed to commit / PR; comment the verdict for the record.
+    - **`not-done` / `broken`:** **do NOT open the PR.** Self-heal the cited unmet ACs — re-run the
+      gate + checker — up to `LOOP_MAX_RETRIES`, then **escalate** with the cited ACs (blocker comment
+      on the issue, exit non-zero); never merge a `not-done` / `broken`.
+      → **Log:** comment the checker verdict each pass — `done` (with the per-AC roll-up) or the unmet
+      ACs + which self-heal attempt.
 
-   > **The loop-guard primitives back this gate.** The self-heal cap above is `LOOP_MAX_RETRIES`
-   > (default 3); an unattended driver additionally enforces the per-run / daily **budget caps**, a
-   > **halt-file kill-switch** (a file, so it halts a _running_ loop with no restart), and a JSONL
-   > **run-state ledger** — all fail-closed.
+    > **The loop-guard primitives back this gate.** The self-heal cap above is `LOOP_MAX_RETRIES`
+    > (default 3); an unattended driver additionally enforces the per-run / daily **budget caps**, a
+    > **halt-file kill-switch** (a file, so it halts a _running_ loop with no restart), and a JSONL
+    > **run-state ledger** — all fail-closed.
 
-5. **Commit with discipline** (`git-workflow`): review the diff, stage specific files (not
-   `git add -A`), atomic conventional commits that reference the issue:
-   ```bash
-   git commit -m "feat(scope): <subject>" -m "" -m "Refs #<NN>"
-   ```
-   **If `git-workflow` is not vendored here, that one line above IS the rule:** read the diff before
-   staging, `git add` explicit paths only, one logical change per commit, conventional subject, and a
-   `Refs #<NN>` trailer. Apply it inline and carry on.
-   → **Log:** the `Refs #<NN>` trailer already links each commit to the issue; add a comment if the
-   commit closes out an Acceptance Criterion so the thread stays readable.
-6. **Security review — the last engineering step.** The diff is now whole, green, and committed —
-   assess its security posture before the PR opens. **Unconditional**: this runs for **every** issue,
-   not just `ui.paths`-touching ones — the security surface (authz/IDOR, secrets, injection,
-   dependencies) is mostly non-UI (data services, API routes, sync jobs), so gating only the UI paths
-   would miss the highest-risk changes. It is **independent** of the UI gate above — on a
-   `ui.paths`-touching issue both must PASS; security does not replace design review, and it runs even
-   when design review doesn't (a pure-backend diff). Run it as the in-review ↔ in-progress rework loop,
-   like the UI/correctness gates:
-   1. **Spawn the `security-reviewer` agent** (the `reviewers[]` entry with `when: always`) **from the
-      MAIN session — never the implementing subagent** (a subagent cannot spawn another agent, so a
-      security review triggered from inside an implementing subagent silently never runs). Hand it
-      **four** inputs: `git diff origin/<main>...HEAD`, the changed-files list, the issue intent
-      (title / body / Acceptance Criteria), and the **project security anchors** pasted verbatim
-      from the `## Security anchors` section of `.claude/REVIEW-ANCHORS.md`, `### <lens>` headings
-      intact so every lens gets its own pointers (see "Project review anchors" at the top of this
-      step). If that file or section is absent, say so in the task prompt, require
-      `ANCHORS: none — universal lenses only` in the verdict, and repeat the narrowing in the PR
-      body. _Requires the reviewer's agent shim to be registered — the agent registry
-      loads at boot, so a newly vendored reviewer needs one Claude Code restart before it is spawnable;
-      if it isn't, spawning fails — see the fail-safe below._
-   2. **Also run the built-in `/security-review`** on the pending branch diff — the deterministic
-      scanner-and-LLM layer that ships with Claude Code, alongside the dedicated agent.
-   3. **Fail-safe, never fail-open:** if the `security-reviewer` agent cannot be spawned (shim not
-      registered, or any other spawn failure), treat that as **"gate not satisfied"** and escalate —
-      do **not** silently skip the gate and open the PR. If `reviewers[]` genuinely has no security
-      entry, say so in the PR body; never claim a review ran.
-   4. **Both clean** (`security-reviewer` returns `VERDICT: PASS` and `/security-review` reports no
-      confirmed high/critical finding): proceed to step 4 (open the PR). Comment both verdicts on the
-      issue for the record.
-   5. **Either flags a problem** (`security-reviewer` returns `VERDICT: FAIL`, or `/security-review`
-      reports a confirmed high/critical finding): **do NOT open the PR.** Self-heal — apply the cited
-      fixes, re-run both — for up to `LOOP_MAX_RETRIES` (default 3). Only **escalate** if still failing
-      after that (blocker comment on the issue, exit non-zero).
-      - **Disputed finding (false positive):** record the dispute + rationale on the issue thread;
-        downgrade to a `MINOR OBSERVATION` only with explicit reasoning — never delete a `FINDING`
-        just to make the gate pass.
-      - **A defect outside this issue's scope** (e.g. a pre-existing leak): file it standalone via
-        `/create-issue` and reference the number — don't expand the current PR to fix it. **Without
-        that skill, the rule holds anyway: open a plain tracker issue yourself** (title, what is
-        wrong, how to reproduce, GIVEN/WHEN/THEN acceptance criteria, and a `## Security Implications`
-        section that is never blank), reference its number here, and carry on. Never widen this PR and
-        never drop the finding on the floor because the authoring skill is missing.
-        → **Log:** comment both verdicts each pass — the `security-reviewer` verdict + "`/security-review`
-        scanners green" (plus any accepted residual risk) on clean; the cited findings + which self-heal
-        attempt on FAIL.
+5.  **Commit with discipline** (`git-workflow`): review the diff, stage specific files (not
+    `git add -A`), atomic conventional commits that reference the issue:
+    ```bash
+    git commit -m "feat(scope): <subject>" -m "" -m "Refs #<NN>"
+    ```
+    **If `git-workflow` is not vendored here, that one line above IS the rule:** read the diff before
+    staging, `git add` explicit paths only, one logical change per commit, conventional subject, and a
+    `Refs #<NN>` trailer. Apply it inline and carry on.
+    → **Log:** the `Refs #<NN>` trailer already links each commit to the issue; add a comment if the
+    commit closes out an Acceptance Criterion so the thread stays readable.
+6.  **Security review — the last engineering step.** The diff is now whole, green, and committed —
+    assess its security posture before the PR opens. **Unconditional**: this runs for **every** issue,
+    not just `ui.paths`-touching ones — the security surface (authz/IDOR, secrets, injection,
+    dependencies) is mostly non-UI (data services, API routes, sync jobs), so gating only the UI paths
+    would miss the highest-risk changes. It is **independent** of the UI gate above — on a
+    `ui.paths`-touching issue both must PASS; security does not replace design review, and it runs even
+    when design review doesn't (a pure-backend diff). Run it as the in-review ↔ in-progress rework loop,
+    like the UI/correctness gates:
+    1. **Spawn the `security-reviewer` agent** (the `reviewers[]` entry with `when: always`) **from the
+       MAIN session — never the implementing subagent** (a subagent cannot spawn another agent, so a
+       security review triggered from inside an implementing subagent silently never runs). Hand it
+       **four** inputs: `git diff origin/<main>...HEAD`, the changed-files list, the issue intent
+       (title / body / Acceptance Criteria), and the **project security anchors** pasted verbatim
+       from the `## Security anchors` section of `.claude/REVIEW-ANCHORS.md`, `### <lens>` headings
+       intact so every lens gets its own pointers (see "Project review anchors" at the top of this
+       step). If that file or section is absent, say so in the task prompt, require
+       `ANCHORS: none — universal lenses only` in the verdict, and repeat the narrowing in the PR
+       body. _Requires the reviewer's agent shim to be registered — the agent registry
+       loads at boot, so a newly vendored reviewer needs one Claude Code restart before it is spawnable;
+       if it isn't, spawning fails — see the fail-safe below._
+    2. **Also run the built-in `/security-review`** on the pending branch diff — the deterministic
+       scanner-and-LLM layer that ships with Claude Code, alongside the dedicated agent.
+    3. **Fail-safe, never fail-open:** if the `security-reviewer` agent cannot be spawned (shim not
+       registered, or any other spawn failure), treat that as **"gate not satisfied"** and escalate —
+       do **not** silently skip the gate and open the PR. If `reviewers[]` genuinely has no security
+       entry, say so in the PR body; never claim a review ran.
+    4. **Both clean** (`security-reviewer` returns `VERDICT: PASS` and `/security-review` reports no
+       confirmed high/critical finding): proceed to step 4 (open the PR). Comment both verdicts on the
+       issue for the record.
+    5. **Either flags a problem** (`security-reviewer` returns `VERDICT: FAIL`, or `/security-review`
+       reports a confirmed high/critical finding): **do NOT open the PR.** Self-heal — apply the cited
+       fixes, re-run both — for up to `LOOP_MAX_RETRIES` (default 3). Only **escalate** if still failing
+       after that (blocker comment on the issue, exit non-zero).
+       - **Disputed finding (false positive):** record the dispute + rationale on the issue thread;
+         downgrade to a `MINOR OBSERVATION` only with explicit reasoning — never delete a `FINDING`
+         just to make the gate pass.
+       - **A defect outside this issue's scope** (e.g. a pre-existing leak): file it standalone via
+         `/create-issue` and reference the number — don't expand the current PR to fix it. **Without
+         that skill, the rule holds anyway: open a plain tracker issue yourself** (title, what is
+         wrong, how to reproduce, GIVEN/WHEN/THEN acceptance criteria, and a `## Security Implications`
+         section that is never blank), reference its number here, and carry on. Never widen this PR and
+         never drop the finding on the floor because the authoring skill is missing.
+         → **Log:** comment both verdicts each pass — the `security-reviewer` verdict + "`/security-review`
+         scanners green" (plus any accepted residual risk) on clean; the cited findings + which self-heal
+         attempt on FAIL.
 
 ### 4. Open the PR
 
