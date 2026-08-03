@@ -44,13 +44,34 @@ rm /tmp/fixed.sh.bak
 
 If you must use `git stash` (e.g. the bug spans many files), first run `git stash list` and confirm it is empty. A repo-level "never stash here" rule reduces but does not eliminate the leak risk; the cp-and-restore recipe above is preferable.
 
+## The red must be BEHAVIOURAL
+
+A red is not automatically evidence. Check _why_ the test failed:
+
+- **`AssertionError`** — the test evaluated the behaviour and the behaviour was wrong. This is the proof.
+- **`ImportError` / `AttributeError` / `NameError` / `TypeError` / `SyntaxError` / a collection error** — the test never got as far as the behaviour. A reversion that deletes or renames a symbol reds this way and proves _nothing_; the test would fail identically if the code were merely misspelled.
+
+So revert the fix's **logic**, not its **symbols**. If your reversion removes a `def`, a `class` or an `import`, it is testing the linker, not the fix.
+
+Two traps worth knowing, both observed in the wild:
+
+- **A masked arm.** If the function under test has several arms that produce the same answer, deleting one may leave the test green because another still returns it. Assert through the value the reverted arm **uniquely** controls, and pin each severable arm separately.
+- **A swallowed structural error.** A broad `except Exception` can absorb an `AttributeError` from a renamed symbol, after which the test fails on its own assertion and _looks_ behavioural. Constrain the reversion's shape, don't just read the exception.
+
+Some genuinely behavioural pins red on something other than `AssertionError` — a test that drives a real subsystem may red on that subsystem's own error type. That is legitimate, but it must be _declared_, not assumed.
+
 ## What to report
 
-In the rework comment, paste the actual stdout of both runs, captioned `RED on revert` and `GREEN on fix`. Two lines of evidence settle the question.
+In the rework comment, paste the actual stdout of both runs, captioned `RED on revert` and `GREEN on fix`, **including the exception type of the red**. Two lines of evidence settle the question; the exception type is what makes them evidence rather than a claim.
 
 ## When to skip
 
-- The regression is on a deterministic surface (a pure function, a parse) and the test exercises it via a direct call. RED-on-revert is then mechanical and the fix is small; a brief textual claim is acceptable.
-- The reviewer has not asked for proof and the bug class is narrow.
+Never skip the proof itself.
 
-Default: when in doubt, prove it.
+A brief textual claim used to be acceptable for small deterministic fixes. It is not. Four pins claimed in one session on that basis turned out to be worthless — one left 543 tests passing on revert, one passed with _and_ without the fix, one raised `TypeError` on both. Every one was written by an author who believed the claim when they made it. The belief is not the problem; the absence of a run is.
+
+What may be scaled down is the _reporting_, never the _running_: on a narrow, deterministic fix, run the revert, confirm the red and its exception type, and report it in one line.
+
+**If your project mechanises this, prefer the mechanism.** A declared pin that a gate re-runs beats a claim in a PR body, because the claim is checked exactly once by the person least able to be sceptical about it.
+
+Default: when in doubt, prove it. When not in doubt, prove it anyway — that is the case that has failed.
