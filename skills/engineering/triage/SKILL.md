@@ -21,8 +21,8 @@ good body; `/triage` owns the _queue_, the _screenshot_, the _in-place rewrite_,
 
 The manifest at `.claude/PROJECT.md` is already in context via the root `CLAUDE.md` import. Its
 **`## Bindings` section is a set of markdown tables in the manifest's prose body**, and every
-`repo.*`, `labels.*`, `board.*`, `gate.*`, `ui.*` name below is read out of those tables **by dotted
-key name**. Never hardcode a label, a path or a command.
+`repo.*`, `labels.*`, `board.*`, `gate.*`, `checklist.*`, `ui.*` name below is read out of those
+tables **by dotted key name**. Never hardcode a label, a path or a command.
 
 > The bindings live in the manifest's **body**, not in YAML frontmatter, on purpose: the `@`-import
 > that puts the manifest in context strips frontmatter, so a binding written up there would not be in
@@ -164,8 +164,21 @@ suggestion: the skeleton below is only the _section list_, and a body that fills
 without applying that skill's discipline (criteria a test can assert, named functions/fields/errors,
 negative + edge cases as first-class, an Out-of-Scope that names the specific temptation and its
 risk, the **Rejected** alternative recorded) is exactly the aspirational issue this skill exists to
-prevent. Run its **Self-Check Before Filing** against your draft and do not edit the issue until
-every box passes.
+prevent.
+
+**Then gate the draft on the project's requirement-quality checklist.** Read `checklist.section` out
+of `checklist.path` and evaluate **every item in it, by its id**, against the body you have drafted.
+Fix the draft and re-evaluate until every item passes. Keep each item's verdict and the specific
+evidence for it — you post that per-item result as a comment in step 8, and it is the artefact that
+justifies the release.
+
+**If an item cannot be made to pass** — the capture simply does not carry what the item demands, and
+your due diligence could not supply it — **still write the rewritten body to the issue.** A worked-up
+body with one honest gap is strictly better than the raw capture, and it is what the next sweep (or
+the owner) picks up from. What you must not do is _release_ it: record that item's verdict as a
+failure with the reason, and step 8 holds `labels.ready` back. **Never silently downgrade a failing
+item to a pass to get the capture out of the queue** — the withheld label is the signal, and a
+checklist that always passes is worth nothing.
 
 > **If `create-issue` is not installed here, carry on rather than hard-stopping.** A missing skill is
 > not a reason to abandon the queue, and there may be no human to install it. Say plainly in your
@@ -177,6 +190,22 @@ every box passes.
 > native sub-issue link _and_ the inline `#NNN` in the epic body); and an Out-of-Scope that names the
 > specific temptation plus a Technical Note recording the rejected alternative. The section list
 > below is the skeleton for exactly that.
+
+> **A missing `checklist` binding NARROWS the pass — it never stops the sweep.** This skill carries
+> two degrade severities, and the checklist deliberately takes the softer one, the same class as the
+> note above: **not** the manifest-absent hard stop near the top of this file. That stop leaves every
+> capture exactly as it is, and applying it here would cost a repo that never declared a checklist its
+> whole triage queue. So with **no `checklist` row in the bindings tables**, run `/create-issue`'s own
+> **`## Self-Check Before Filing`** (its seven boxes) as the floor instead, work the capture up
+> normally — and **declare the narrowing**: the step-8 comment leads with
+> `CHECKLIST: none bound - create-issue self-check only`, because a floor-only pass must never read as
+> a full one.
+>
+> **The half-bound arm is the fatal one.** `checklist.path` bound but unreadable, or
+> `checklist.section` not found inside that file, is **could not run, not a pass** — a typo'd binding
+> must never degrade quietly into a floor-only pass that claims to be a full one. Rewrite nothing,
+> relabel nothing, post that blocker as a comment on the issue, and stop non-zero. Do not wait for a
+> human to correct the binding: headless there is nobody to answer.
 
 Body:
 
@@ -234,6 +263,40 @@ title convention.
 
 ### 8 · Relabel, prioritise, board
 
+**Post the step-7 checklist result as a comment FIRST, before the relabel below.** The release
+judgement then exists as an auditable artefact on the thread instead of only in a transcript nobody
+can read later. Write it to a scratch file and comment the file — a checklist is full of backticked
+headings like `` `## Acceptance Criteria` ``, so the step-7 rule applies here too: never inline a body
+with backticks straight into the shell.
+
+```bash
+gh issue comment <NN> --body-file "$SCRATCH/checklist-<NN>.md"
+```
+
+The comment **leads with one stable header line**, which is what makes it greppable — for the
+idempotency check below, and for anyone later auditing whether an issue was actually checked:
+
+| Case                   | First line of the comment                              |
+| ---------------------- | ------------------------------------------------------ |
+| `checklist` bound      | `CHECKLIST: <checklist.path> § <checklist.section>`    |
+| No `checklist` binding | `CHECKLIST: none bound - create-issue self-check only` |
+
+Then one line per item: its id, its verdict, and the specific evidence for that verdict.
+
+- **A failing item blocks the relabel for THAT capture only.** Leave the rewritten body in place,
+  leave `labels.triage` on, do **not** stamp `labels.ready`, and move to the next capture. **Never
+  abort the sweep** — this is the same shape of hold as a too-vague capture (step 6), one issue held
+  while the queue keeps moving.
+- **A re-sweep must not stack comments.** A capture parked in flight comes back around on a later
+  sweep: grep the thread for the `CHECKLIST:` header first, and replace it or skip rather than
+  posting a second checklist for the same body revision.
+- **The checklist gates release, not analysis.** It does not run, and no comment is posted, for a
+  capture closed as duplicate / won't-fix (step 5), parked in flight (step 5), or parked as too big /
+  too vague (step 6). None of those has a rewritten body to check, so the checklist is
+  _inapplicable_, not failing — never read a missing comment on those paths as a block.
+- **This comment is a main-session write**, alongside the label writes below — never delegated to a
+  fan-out worker.
+
 The relabel is what actually releases the issue to the loop — **`labels.triage` off, `labels.ready`
 on, in one call** so it can never sit in both states:
 
@@ -250,6 +313,9 @@ gh issue edit <NN> \
 - **`labels.ultra`** — only when the owner asks for it, or the work is genuinely multi-file/subtle.
 - **`labels.ready` is a release, not a formality.** If you left an open question in the body, do
   **not** stamp it — the loop will build the guess.
+- **A failing checklist item is that same hold.** The body stays rewritten and the comment stays
+  posted, but `labels.triage` stays on and `labels.ready` is withheld until the item passes. Say which
+  item held it in your report, so the next sweep knows what to fix.
 - **No `board` row in the bindings tables ⇒ skip the board call.** The card state is a convenience, never a
   gate; a failed board write must not block the relabel.
 
