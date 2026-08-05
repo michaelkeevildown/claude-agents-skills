@@ -38,6 +38,7 @@ from memory):
 | `<ready>`       | `labels.ready` — the one pickup label                                                                                                                                                           |
 | `<gate-label>`  | `labels.human_gate` — the label that hands a PR to a human to merge                                                                                                                             |
 | `<ui-reviewer>` | the `reviewers` entry whose `when` matches `ui.paths` — **resolve it from the `reviewers` table, never name an agent inline.** No matching entry ⇒ this repo has no UI reviewer (degrade below) |
+| `<checklist>`   | `checklist.section` read out of `checklist.path` — the project's requirement-quality checklist. Used at exactly one point: the epic-mode convergence audit must clear it before it may stamp `<ready>` on a gap issue it wrote itself. **Absent, unreadable, or any item failing ⇒ the audit still files the gap, just never with `<ready>`** |
 
 **Reviewers are named by the manifest, not by this file.** `reviewers` is a list of `agent` + `when`
 pairs, and a repo declares whichever it actually ships. The four roles this skill gates on are the
@@ -265,9 +266,22 @@ Closes #<N>` (one `Closes` per in-scope sub **and** the epic) so merging it late
       and names the originating sub-issue + AC number, typed and prioritised on merit. **Without that
       skill, the rule holds anyway: open a plain tracker issue yourself** (title, what is wrong, how to
       reproduce, GIVEN/WHEN/THEN acceptance criteria, and a `## Security Implications` section that is
-      never blank). Apply `<ready>` **only** if the body clears the same requirement-quality bar
-      `/triage` applies before its release relabel — an under-specified gap is filed **without** it,
-      and the audit comment says so. Then post one summary comment on the epic listing every gap number
+      never blank). Before filing a batch, **preflight the budget** the same way step 4 of `/epic`
+      does (`gate.graphql_guard`): a gap issue plus its checklist comment is two writes each, and this
+      runs unattended.
+
+      **Releasing a gap issue is the one privileged act in this audit, so it is gated exactly like any
+      other release — never by self-assertion.** You authored this body, so "it looks fine" is worth
+      nothing: run the project's requirement-quality checklist against it (`checklist.section` out of
+      `checklist.path`, every item by id, the same list `/triage` runs before its release relabel),
+      post the completed per-item result as a comment on the gap issue leading with the
+      `CHECKLIST:` header, and only then apply `<ready>`. **File without `<ready>` — and say so in the
+      audit comment — whenever any item fails, whenever the checklist could not run (`checklist.path`
+      unreadable or `checklist.section` not found), and whenever no `checklist` is bound at all.**
+      An unattended agent must never hand its own output the pickup label on the strength of a bar it
+      did not actually apply; a human or a later `/triage` pass can always release it afterwards.
+
+      Then post one summary comment on the epic listing every gap number
       filed. Under `tracker: none` there is nothing to search and nothing to file: record the audit
       result wherever the project keeps its log.
    6. **Append-only, always.** The audit reads issues, files new ones, and posts comments — it

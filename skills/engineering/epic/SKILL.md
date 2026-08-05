@@ -259,12 +259,18 @@ portable discipline.
    extra write per sub-issue. Lead with the machine-readable header line, so a later run can `grep`
    for it instead of re-reading the thread:
 
+   Write it to a scratch file and comment the file, rather than inlining it — checklist evidence
+   quotes issue-body text full of backticked headings, and an evidence line that happened to be
+   exactly `EOF` would terminate an inlined heredoc early and hand the rest to the shell. Redirecting
+   a quoted heredoc is plain Bash, so this needs no `Write` tool:
+
    ```bash
-   gh issue comment <child> --body "$(cat <<'EOF'
+   # <scratch> = any writable temp dir for this session
+   cat <<'EOF' > "<scratch>/chk-<child>.md"
    CHECKLIST: <checklist.path> § <checklist.section>
    <one line per checklist item: its id, PASS, and the specific evidence in this body>
    EOF
-   )"
+   gh issue comment <child> --body-file "<scratch>/chk-<child>.md"
    ```
 
    With no `checklist` binding the header line is instead
