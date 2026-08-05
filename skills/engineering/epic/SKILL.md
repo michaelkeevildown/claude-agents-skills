@@ -15,8 +15,9 @@ structure. Execution is a separate step — `/implement-issue` walks the sequenc
 
 The manifest at `.claude/PROJECT.md` is already in context via the root `CLAUDE.md` import. Its
 **`## Bindings` section is a set of markdown tables in the manifest's prose body**, and every
-`repo.*`, `labels.*`, `board.*`, `branch.*`, `gate.*`, `ui.*` name below is read out of those tables
-**by dotted key name**. Never hardcode a repo slug, a label, a branch prefix or a command.
+`repo.*`, `labels.*`, `board.*`, `branch.*`, `gate.*`, `checklist.*`, `ui.*` name below is read out
+of those tables **by dotted key name**. Never hardcode a repo slug, a label, a branch prefix or a
+command.
 
 > The bindings live in the manifest's **body**, not in YAML frontmatter, on purpose: the `@`-import
 > that puts the manifest in context strips frontmatter, so a binding written up there would not be in
@@ -134,6 +135,16 @@ portable discipline.
   healthy, go ahead; exit 1 ⇒ the pool is low, so **space the writes out** (or pause and re-run)
   rather than draining it and starving the loop. With `gate.graphql_guard` absent, space a large batch out
   anyway. This governs `/create-issue`'s own board writes too, not just `/epic`.
+- **Requirement-quality checklist (`checklist.path` + `checklist.section`):** the bar every drafted
+  body must clear **before** it is filed (step 4). The two keys are a **pointer, never a copy** — read
+  the section named by `checklist.section` out of the file named by `checklist.path` and run the items
+  that file actually contains. The project's copy is the only copy: never restate the items here, in
+  an issue body, or anywhere else. _With no `checklist` binding_, fall back to `create-issue`'s
+  **`## Self-Check Before Filing`** and lead the posted comment with
+  `CHECKLIST: none bound - create-issue self-check only`, so a floor-only pass never reads as a full
+  one. _With `checklist.path` bound but unreadable, or `checklist.section` not found inside it_, you
+  **could not run** the bar — that is not a pass: file nothing, post the blocker as a comment on the
+  epic issue, and stop non-zero.
 - **Conventions live in the project's `CLAUDE.md`** (and any nested per-directory one) — cite the
   relevant one in Technical Notes so the builder inherits the house rules for the surface it touches.
 - **Design-system surface — only when `ui.enabled` is true.** If `ui.enabled` is false or absent,
@@ -175,6 +186,14 @@ portable discipline.
      (`labels.ready` + `labels.human_gate` — it is **built and auto-merged into the epic branch like
      any sub**; the gate label instead gates the epic's **final** PR, which the owner merges), or
      **parked** (no `labels.ready` — invisible to the loop until one is added).
+   - plus the **outcome coverage matrix** — one row per epic-level outcome, taken from the epic's own
+     `## Summary`, mapped to the sub-issue(s) and the acceptance-criterion number(s) that deliver it:
+     `| Epic outcome | Sub-issue | AC # |`. An **unmapped outcome is a hole in the breakdown**, not a
+     detail — either author another sub-issue for it, or record it as an explicit Out-of-Scope line in
+     the epic body; never leave one silently unclaimed. This is **not** a blocking 100%-mapped gate:
+     the person's go below is the arbiter, and the explicit Out-of-Scope line is the sanctioned
+     escape. A single-sub epic still gets its one trivial row — presenting it is what forces the "is
+     this really an epic?" question.
 
    Get the person's **go before filing anything**. This is the deliberate, gated act; do not create
    issues on a guess — and because dispositions are on the table, the go is _informed_: approving the
@@ -214,7 +233,15 @@ portable discipline.
 4. **File each sub-issue, in order.** First **preflight the GraphQL budget** — filing N sub-issues
    plus their board cards + linkage (steps 4–5) is a burst of GraphQL writes, so run the budget guard
    before starting; if it reports low budget (exit 1), space the writes out (or pause until it clears)
-   rather than draining the shared pool. Then, for each, `gh issue create` with the full `create-issue`
+   rather than draining the shared pool. **Next, run the project's requirement-quality checklist
+   against every drafted body — before you create anything.** Read the section named by
+   `checklist.section` out of the file named by `checklist.path`, and evaluate **every item, by id**,
+   against that body. Fix the body and re-evaluate until every item passes; a body with a failing item
+   is not filed. _With no `checklist` binding_, run `create-issue`'s own
+   **`## Self-Check Before Filing`** instead, and say which list you ran in the comment below. _With
+   `checklist.path` bound but unreadable, or `checklist.section` not found inside it_, you **could not
+   run** the bar, and that is not a pass: file nothing, post the blocker as a comment on the epic
+   issue, and stop non-zero. Then, for each, `gh issue create` with the full `create-issue`
    body (Summary / Acceptance Criteria / Edge Cases / Out of Scope / Technical Notes / Affected Files
    / Dependencies). State the dependency explicitly as `Depends on #<earlier sub-issue>` (or "none").
    Apply the type + priority labels **and `labels.ready` per the approved disposition** (stamped by
@@ -225,6 +252,24 @@ portable discipline.
    ```bash
    <board.command> <child> ready
    ```
+
+   Then **post the completed checklist as a comment on the sub-issue you just filed.** It is
+   _evaluated_ before `gh issue create` (above) but _posted_ after it, because the comment needs
+   `<child>`, which does not exist until the issue does — count it in the budget preflight as one
+   extra write per sub-issue. Lead with the machine-readable header line, so a later run can `grep`
+   for it instead of re-reading the thread:
+
+   ```bash
+   gh issue comment <child> --body "$(cat <<'EOF'
+   CHECKLIST: <checklist.path> § <checklist.section>
+   <one line per checklist item: its id, PASS, and the specific evidence in this body>
+   EOF
+   )"
+   ```
+
+   With no `checklist` binding the header line is instead
+   `CHECKLIST: none bound - create-issue self-check only` and the items are `create-issue`'s
+   Self-Check boxes — a floor-only pass must never read as a full one.
 
 5. **Wire the two-way linkage for every sub-issue** (BOTH are required — the tracker UI reads one,
    scripts the other):
@@ -259,7 +304,9 @@ portable discipline.
    field lists the current children + their state. Show the person the existing sequence so the new
    work slots in correctly.
 2. **Shape the addition + settle where it fits** in the order (which existing/new issues it
-   `Depends on`, and what now depends on it). **Gate the breakdown.**
+   `Depends on`, and what now depends on it). **Gate the breakdown**, and in the same breath say
+   **which epic outcome the addition closes** — or name it as a NEW outcome the epic body must gain
+   (there is no matrix to present at this altitude; the one question is enough).
 3. **File the new sub-issue(s)** (steps 4–5 above): full body, `Depends on #NNN`, both linkages,
    board card at **ready** (`<board.command> <child> ready`), and **append** the new line(s) to the
    epic's `## Planned Sub-Issues` list as `N. #<child> — **<title>** — <scope>` (numbered, no
