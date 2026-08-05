@@ -222,15 +222,57 @@ Closes #<N>` (one `Closes` per in-scope sub **and** the epic) so merging it late
      its per-number `Closes #<sub>, …, Closes #<N>` body closes them all (repeat the keyword per
      number — never `Closes #a #b #N`). Then **run the project's close-out hooks
      (`hooks.close_out`, Procedure step 5) once for EVERY issue that merge closed**, the epic and
-     each in-scope sub, since the subs only close here. Then remove the shared worktree
-     (`git -C <repo> worktree remove <worktree>`) and report.
+     each in-scope sub, since the subs only close here. Then run the **post-merge convergence audit**
+     (step 7 below): it goes after the hooks and **before** teardown, while the worktree still exists.
+     Only then remove the shared worktree (`git -C <repo> worktree remove <worktree>`) and report.
    - **Gated** (`<gate-label>` on the epic or any sub, or an aggregate diff touching `ui.paths`):
      `gh pr ready <final PR>` + `gh pr edit <final PR> --add-label <gate-label>`, post the handoff note
      on the epic, and **STOP** — the owner checks out `<epic-branch>`, tests the assembled whole, and
-     merges. Leave the worktree in place. Nothing has closed yet, so the close-out hooks do not run
-     on this path: name them in the handoff note as pending on the owner's merge. **Never auto-merge
-     a gated final PR.** This stop is a _designed_ terminal state (the epic is built and parked at
-     its gate), not a blocker: report it and finish cleanly.
+     merges. Leave the worktree in place. Nothing has closed yet, so neither the close-out hooks nor
+     the convergence audit (step 7) runs on this path: name **both** in the handoff note as pending
+     on the owner's merge, for whoever performs it. **Never auto-merge a gated final PR.** This stop
+     is a _designed_ terminal state (the epic is built and parked at its gate), not a blocker:
+     report it and finish cleanly.
+7. **Post-merge convergence audit — runs exactly ONCE per epic, on whichever path performed the
+   merge.** Spec-kit's `/speckit.converge` pattern, ported onto the issue rail: the per-sub reviewers
+   certify each sub-PR individually (`goal-checker`, where this repo declares one), but integration
+   gaps _between_ subs evaporate the moment everything is merged — this is the one check that
+   re-verifies the ASSEMBLED result against everything the epic promised. On the **Ungated** path it
+   runs here, after the close-out hooks and **before** the worktree teardown. On the **Gated** path
+   nothing has merged yet, so it does **not** run here at all: the handoff note names it as pending on
+   the owner's merge, and whoever performs that merge runs it. Never run it twice for the same epic.
+   1. **Audit freshly-fetched `origin/<main>`, never the worktree.** `git fetch origin`, then read the
+      merged result through `origin/<main>` (`git show origin/<main>:<path>`). That is _mechanical_
+      here, not just the usual stale-checkout rule: the merge above ran `--delete-branch`, so
+      `<epic-branch>` is already gone and `origin/<main>` is the only readable oracle left.
+   2. **Re-read what was promised** — the epic body, and for every **closed** sub-issue its
+      `## Acceptance Criteria` GIVEN/WHEN/THEN block. A sub that is still open (a late-added, unmerged
+      straggler) is out of scope for this pass: note it in the audit comment, don't audit it.
+   3. **Verify each AC against the merged code, then classify it.** Read the file/symbol it claims —
+      **never infer from the PR description alone.**
+      - **met** — nothing to do.
+      - **missing / partial / contradicts** — a confirmed gap; file it (substep 5).
+      - **descoped** — the owner deliberately dropped it mid-epic: note it, file nothing.
+      - **unverifiable here** — it needs live production/pre-production state or a physical device:
+        note it _and the reason_, and never guess a verdict.
+      - **already tracked** by an open follow-up filed mid-epic — link it, don't refile.
+   4. **Zero confirmed gaps ⇒ one comment, no issues:**
+      `gh issue comment <N> --body "converged — no gaps vs #<N>"`, and file nothing.
+   5. **Confirmed gap(s) ⇒ idempotent filing.** Search first —
+      `gh issue list --search "Refs #<N>" --state open`, or the tracker's equivalent body search — and
+      skip every gap an open issue already tracks. File each remaining gap as a NEW standalone issue to
+      the full `/create-issue` discipline; its body carries **`Refs #<N>`, never a closing keyword**,
+      and names the originating sub-issue + AC number, typed and prioritised on merit. **Without that
+      skill, the rule holds anyway: open a plain tracker issue yourself** (title, what is wrong, how to
+      reproduce, GIVEN/WHEN/THEN acceptance criteria, and a `## Security Implications` section that is
+      never blank). Apply `<ready>` **only** if the body clears the same requirement-quality bar
+      `/triage` applies before its release relabel — an under-specified gap is filed **without** it,
+      and the audit comment says so. Then post one summary comment on the epic listing every gap number
+      filed. Under `tracker: none` there is nothing to search and nothing to file: record the audit
+      result wherever the project keeps its log.
+   6. **Append-only, always.** The audit reads issues, files new ones, and posts comments — it
+      **NEVER** reopens a closed sub-issue and **NEVER** edits a shipped issue's body, even to
+      "correct" it.
 
 > **Resume contract:** the loop is re-entrant. If it's interrupted (a dead agent, a crash, you stop
 > it), just re-invoke `/implement-issue <epic#>` — it re-attaches to the existing `<epic-branch>`
@@ -240,14 +282,22 @@ Closes #<N>` (one `Closes` per in-scope sub **and** the epic) so merging it late
 > with an open PR against `<main>` — by retargeting the stray PR onto `<epic-branch>`
 > (`gh pr edit --base <epic-branch>`, `Closes`→`Refs`) and treating an already-merged sub as satisfied.
 > Nothing is lost, nothing is double-built.
+>
+> **Step 7's audit re-attaches the same way, off its own markers on the tracker** — alongside the
+> branch, the worktree and the final PR: the `converged — no gaps vs #<N>` comment on the epic, or the
+> gap issues carrying `Refs #<N>` plus the summary comment listing them. Markers present ⇒ this epic
+> has already been audited, so don't audit it again; markers absent ⇒ it never was. **A fully-merged,
+> closed epic is therefore NOT the "epic ISN'T complete" stop below**: re-entering on one leaves
+> exactly step 7 to do — run the audit if its markers are absent, report converged if they are
+> present, and finish.
 
 **Stop ONLY when one of these is true — then report and hand back** (between sub-issues the loop does
 **not** pause to ask; these are the only interrupts):
 
 | Stop reason                                                                                                                                                                              | What to do                                                                                                                                                                                                                                                                                                                                     |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **All subs merged into `<epic-branch>`, final PR ungated + aggregate CI green**                                                                                                          | `gh pr ready` the final `<epic-branch>→<main>` PR, squash-merge it to `<main>` (its per-number `Closes #<sub>, …, Closes #<N>` body — keyword repeated per number — closes them all), tear down the worktree (step 6), and report.                                                                                                             |
-| **All subs merged into `<epic-branch>`, but the final PR is gated** (`<gate-label>` on the epic or any sub, or an aggregate diff touching `ui.paths`)                                    | `gh pr ready` the final PR + `gh pr edit --add-label <gate-label>`, post the handoff note, and **STOP** — the owner merges the assembled whole. Leave the worktree in place; report the merged subs + the pending final PR.                                                                                                                    |
+| **All subs merged into `<epic-branch>`, final PR ungated + aggregate CI green**                                                                                                          | `gh pr ready` the final `<epic-branch>→<main>` PR, squash-merge it to `<main>` (its per-number `Closes #<sub>, …, Closes #<N>` body — keyword repeated per number — closes them all), then — in this order — run the close-out hooks, run the convergence audit (step 7), tear down the worktree, and report.                                                                         |
+| **All subs merged into `<epic-branch>`, but the final PR is gated** (`<gate-label>` on the epic or any sub, or an aggregate diff touching `ui.paths`)                                    | `gh pr ready` the final PR + `gh pr edit --add-label <gate-label>`, post the handoff note, and **STOP** — the owner merges the assembled whole. The handoff note names the close-out hooks and the convergence audit (step 7) as pending on that merge. Leave the worktree in place; report the merged subs + the pending final PR.            |
 | **No ready sub-issue remains but the epic ISN'T complete** — all remaining are blocked (an owner-gated dep, a parked sub without `<ready>`, or a malformed/cross-epic `Depends on`)      | Classify _why_ each remaining sub-issue is blocked, comment that classification on the epic, and **leave the shared worktree in place** (only the all-merged ungated path removes it) so a follow-up can resume.                                                                                                                               |
 | **Remaining work is owner-gated** — a live apply to a shared/production environment, a step that can only run on the target host (secrets, backups, service units), a production release | Don't force it. Finish everything you _can_ first, then list the gated steps for the owner. The _authoring_ of such a change and its PR still merge (CI runs the gate against the test environment); only the **live apply** is gated — collect it, don't block the loop on it.                                                                |
 | **A gate stays red after ~3 self-heals** — the quality gate, a RED UI runner / `<ui-reviewer>` FAIL, or CI past the wait cap                                                             | Stop on that sub-issue, leave its card **in-progress**, and take the headless-legal terminal action: no PR merge, post the cited failure as a comment on the sub-issue, exit non-zero. Do **not** advance as if it merged. (A UI runner exiting `2` is **not** this row — it could not run, so it is a recorded skip and the loop carries on.) |
@@ -806,7 +856,10 @@ prerequisite code is present — same readiness logic as step 1.
   the epic's sub-issues one by one on a shared worktree, each sub-PR auto-merging into `<epic-branch>`
   as it goes; the epic container itself is still never implemented directly. The epic + every sub close
   together the moment the single `<epic-branch>→<main>` PR merges (its per-number
-  `Closes #<sub>, …, Closes #<N>` line — the keyword repeats per number).
+  `Closes #<sub>, …, Closes #<N>` line — the keyword repeats per number). **That merge is not the last
+  step** — it triggers the post-merge convergence audit (Epic-mode step 7), which re-verifies the
+  assembled result on `origin/<main>` against the epic's and every closed sub's acceptance criteria and
+  files each confirmed gap as a NEW issue.
 - **Don't build on an unmet dependency.** The readiness gate exists because a sub-issue's
   `Depends on #NNN` names code that must merge first; starting early means rebasing onto churn.
 - **The default branch is sacred** — never commit to `<main>` directly; everything goes through a
