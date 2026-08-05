@@ -61,6 +61,14 @@ mode step 6.)
 
 **Degrades when an optional binding is absent** (absence is a decision, not an oversight):
 
+- **`checklist` absent** — the epic-mode convergence audit (step 7) still files every gap it finds,
+  but **never stamps `<ready>` on one**, and says so in its audit comment. Note this is deliberately
+  **stricter** than the manifest's own `checklist`-absent rule and than `/triage`'s, both of which
+  permit a declared-narrowing pass and then release. That asymmetry is the point: those two are a
+  human or a supervised sweep releasing someone *else's* body, whereas the audit runs unattended and
+  would be releasing a body **it wrote itself**. **Do not "harmonise" this down to the manifest floor**
+  — that reopens the self-grant hole a security review closed.
+
 - **`ui.enabled` false or absent** — skip the UI gate entirely and **say in the PR body that no UI gate
   ran.** Never substitute a screenshot-free guess at design conformance. The same applies when the UI
   runner itself reports it could not run (exit `2` — see the exit-code table in step 3): a skip is
@@ -261,7 +269,11 @@ Closes #<N>` (one `Closes` per in-scope sub **and** the epic) so merging it late
       `gh issue comment <N> --body "converged — no gaps vs #<N>"`, and file nothing.
    5. **Confirmed gap(s) ⇒ idempotent filing.** Search first —
       `gh issue list --search "Refs #<N>" --state open`, or the tracker's equivalent body search — and
-      skip every gap an open issue already tracks. File each remaining gap as a NEW standalone issue to
+      skip every gap an open issue already tracks. **Treat a hit as authoritative and an EMPTY result
+      as weak:** a tracker's search index lags behind its own writes, so confirm an empty result
+      against a direct listing (the REST/API form, not the search form) before concluding a gap is
+      untracked. This step runs unattended, so a false negative here refiles a gap you already have,
+      with nobody watching. File each remaining gap as a NEW standalone issue to
       the full `/create-issue` discipline; its body carries **`Refs #<N>`, never a closing keyword**,
       and names the originating sub-issue + AC number, typed and prioritised on merit. **Without that
       skill, the rule holds anyway: open a plain tracker issue yourself** (title, what is wrong, how to
