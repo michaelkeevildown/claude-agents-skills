@@ -105,7 +105,8 @@ portable discipline.
   **invisible to the loop and silently never builds**. Stamp `labels.ready` by default. Leave it OFF
   only for **host-resident** work the loop can't verify inside its fence (secrets, backups,
   service/systemd config, anything _applied to_ a live host — build those by explicit number on that
-  host) or a sub the owner explicitly parks at step 2's go-gate — never silently. The label is a
+  host), a sub the owner explicitly parks at step 2's go-gate, or a sub carrying a checklist item that
+  cannot be made to pass (step 4's arm) — never silently. The label is a
   _pickup_ signal only — merge safety stays with `labels.human_gate` + the `ui.paths` fail-safe, and
   the deliberate-review moment is step 2's go-gate. (Removing `labels.ready` later parks a misbehaving
   issue; keep that lever.)
@@ -135,8 +136,9 @@ portable discipline.
   healthy, go ahead; exit 1 ⇒ the pool is low, so **space the writes out** (or pause and re-run)
   rather than draining it and starving the loop. With `gate.graphql_guard` absent, space a large batch out
   anyway. This governs `/create-issue`'s own board writes too, not just `/epic`.
-- **Requirement-quality checklist (`checklist.path` + `checklist.section`):** the bar every drafted
-  body must clear **before** it is filed (step 4). The two keys are a **pointer, never a copy** — read
+- **Requirement-quality checklist (`checklist.path` + `checklist.section`):** the bar every sub-issue
+  must clear to be released — its text items gate filing (step 4), an item whose evidence a later step
+  creates is judged at step 5. The two keys are a **pointer, never a copy** — read
   the section named by `checklist.section` out of the file named by `checklist.path` and run the items
   that file actually contains. The project's copy is the only copy: never restate the items here, in
   an issue body, or anywhere else. _With no `checklist` binding_, fall back to `create-issue`'s
@@ -235,9 +237,13 @@ portable discipline.
    before starting; if it reports low budget (exit 1), space the writes out (or pause until it clears)
    rather than draining the shared pool. **Next, run the project's requirement-quality checklist
    against every drafted body — before you create anything.** Read the section named by
-   `checklist.section` out of the file named by `checklist.path`, and evaluate **every item, by id**,
-   against that body. Fix the body and re-evaluate until every item passes; a body with a failing item
-   is not filed. _With no `checklist` binding_, run `create-issue`'s own
+   `checklist.section` out of the file named by `checklist.path`, and evaluate, by id, **every item
+   whose evidence is in the text you drafted**. Fix the body and re-evaluate until every one of those
+   passes; a body with a failing text item is not filed (the one exception is the cannot-pass arm
+   below). **An item whose evidence only exists once a later step has run — any tracker fact this step
+   has not created yet: an issue number (this sub-issue's or a sibling's), a link, a card — takes NO
+   verdict here, neither pass nor fail.** You cannot honestly judge an item against state you have not
+   created; step 5 judges those, once it has. _With no `checklist` binding_, run `create-issue`'s own
    **`## Self-Check Before Filing`** instead, and say which list you ran in the comment below. _With
    `checklist.path` bound but unreadable, or `checklist.section` not found inside it_, you **could not
    run** the bar, and that is not a pass: file nothing, post the blocker as a comment on the epic
@@ -246,40 +252,20 @@ portable discipline.
    / Dependencies). State the dependency explicitly as `Depends on #<earlier sub-issue>` (or "none").
    Apply the type + priority labels **and `labels.ready` per the approved disposition** (stamped by
    default, plus `labels.human_gate` where step 2 marked it human-gated; a host-resident or
-   owner-parked sub-issue is the one filed WITHOUT `labels.ready`). Then put each sub-issue on the
+   owner-parked sub-issue is filed WITHOUT `labels.ready`, and so is one the arm below holds back).
+   Then put each sub-issue on the
    board at its **ready** status — these are committed, sequenced work the person can pick up:
 
    ```bash
    <board.command> <child> ready
    ```
 
-   Then **post the completed checklist as a comment on the sub-issue you just filed.** It is
-   _evaluated_ before `gh issue create` (above) but _posted_ after it, because the comment needs
-   `<child>`, which does not exist until the issue does — count it in the budget preflight as one
-   extra write per sub-issue. Lead with the machine-readable header line, so a later run can `grep`
-   for it instead of re-reading the thread:
-
-   Write it to a scratch file and comment the file, rather than inlining it into `--body` — checklist
-   evidence quotes issue-body text full of backticked headings, and a file keeps that text out of the
-   shell's hands entirely instead of relying on getting the quoting right. Redirecting a quoted
-   heredoc is plain Bash, so this needs no `Write` tool.
-
-   **What this does NOT fix, so nobody assumes it does:** the heredoc is still a heredoc, so an
-   evidence line that is exactly `EOF` still ends it early either way. Never emit a bare `EOF` line
-   into the body; if the content might contain one, change the delimiter (`<<'CHKEOF'`):
-
-   ```bash
-   # <scratch> = any writable temp dir for this session
-   cat <<'EOF' > "<scratch>/chk-<child>.md"
-   CHECKLIST: <checklist.path> § <checklist.section>
-   <one line per checklist item: its id, PASS, and the specific evidence in this body>
-   EOF
-   gh issue comment <child> --body-file "<scratch>/chk-<child>.md"
-   ```
-
-   With no `checklist` binding the header line is instead
-   `CHECKLIST: none bound - create-issue self-check only` and the items are `create-issue`'s
-   Self-Check boxes — a floor-only pass must never read as a full one.
+   **If an item cannot be made to pass** — the shape the person approved genuinely does not carry what
+   the item demands, and your due diligence could not supply it — **still file the sub-issue and wire
+   its linkage in step 5.** What you withhold is the release, not the work: leave `labels.ready` OFF
+   whatever disposition step 2 gave it, and record that item as a failure with its reason in the
+   step-5 comment. **Never silently downgrade a failing item to a pass to get the sub-issue filed** —
+   the withheld label is the signal, and a checklist that always passes is worth nothing.
 
 5. **Wire the two-way linkage for every sub-issue** (BOTH are required — the tracker UI reads one,
    scripts the other):
@@ -302,10 +288,48 @@ portable discipline.
      gh issue edit <epic> --body "<full updated body>"
      ```
 
+   Then, with **both** links in place, **post the completed checklist as a comment on that
+   sub-issue** — one comment per child, every item, each verdict citing the evidence that exists at
+   that moment. The text items were settled at step 4; judge the ones it deferred now, against the
+   state you have just created. **If one of those does not hold, repair it and re-check BEFORE you
+   record its verdict** — a link you can still add, or **the child's own** `Depends on` line, now
+   correctable because the numbers finally exist (`gh issue edit <child> --body "<full updated body>"`
+   — the child's body, not the epic's, which the bullet above already rewrote), is a repair, not a
+   failure. Only a gap you cannot close takes step 4's cannot-pass arm — and reaching it from here
+   means the sub-issue is already filed and already labelled, so the arm's "leave `labels.ready` OFF"
+   becomes **take it off**: `gh issue edit <child> --remove-label "<labels.ready>"` (and drop its board
+   card back to `backlog`), then record the verdict. Stripping the label is the arm's remedy, not a
+   repair of the item, so it does not violate the repair-before-verdict rule above.
+   Count the comment in the budget preflight as one extra write per sub-issue, and lead with the
+   machine-readable header line, so a later run can `grep` for it instead of re-reading the thread:
+
+   Write it to a scratch file and comment the file, rather than inlining it into `--body` — checklist
+   evidence quotes issue-body text full of backticked headings, and a file keeps that text out of the
+   shell's hands entirely instead of relying on getting the quoting right. Redirecting a quoted
+   heredoc is plain Bash, so this needs no `Write` tool.
+
+   **What this does NOT fix, so nobody assumes it does:** the heredoc is still a heredoc, so an
+   evidence line that is exactly `EOF` still ends it early either way. Never emit a bare `EOF` line
+   into the body; if the content might contain one, change the delimiter (`<<'CHKEOF'`):
+
+   ```bash
+   # <scratch> = any writable temp dir for this session
+   cat <<'EOF' > "<scratch>/chk-<child>.md"
+   CHECKLIST: <checklist.path> § <checklist.section>
+   <one line per checklist item: its id, its verdict, and the specific evidence for that verdict>
+   EOF
+   gh issue comment <child> --body-file "<scratch>/chk-<child>.md"
+   ```
+
+   With no `checklist` binding the header line is instead
+   `CHECKLIST: none bound - create-issue self-check only` and the items are `create-issue`'s
+   Self-Check boxes — a floor-only pass must never read as a full one.
+
 6. **Confirm + report.** Verify the children are linked:
    `gh issue view <epic> --json subIssues,subIssuesSummary`
    (each node lists the child's `number` + `state`, plus a `completed`/`total` summary). Report the
-   epic number, the sub-issues with their numbers + sequence, and point the person at
+   epic number, the sub-issues with their numbers + sequence, **any sub-issue whose `labels.ready` you
+   withheld and the item that failed**, and point the person at
    **`/implement-issue`** to start (it will pick the lowest-numbered _ready_ sub-issue).
 
 ## Procedure — EXTEND an existing epic (`/epic <number>`)
