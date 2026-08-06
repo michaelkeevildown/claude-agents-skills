@@ -293,12 +293,14 @@ portable discipline.
    that moment. The text items were settled at step 4; judge the ones it deferred now, against the
    state you have just created. **If one of those does not hold, repair it and re-check BEFORE you
    record its verdict** — a link you can still add, or **the child's own** `Depends on` line, now
-   correctable because the numbers finally exist (`gh issue edit <child> --body "<full updated body>"`
-   — the child's body, not the epic's, which the bullet above already rewrote), is a repair, not a
-   failure. Only a gap you cannot close takes step 4's cannot-pass arm — and reaching it from here
-   means the sub-issue is already filed and already labelled, so the arm's "leave `labels.ready` OFF"
-   becomes **take it off**: `gh issue edit <child> --remove-label "<labels.ready>"` (and drop its board
-   card back to `backlog`), then record the verdict. Stripping the label is the arm's remedy, not a
+   correctable because the numbers finally exist — is a repair, not a failure. Rewrite **the child's
+   own** body, not the epic's, which the bullet above already rewrote, and pass it through a file
+   rather than inlining it, for the reason given just below:
+   `gh issue edit <child> --body-file "<scratch>/body-<child>.md"`.
+   Only a gap you cannot close takes step 4's cannot-pass arm — and reaching it from here
+   means the sub-issue is already filed, so the arm's "leave `labels.ready` OFF" becomes **take it
+   off**: `gh issue edit <child> --remove-label "<labels.ready>"` (harmless if the disposition never
+   stamped it; and drop its board card back to `backlog`), then record the verdict. Stripping the label is the arm's remedy, not a
    repair of the item, so it does not violate the repair-before-verdict rule above.
    Count the comment in the budget preflight as one extra write per sub-issue, and lead with the
    machine-readable header line, so a later run can `grep` for it instead of re-reading the thread:
