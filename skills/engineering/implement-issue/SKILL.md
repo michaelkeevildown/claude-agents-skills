@@ -665,6 +665,26 @@ origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **
     **If `git-workflow` is not vendored here, that one line above IS the rule:** read the diff before
     staging, `git add` explicit paths only, one logical change per commit, conventional subject, and a
     `Refs #<NN>` trailer. Apply it inline and carry on.
+
+    **Then push the branch — immediately, before the security review and the PR step:**
+    ```bash
+    git -C <worktree> push -u origin <branch>
+    ```
+    This runs **only after the quality gate is green** (step 3's gate leg above), so a red-gate branch
+    never reaches `origin`. From this moment the committed work is **durable on `origin`**: an
+    unattended fire that dies after this point — reaped on wallclock, killed with its container, out
+    of budget — loses nothing, because the branch outlives the machine that built it. Without this
+    push the only push is the one in step 4, which happens exactly when a PR opens, i.e. precisely the
+    case where the work was never at risk.
+    - **Push once, and never with `--force` or `--force-with-lease`.** If the push is rejected as
+      non-fast-forward, a *previous* strand for this issue is already on `origin` and force-pushing
+      would destroy it — strictly worse than losing this fire's copy. On rejection: comment the local
+      `HEAD` SHA on the issue and carry on to the next step. **A rejected push must never abort the
+      run.**
+    - **Durability is not resume.** A pushed branch is not reused by a later run — the standalone path
+      has no resume contract (step 1 creates the worktree with `git worktree add -b`, off
+      `origin/<main>`, every time). This buys recoverability of finished work and one fewer spurious
+      page; it does not shorten or restart anything.
     → **Log:** the `Refs #<NN>` trailer already links each commit to the issue; add a comment if the
     commit closes out an Acceptance Criterion so the thread stays readable.
 6.  **Security review — the last engineering step.** The diff is now whole, green, and committed —
@@ -743,6 +763,11 @@ origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **
   > **Security gate (unconditional):** every PR, UI-touching or not, must also have a clean
   > `security-reviewer` verdict + `/security-review` pass before this step runs. Independent of the UI
   > gate — both must PASS on a `ui.paths`-touching PR.
+
+  The `push` below is **idempotent, not a second distinct push**: step 3 item 5 already pushed this
+  branch at commit time, so this is a fast-forward no-op unless commits were added since (a self-heal
+  pass, a rework commit). It stays here so the PR step is self-contained for a run that reached it by
+  some other route. The two pushes do not conflict.
 
   ```bash
   git -C <worktree> push -u origin <branch>
