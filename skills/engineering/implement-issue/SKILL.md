@@ -770,16 +770,19 @@ origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **
   The `push` below is **idempotent, not a second distinct push — provided step 3 item 5's push
   SUCCEEDED**: that push already put this branch on `origin`, so this one is a fast-forward no-op
   unless commits were added since (a self-heal pass, a rework commit). It stays here so the PR step is
-  self-contained for a run that reached it by some other route. On that path the two pushes cannot
-  conflict.
+  self-contained for a run that reached it by some other route. On the succeeded path this skill's own
+  two pushes cannot conflict.
 
-  **If step 3 item 5's push was REJECTED as non-fast-forward, this push is rejected too — and you must
-  NOT open the PR.** `origin/<branch>` is then a *previous* strand's tip, which this run neither built
-  nor gated: opening a PR would attach a body asserting "gate green, reviewers PASS" to a diff that was
-  never gated or reviewed, and on an auto-merge repo that merges unreviewed work. Instead: comment on
-  the issue with this run's local `HEAD` SHA, the fact that `origin/<branch>` holds an older
-  unrecovered strand, and that no PR was opened; then stop without opening one. Never `--force` here
-  either.
+  **If THIS push is rejected as non-fast-forward — for any reason — you must NOT open the PR.** Key
+  the rule on what you observe here, not on what happened earlier: it holds whether step 3 item 5 was
+  rejected, never ran (a run that reached this step by some other route), or succeeded and something
+  else moved the ref since. `origin/<branch>` is then a tip this run neither built nor gated, usually a
+  *previous* strand's: opening a PR would attach a body asserting "gate green, reviewers PASS" to a
+  diff that was never gated or reviewed, and on an auto-merge repo that merges unreviewed work.
+  Instead **escalate**, the same terminal action as any other blocker here: comment on the issue with
+  this run's local `HEAD` SHA, the fact that `origin/<branch>` holds a tip this run did not produce,
+  and that no PR was opened — then **exit non-zero**, so a driver reads it as a blocked run rather
+  than a clean no-op. Never `--force` here either.
 
   ```bash
   git -C <worktree> push -u origin <branch>
