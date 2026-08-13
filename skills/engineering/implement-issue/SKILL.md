@@ -767,6 +767,25 @@ origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **
   > `security-reviewer` verdict + `/security-review` pass before this step runs. Independent of the UI
   > gate — both must PASS on a `ui.paths`-touching PR.
 
+  **The `REVIEWERS:` line is MANDATORY and machine-read — it is the merge door's only structured
+  evidence that a review happened.** Emit exactly one such line, as the first line of the body, with
+  one `<agent>=<verdict>` pair for **every** agent in the project manifest's `reviewers[]`:
+
+  - a reviewer that ran ⇒ its verdict verbatim (`PASS`, `FAIL`, `done`, `not-done`, `broken`);
+  - a reviewer the manifest does not declare, or whose `when` does not match this diff ⇒ `n/a`;
+  - a reviewer that was declared and applicable but **could not be spawned** — the Agent tool refused,
+    a quota or permission denied it, the runner died — ⇒ the WHOLE line reads
+    `REVIEWERS: COULD-NOT-RUN <agent>[,<agent>...]` and the PR does not open (escalate, per the
+    could-not-run terminal action).
+
+  Prose elsewhere in the body may elaborate; it may never substitute. **Never omit the line, and never
+  write a verdict a reviewer did not return.** The failure this closes is specific and has happened: a
+  PR whose reviewers could not be spawned named all three of them in its prose while stating they did
+  not run, so any consumer grepping for a reviewer's name read it as reviewed. A structured line with an
+  explicit COULD-NOT-RUN value is the difference between "no review" and "review passed" being
+  distinguishable at all — and on a repo with auto-merge enabled, that difference is the only thing
+  standing between an unreviewed diff and the default branch.
+
   The `push` below is **idempotent, not a second distinct push — provided step 3 item 5's push
   SUCCEEDED**: that push already put this branch on `origin`, so this one is a fast-forward no-op
   unless commits were added since (a self-heal pass, a rework commit). It stays here so the PR step is
@@ -788,6 +807,8 @@ origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **
   git -C <worktree> push -u origin <branch>
   gh pr create --title "<type>(<scope>): <subject>" \
     --body "$(cat <<'EOF'
+  REVIEWERS: <agent>=<verdict> [<agent>=<verdict> ...]
+
   ## Summary
   - <what changed and why>
 
