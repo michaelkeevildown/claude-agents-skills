@@ -229,6 +229,24 @@ gh issue edit <epic> --body "<full updated body>"
 2. #<child> — **Sub-Item Title** — description (depends on #<earlier-child>)
 ```
 
+## Build Tier Labels (`model:`/`effort:`) — only when the project binds one
+
+Some projects run an autonomous build loop that fires each issue at a chosen model and effort
+level, resolved from two labels: a `model:` label and an `effort:` label. That vocabulary — the
+label prefixes, the allowed values, the default, and the signals that push an issue up or down — is
+a **project binding**, never something this skill invents. Look for it wherever the project keeps
+its other bindings (typically a `tier.path` + `tier.section` pointer alongside `labels.*`, read the
+same way as every other dotted-key binding).
+
+- **Bound:** select exactly one `model:` value and one `effort:` value from the vocabulary the
+  binding names, and record the choice — the class and the specific signal that decided it — in the
+  issue body (a short `## Build Tier` note, or a line in `## Technical Notes` when the project's own
+  template has no dedicated section). Never leave the decision unstated: an unlabelled issue looks
+  identical to an issue nobody thought about, and on a project that defaults an unlabelled issue to a
+  cheap tier, that silence is a silent downgrade.
+- **Unbound:** the project has no tier vocabulary to read. Stamp no tier label and don't guess a
+  model name — this is a silent, safe degrade, never a gap to call out in the issue.
+
 ## Self-Check Before Filing
 
 - [ ] Could a second builder produce the same behaviour from these ACs alone?
@@ -238,6 +256,8 @@ gh issue edit <epic> --body "<full updated body>"
 - [ ] If a design decision was non-obvious, is the rejected alternative recorded?
 - [ ] If part of an epic: native link **and** the inline `#NNN` body reference both done?
 - [ ] Dependencies stated as `Depends on #NNN` or explicitly "none"?
+- [ ] If the project binds a build-tier vocabulary: does the issue carry both a `model:` and an
+      `effort:` label, with the choice justified in the body? (No such binding ⇒ n/a, not a fail.)
 
 ## Anti-Patterns
 

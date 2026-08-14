@@ -126,6 +126,17 @@ portable discipline.
   `labels.ultra` so `/implement-issue` fires that ONE build at the coding agent's deepest effort
   setting — its own internal multi-agent depth, no bespoke fan-out authored here. Per-sub-issue
   opt-in only; it changes HOW that build happens, never the reviewer gate or the merge policy above.
+- **Build tier (`tier.path` + `tier.section`, if bound):** every sub-issue also declares a `model:`
+  and an `effort:` label, per `create-issue`'s "Build Tier Labels" — read the vocabulary, the class
+  table and the push-up/push-down signals from `tier.section` in `tier.path` (never hardcode a model
+  name here), pick the class from the sub-issue's own shape (multi-file, security-touching, a prod
+  data path, a demanded revert-pin push it up; docs-only, single-file, well-precedented push it
+  down), and record the choice + the specific signal that decided it as a line in the sub-issue's
+  `## Technical Notes`. `labels.ultra` still expands to `model:opus` + `effort:xhigh` on its own —
+  restated here only so a sub-issue carrying both is filed correctly the first time, since an
+  explicit `model:`/`effort:` label beats the expansion per the project's own rule. **No `tier`
+  binding ⇒ stamp neither label and say nothing** — the same silent, safe degrade `create-issue`
+  documents, never a guess at a model name.
 - **The gate is `gate.command`** — name it in Technical Notes as the bar a sub-issue must pass, along
   with `gate.prereq` if the project declares one. If `gate` is absent that is fatal for the _builder_,
   not for you: still name the bar the project does have, and say so plainly if it has none.
@@ -253,7 +264,9 @@ portable discipline.
    Apply the type + priority labels **and `labels.ready` per the approved disposition** (stamped by
    default, plus `labels.human_gate` where step 2 marked it human-gated; a host-resident or
    owner-parked sub-issue is filed WITHOUT `labels.ready`, and so is one the arm below holds back).
-   Then put each sub-issue on the
+   Apply the build-tier labels too, per the bindings bullet above — a deliberate `model:` + `effort:`
+   pair, justified in the sub-issue's own `## Technical Notes`, when `tier` is bound; neither label
+   when it isn't. Then put each sub-issue on the
    board at its **ready** status — these are committed, sequenced work the person can pick up:
 
    ```bash

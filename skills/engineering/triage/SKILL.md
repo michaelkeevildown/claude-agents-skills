@@ -21,8 +21,8 @@ good body; `/triage` owns the _queue_, the _screenshot_, the _in-place rewrite_,
 
 The manifest at `.claude/PROJECT.md` is already in context via the root `CLAUDE.md` import. Its
 **`## Bindings` section is a set of markdown tables in the manifest's prose body**, and every
-`repo.*`, `labels.*`, `board.*`, `gate.*`, `checklist.*`, `ui.*` name below is read out of those
-tables **by dotted key name**. Never hardcode a label, a path or a command.
+`repo.*`, `labels.*`, `board.*`, `gate.*`, `checklist.*`, `tier.*`, `ui.*` name below is read out of
+those tables **by dotted key name**. Never hardcode a label, a path or a command.
 
 > The bindings live in the manifest's **body**, not in YAML frontmatter, on purpose: the `@`-import
 > that puts the manifest in context strips frontmatter, so a binding written up there would not be in
@@ -297,6 +297,15 @@ Then one line per item: its id, its verdict, and the specific evidence for that 
 - **This comment is a main-session write**, alongside the label writes below — never delegated to a
   fan-out worker.
 
+Before the relabel, decide the **build tier** — a `model:` and an `effort:` label — when the project
+binds a vocabulary for it (`tier.path` + `tier.section`, alongside the other `labels.*` bindings; see
+`create-issue`'s "Build Tier Labels"). Read the class table and the push-up/push-down signals from
+`tier.section` in `tier.path`, pick the class from what the rewritten body actually shows (multi-file,
+security-touching, a prod data path, a demanded revert-pin push up; docs-only, single-file,
+well-precedented push down), and add a line to the rewritten body's `## Technical Notes` recording the
+choice and the signal that decided it. **No `tier` binding ⇒ stamp neither label** — the same silent,
+safe degrade `create-issue` documents, never a guess at a model name.
+
 The relabel is what actually releases the issue to the loop — **`labels.triage` off, `labels.ready`
 on, in one call** so it can never sit in both states:
 
@@ -304,6 +313,7 @@ on, in one call** so it can never sit in both states:
 gh issue edit <NN> \
   --remove-label "<labels.triage>" \
   --add-label "<labels.ready>,<type>,<priority>"   # type: labels.bug|labels.enhancement · priority: from labels.priority_order
+  # plus "<model-label>,<effort-label>" in the same --add-label, when `tier` is bound
 <board.command> <NN> ready
 ```
 
@@ -311,6 +321,8 @@ gh issue edit <NN> \
   default for UI issues; the owner validates and merges). With no UI surface, apply it on explicit
   intent only.
 - **`labels.ultra`** — only when the owner asks for it, or the work is genuinely multi-file/subtle.
+  Expands to `model:opus` + `effort:xhigh` on its own; an explicit `model:`/`effort:` label on the
+  same issue beats the expansion, per the project's own rule.
 - **`labels.ready` is a release, not a formality.** If you left an open question in the body, do
   **not** stamp it — the loop will build the guess.
 - **A failing checklist item is that same hold.** The body stays rewritten and the comment stays
