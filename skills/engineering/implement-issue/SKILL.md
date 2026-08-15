@@ -109,9 +109,42 @@ shared integration branch `<epic-branch>` and auto-merging each green sub-PR int
 opening + resolving ONE final `<epic-branch>→<main>` PR — and only stops when the epic is finished or
 it hits a gate it cannot clear by itself. No "do them all" each time, no pausing between sub-issues.
 
-**Detect the epic first.** The argument is an epic iff `gh issue view <N> --json labels` carries the
-`labels.epic` label (or `gh issue view <N> --json subIssues` returns children). If it's a plain issue,
-ignore this section and run the single-issue **Procedure** below as normal.
+**Route the argument FIRST — this ONE ordered decision fixes the mode AND the PR base BEFORE any
+Procedure step runs.** Resolve the argument once, act on the first matching row, and treat the base it
+fixes as final: **no passage later in this file re-derives it.** (This is the whole of the epic-child
+routing rule; it lives here, above the Procedure, precisely so a session invoked with a sub-issue
+number reads it before it selects a Procedure — the reader-dependent contradiction this replaces was
+that the base depended on which passage a session happened to read first.)
+
+1. **Is the argument itself an epic?** `gh issue view <N> --json labels` carries the `labels.epic`
+   label, or `gh issue view <N> --json subIssues` returns children. ⇒ **Epic mode** (this whole
+   section): the autonomous loop bundles every ready sub onto `<epic-branch>` and opens ONE final
+   `<epic-branch>→<main>` PR. Ignore the single-issue Procedure's routing for the container.
+2. **Otherwise it is a single issue** (a standalone, or ONE sub-issue named by its own number). **Look
+   up its parent** — `gh issue view <NN> --json parent -q .parent.number` (empty ⇒ standalone; the
+   lookup must not error or stall on an empty result) — and pick the base by the **ratified
+   epic-child rule**:
+   - **Standalone (no parent), OR a sub whose parent epic has NO `epic/<N>` integration branch on
+     origin** (`git ls-remote --exit-code --heads origin epic/<parent>` exits non-zero) ⇒ the
+     single-issue **Procedure** below, base **fresh `origin/<main>`**, body **`Closes #<NN>`**. This is
+     the ratified path for a lone sub built by its own number: it lands **direct to `<main>`**, and its
+     parent epic closes **natively** as its children close — there is **no** final bundling PR, and
+     nothing depends on a final PR carrying `Closes #<already-closed-sub>` (the no-op the loop's
+     `merge_policy.is_epic_integration_base` names as the #287/#434 degeneration).
+   - **A sub whose parent epic ALREADY has an `epic/<N>` integration branch on origin** (a loop run in
+     flight — e.g. `epic/961`, a half-bundled epic) ⇒ the single-issue Procedure but base
+     **`origin/epic/<N>`**, body **`Refs #<NN>`** — join the existing bundle rather than half-bundling
+     the epic; that epic's final `<epic-branch>→<main>` PR closes it. Do not open a second, `<main>`-
+     based PR for a sub whose epic is already bundling.
+
+   **This divergence between a by-number build and the autonomous loop is DELIBERATE, not a bug.**
+   Invoked with an _epic number_, the loop bundles every sub (base `epic/<N>`); invoked with a _sub
+   number_, a single-issue build lands **direct to `<main>`** unless an `epic/<N>` branch already
+   exists. Both are correct, and `is_epic_integration_base("main")` is `False` **on purpose**: a
+   direct-to-`<main>` epic child takes the ordinary per-PR merge gate (there is no aggregate final gate
+   for it to defer to), while a sub that joins an `epic/<N>` branch defers to that epic's final gate.
+   Re-shaping the loop's router or `merge_policy` to match a by-number build is a separate, riskier
+   change and is **out of scope** for this rule — this fixes the written contract, not the loop.
 
 **The integration-branch model — the whole shape in one place:**
 
@@ -121,20 +154,27 @@ ignore this section and run the single-issue **Procedure** below as normal.
   quality gate + reviewers passing is enough; there is no per-sub owner gate. Sub-PRs carry
   **`Refs #<sub>`, NEVER `Closes`** (they don't target the default branch, so the sub-issue must stay
   open until the final PR merges).
-- **A lone sub of an epic still bundles.** Even a single ready sub of an epic builds onto
-  `<epic-branch>` and PRs into it — never straight to `<main>`. Only a genuinely standalone (non-epic)
-  issue PRs to `<main>`. Resolve a sub → its parent with
+- **Within Epic mode, a lone ready sub still bundles.** When the loop is driving an epic (you invoked
+  it with the _epic_ number), even a single ready sub builds onto `<epic-branch>` and PRs into it — the
+  loop never shortcuts a one-sub epic straight to `<main>`. **This is scoped to the loop.** A sub built
+  on its own **by number** is NOT in Epic mode: it is routed by the ordered rule above ("Route the
+  argument FIRST") — direct to `<main>` with `Closes`, unless an `epic/<N>` branch already exists for
+  its parent, in which case it joins that branch with `Refs`. Resolve a sub → its parent with
   `gh issue view <NN> --json parent -q .parent.number` (empty ⇒ standalone).
 - **`<gate-label>` no longer stalls the epic — it bubbles up to the FINAL PR.** A `<gate-label>` (or
   `ui.paths`-touching) sub still builds + auto-merges into `<epic-branch>` like any other. The gate
   moves to the ONE final `<epic-branch>→<main>` PR: it is **human-gated iff** `<gate-label>` is on the
   **epic**, on **any** sub, OR the **aggregate** `<epic-branch>` diff touches `ui.paths`. (This is
   exactly what un-sticks the old deadlock where a gated sub #2 froze subs #3–7.)
-- **Safety invariant — nothing reaches `<main>` unless the aggregate gate is green AND (if gated) a
-  human merged it.** The only two paths to `<main>` are the unchanged standalone PR and this epic's ONE
-  final `<epic-branch>→<main>` PR. A sub-PR is hard-guarded to `base == <epic-branch>` — it can never
-  merge to `<main>`. Ungated final PR ⇒ auto-merge to `<main>` once every sub is in AND aggregate CI is
-  green; gated ⇒ mark ready + add `<gate-label>` + STOP for the owner.
+- **Safety invariant (in Epic mode) — nothing the LOOP built reaches `<main>` unless the aggregate
+  gate is green AND (if gated) a human merged it.** While the loop is bundling an epic, a **loop-built
+  sub-PR** is hard-guarded to `base == <epic-branch>` — it can never merge to `<main>`; the only route
+  its work takes to `<main>` is this epic's ONE final `<epic-branch>→<main>` PR (ungated ⇒ auto-merge
+  once every sub is in AND aggregate CI is green; gated ⇒ mark ready + add `<gate-label>` + STOP for
+  the owner). This invariant governs the loop, not a by-number single-issue build: a lone epic child
+  built **direct to `<main>`** under the ratified rule ("Route the argument FIRST") is a legitimate
+  third route to `<main>`, gated by its own ordinary per-PR gate rather than by an aggregate final one
+  — that is the deliberate divergence stated in the router, not a hole in this fence.
 - **Idempotent + re-entrant.** Creating the `<epic-branch>` branch, opening/updating the final PR,
   merging subs, and the final merge must ALL be safe to re-run — detect "already exists / already
   merged / already open" and no-op. Tolerate an epic PARTIALLY on `<main>` already (e.g. a sub merged
@@ -410,7 +450,10 @@ overrides the filter.
   here, the rule it carries is exactly the sentence you just read**: one branch per issue, named
   `<type>/<NN>-<slug>` off fresh `origin/<main>`, lowercase and hyphenated within
   `branch.slug_max_len`, so apply it inline and carry on).
-- Branch from fresh `<main>` into a **sibling worktree** (the house pattern):
+- Branch from the base **"Route the argument FIRST" (top of file) already fixed** into a **sibling
+  worktree** (the house pattern). For a standalone or a lone epic child under the ratified rule that
+  base is fresh `origin/<main>`; for a by-number sub joining an existing `epic/<N>` branch it is
+  `origin/epic/<parent>` — substitute it for `origin/<main>` below. Do not re-decide the base here.
   ```bash
   git -C <repo> fetch origin
   git -C <repo> worktree add -b <branch> <worktree> origin/<main>
@@ -737,11 +780,14 @@ origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **
 
 ### 4. Open the PR
 
-> **Epic mode overrides the PR base + closing keyword:** for an epic sub-issue the PR targets the
-> integration branch — `gh pr create --base <epic-branch> …` — and its body uses **`Refs #<NN>`, NEVER
-> `Closes #<NN>`** (a sub doesn't target the default branch, so it must stay open until the epic's
-> final PR merges). The `Closes #<NN>` template below is the **standalone** shape; leave it as-is and
-> apply this override only in epic mode.
+> **The PR base + closing keyword are the ones "Route the argument FIRST" (top of file) already
+> fixed — do NOT re-derive them here.** When that base is an `<epic-branch>` integration branch —
+> Epic mode, or a by-number sub joining an `epic/<N>` branch the loop had already cut — the PR targets
+> it: `gh pr create --base <epic-branch> …` with **`Refs #<NN>`, NEVER `Closes #<NN>`** (the sub stays
+> open until the epic's final PR merges). When that base is `<main>` — a genuine standalone, OR a lone
+> epic child built **direct to `<main>`** under the ratified rule — use the `Closes #<NN>` template
+> below unchanged (its parent epic then closes natively as this child closes). The base decision is
+> made once, at the top; this step only applies it.
 
 - **Autonomy — no human in the per-PR loop.** Once the local gate and every applicable reviewer in
   `reviewers[]` PASS — `<ui-reviewer>` (`ui.paths`), `correctness-reviewer` (backend),
