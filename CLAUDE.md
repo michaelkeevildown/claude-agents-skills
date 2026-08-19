@@ -99,12 +99,12 @@ Two rules `--vendor` must never lose: it copies **per file** and never removes a
 | git-workflow               | global      | 582   | Git workflow conventions                                                             |
 | zustand-state              | frontend    | 529   | Zustand 5 state management                                                           |
 | react-patterns             | frontend    | 507   | React 19 + TypeScript strict mode patterns                                           |
+| issue-authoring            | global      | 505   | Writing GitHub Issues an autonomous agent can implement without guessing             |
 | neo4j-driver-js            | frontend    | 447   | Neo4j JavaScript driver 6                                                            |
 | neo4j-cypher               | global      | 434   | Neo4j Cypher query language reference                                                |
 | neo4j-data-models          | global      | 429   | Neo4j graph data modeling patterns                                                   |
 | epic                       | engineering | 378   | Author a NEW epic (a high-level piece of functionality broken into ordered sub-is... |
 | triage                     | engineering | 360   | Work up the owner's raw captures                                                     |
-| issue-authoring            | global      | 274   | Writing GitHub Issues an autonomous agent can implement without guessing             |
 | kickoff                    | engineering | 120   | Capability-audit gate before substantial new work                                    |
 | regression-proof-red-green | global      | 77    | Prove a regression test fails on pre-fix code and passes on the fix before claimi... |
 | quality-gate               | engineering | 65    | Run the project's canonical quality gate, the single command a human, the pre-com... |
