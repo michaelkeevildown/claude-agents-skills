@@ -2,6 +2,7 @@
 name: test-writer
 description: Write Playwright E2E tests that verify the builder's implementation against feature doc acceptance criteria. Tests should PASS. Triggers on write tests, test writer, pick up testing, E2E tests, verify feature.
 tools: Read, Grep, Glob, Bash, Write, Edit
+model: sonnet
 memory: user
 ---
 
