@@ -131,6 +131,16 @@ Two rules `--vendor` must never lose: it copies **per file** and never removes a
 - First executable line: `set -euo pipefail`
 - All `.sh` files must be executable (`chmod +x`)
 - Quote all variables: `"$var"` not `$var`
+- **Exception — a script meant to be SOURCED takes no `set` line.** `set -euo pipefail` in a sourced
+  file applies to the **caller's** shell, so adding one imposes `-e` on every consumer and can kill a
+  script that was merely reading a variable. `verify-scripts/lifecycle-stage.sh` is sourced (it
+  exports `LIFECYCLE_STAGE` / `PROJECT_STACK`) and deliberately has none. Its shellcheck `SC2034`
+  "appears unused" is a false positive for the same reason: the variable _is_ the output.
+- **Guard command substitutions that contain a pipe.** Under `pipefail`, `x="$(grep ... | sed ...)"`
+  takes grep's non-zero exit on no-match; with `-e` that aborts the script before any guard runs, and
+  without `-e` it silently yields an empty string. Write `|| true` at the call site and give the
+  variable an explicit fallback — an empty value in a diagnostic is worse than a crash, because it
+  reads as an answer. See `skills/global/bash-pipefail-safety`.
 
 ### Naming
 
@@ -155,6 +165,16 @@ Two rules `--vendor` must never lose: it copies **per file** and never removes a
 Six stack categories: `frontend`, `flutter`, `python`, `rust`, `global` (universal),
 and `engineering` (the tracker/lifecycle pack: issue authoring, epics, triage, build, gate)
 
+## Self-audit
+
+`bash verify-scripts/audit-repo.sh` runs every mechanical check this repo has, offline, and exits
+non-zero on any finding: shell syntax, agent/skill frontmatter, cited-path resolution, whether bash
+blocks in skills actually parse, unguarded command substitutions under `pipefail`, silent stubs,
+hooks JSON + their referenced scripts, and inventory freshness.
+
+**Run it before opening a PR.** Every check exists because it once found a real defect — the
+inventory leg caught this repo going stale the very first time it ran.
+
 ## Project-layer templates
 
 `setup.sh --bootstrap` scaffolds a consumer repo's **project layer** — the manifest, the gate shims,
@@ -164,6 +184,7 @@ templates under [`templates/`](templates/README.md), driven by the registry
 
 **To add a scaffolded file: drop a template under `templates/project/` and add one row to
 `FILES.tsv`.** No shell editing. See `templates/README.md` for the columns and the token list.
+
 
 ## Do NOT
 
