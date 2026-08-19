@@ -52,6 +52,11 @@ So when the defect is localised, the issue must say **where the fix goes**:
 
 Absent that, "no ambiguity" is only true of the outcome, not of the change.
 
+**Where it goes:** in `## Technical Notes` (and the do-not-touch items in
+`## Out of Scope`) — never in `## Summary`, which stays "what and why, not how".
+The criteria still describe observable behaviour; the seam is the note that stops
+a builder reaching it through the wrong call site.
+
 ### Cite code so the citation survives
 
 A bare line number rots on the next merge. Anchor on the **symbol plus a short
@@ -128,6 +133,41 @@ sibling process can advance your local branch underneath you and flip an earlier
 merged. (If the project's canonical branch isn't `origin/main`, the project layer
 names it.)
 
+### Search the tracker before you write a line
+
+The cheapest issue to write is the one that already exists. Before drafting,
+search **open and closed** issues for the same symptom, the same file, and the
+same feature name — closed matters, because a closed issue tells you the work was
+done, rejected, or duplicated, and each of those changes what you file.
+
+```bash
+gh issue list --state all --search "<symptom or symbol>" --limit 30
+```
+
+On a hit: extend or reopen that issue rather than filing a near-duplicate. Two
+issues covering one defect split the evidence, and whichever gets built first
+leaves the other looking unfinished forever. If you file anyway because the scope
+genuinely differs, say so in the body and link the neighbour — the builder must
+not have to rediscover the relationship.
+
+## The title is a queue-triage surface, not a heading
+
+An autonomous queue is read as a **list of titles**. Priority ordering, duplicate
+spotting, and the owner's "what is this?" all happen before anyone opens the body.
+
+A title states **the defect or the capability, not the area**:
+
+| Weak                     | Strong                                                                  |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `Fix the job runner`     | `fix(runner): a cancelled job is retried forever, saturating the queue` |
+| `Improve error handling` | `fix(api): the freshness handler swallows a fault with no log`          |
+| `Auth work`              | `feat(auth): rotate refresh tokens on every use`                        |
+
+Lead with the consequence where there is one — "saturating the queue" is what makes
+someone read it today rather than next month. If the project binds a commit or
+title convention, follow that; absent a binding, a short `type(scope):` prefix
+plus the observable problem reads well in every tracker.
+
 ## Issue Body Structure
 
 Use these sections, in this order. Omit a section only when it genuinely does
@@ -160,6 +200,12 @@ One paragraph: what this does and why it needs to exist. Not how.
 
 - `path/to/file` — what changes here
 
+## Security Implications
+
+> What this touches: authz and tenant isolation, untrusted input, secrets,
+> new or bumped dependencies, new HTTP/RPC surface, outbound calls. Never
+> blank — a genuinely neutral change says so _with its reason_.
+
 ## Design Spec
 
 > Only for issues with a visible UI surface. Omit (or "no UI changes in scope")
@@ -190,6 +236,66 @@ Every criterion must be:
 4. **Observable** — asserts a result a user or a test can see, not an internal
    intention ("THEN the component is well-structured" is not a criterion).
 
+### At least one criterion must be an OUTCOME, not a mechanism
+
+A criterion that names a **mechanism** — "add `retryWithBackoff()`", "install the
+timer", "add the dedup marker" — can be satisfied in full while the feature does
+not work. This is the most expensive failure in this document, because it passes
+every check: the code exists, the test is green, the box is ticked, and the thing
+the issue existed to produce never happens.
+
+It is not hypothetical. One epic shipped thirteen mechanism criteria across its
+sub-issues, ticked every one, passed the gate — and the alert they existed to add
+**could never fire**. Nothing in the criteria had ever asserted that it did.
+
+So every issue carries at least one criterion of the shape:
+
+> GIVEN [a real scenario] WHEN [the system runs] THEN [the observable outcome the
+> > issue exists to produce]
+
+and it must hold **at production configuration** — the real thresholds, the real
+config resolution, the deployed surface. A test that lowers a threshold to make
+the path reachable, or stubs out the very component it is meant to prove, does
+**not** satisfy an outcome criterion: it proves the feature works in a
+configuration that does not exist.
+
+Three that look fine and are not:
+
+| Looks satisfied                                          | Why it proves nothing                              |
+| -------------------------------------------------------- | -------------------------------------------------- |
+| Alert page proven with the threshold dropped 4 → 1       | Production runs at 4; the page was never reachable |
+| Ledger proven with its recorder monkeypatched inert      | The thing under test was replaced by a stub        |
+| Count asserted against a value that is 1 by construction | The assertion cannot fail, so it tests nothing     |
+
+Ask of each criterion: **if I implemented exactly this and nothing else, would
+the feature actually work?** If yes for the whole set, the outcome criterion is
+present. If not, you have specified a mechanism and hoped.
+
+### A bug fix must be pinned by a test that fails without it
+
+For an issue whose job is to fix a defect, "the tests pass" is not evidence — the
+tests passed before the fix too, which is why the bug shipped. Require, as a
+criterion, that **reverting the fix makes a named test fail**:
+
+> GIVEN the fix is reverted WHEN `<named test>` runs THEN it fails
+
+Without it the fix is unheld: re-introducing the original defect leaves the suite
+green, and the next rebase or refactor silently restores the bug. One review found
+a fix whose removal left the entire suite passing.
+
+Two things make such a pin worthless, so state them in the issue:
+
+- **The red must be behavioural.** A test that fails with `ImportError` /
+  `AttributeError` because a symbol is missing proves nothing about behaviour —
+  assert through a pre-existing entry point, not the new symbol's existence.
+- **Pin each severable arm separately.** If two branches produce the same answer,
+  deleting one leaves the test green. Assert through the value the reverted branch
+  **uniquely** controls.
+
+The sibling **`regression-proof-red-green`** skill is how a builder demonstrates
+the red without `git stash`; this criterion is what makes it non-optional. If the
+project also has a mechanical pin format, its bindings name it.
+
 ### Negative and edge criteria are first-class
 
 The happy path is the easy half. For each criterion, ask: what is the failure
@@ -217,6 +323,29 @@ When a non-obvious design decision was made, record the road not taken and _why_
 
 This stops a well-meaning builder from "improving" the design back into the
 failure mode you already ruled out.
+
+## Writing Security Implications That Aren't Theatre
+
+The section exists to make someone _look_, once, at the moment they still
+understand the change. Two failure modes, both common:
+
+- **Blank or "N/A"** — indistinguishable from "nobody checked".
+- **Boilerplate** — "no security impact" pasted onto a change that adds a route.
+
+Name what the change actually touches, and if it touches nothing, say so **with
+the reason** so a reviewer can check the reasoning rather than the verdict:
+
+> No security impact — presentational change to an existing component; no new
+> input, route, dependency, or auth path.
+
+Re-analyse it whenever scope materially changes. A criterion added late that
+introduces a route, an input, a dependency, or an auth path invalidates the
+section written against the original scope — the same discipline as re-checking
+`Depends on #NNN` when the dependency graph shifts.
+
+Where the change _is_ security-relevant, state the direction of failure, not just
+the surface: which way an unreadable or error state resolves, and what an attacker
+or a transient fault gains if it resolves the other way.
 
 ## One Issue or Several?
 
@@ -324,7 +453,13 @@ same way as every other dotted-key binding).
 
 ## Self-Check Before Filing
 
+- [ ] Did you search open **and closed** issues for a duplicate before drafting?
+- [ ] Does the title name the defect or capability (and its consequence), not the area?
 - [ ] Could a second builder produce the same behaviour from these ACs alone?
+- [ ] Is at least one criterion an OUTCOME at production configuration — not a
+      mechanism that could be fully satisfied while the feature does not work?
+- [ ] If this is a bug fix: is there a criterion that reverting it makes a NAMED
+      test fail, behaviourally, on the arm the fix uniquely controls?
 - [ ] If this is a FIX to a localised defect: does the issue name the seam, the
       placement, the do-not-touch list, and the failure direction — so two
       builders would change the same code, not just reach the same behaviour?
@@ -337,6 +472,8 @@ same way as every other dotted-key binding).
       block reproduced at the target file's real indentation?
 - [ ] Are failure and edge cases covered, not just the happy path?
 - [ ] Does Out of Scope name the _specific_ temptation and its risk?
+- [ ] Is Security Implications filled in — what it touches, or "none" **with the
+      reason** — and re-checked if scope moved since it was written?
 - [ ] If a design decision was non-obvious, is the rejected alternative recorded?
 - [ ] If part of an epic: native link **and** the inline `#NNN` body reference both done?
 - [ ] Dependencies stated as `Depends on #NNN` or explicitly "none"?
@@ -345,18 +482,24 @@ same way as every other dotted-key binding).
 
 ## Anti-Patterns
 
-| Anti-Pattern                                | Why it fails                                                                    | Fix                                                            |
-| ------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| "THEN it works correctly"                   | Two builders implement two different things                                     | Name the exact observable result                               |
-| Fix issue names the behaviour, not the seam | Same behaviour reached via a worse call site; builder re-does the investigation | Name function, placement, do-not-touch list, failure direction |
-| A comment contradicts the body              | Two competing specs; the builder cannot tell which won                          | Rewrite the BODY; comments hold evidence only                  |
-| Unverified "this is cheap / not cached"     | Trusted and acted on; steers the fix wrong past the point anyone re-checks      | Read the implementation; prove it or mark it unverified        |
-| Citing a bare line number                   | Rots on the next merge; anchor lands in the wrong place                         | Symbol + verbatim snippet, line number as a hint               |
-| ACs cover only the happy path               | Ships something that crashes on the first odd input                             | Add a failure/edge criterion per path                          |
-| Out of Scope: "no cleanup"                  | Builder can't tell which code is load-bearing                                   | Name the specific code and the breakage risk                   |
-| One mega-issue spanning backend + UI        | Can't review, test, or revert independently                                     | Split on surface; link with `Depends on`                       |
-| Sub-issue linked only via body reference    | Invisible in GitHub's UI tracker                                                | Add the native `addSubIssue` link too                          |
-| Sub-issue linked only via native link       | Invisible to epic-body scanning scripts                                         | Add the inline `#NNN` body reference too                       |
-| Task-list checkbox in the epic list         | Drifts — must be hand-ticked on merge, often stale                              | Use an inline `#NNN`; it auto-strikes on close                 |
-| `gh issue edit --add-parent` on gh ≤2.83    | Silently unavailable; link never made                                           | Use the GraphQL `addSubIssue` mutation                         |
-| Trusting `--json parent` to confirm a link  | Returns empty unreliably                                                        | Confirm via the `subIssues` GraphQL query                      |
+| Anti-Pattern                                                  | Why it fails                                                                    | Fix                                                            |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| "THEN it works correctly"                                     | Two builders implement two different things                                     | Name the exact observable result                               |
+| Fix issue names the behaviour, not the seam                   | Same behaviour reached via a worse call site; builder re-does the investigation | Name function, placement, do-not-touch list, failure direction |
+| A comment contradicts the body                                | Two competing specs; the builder cannot tell which won                          | Rewrite the BODY; comments hold evidence only                  |
+| Unverified "this is cheap / not cached"                       | Trusted and acted on; steers the fix wrong past the point anyone re-checks      | Read the implementation; prove it or mark it unverified        |
+| Citing a bare line number                                     | Rots on the next merge; anchor lands in the wrong place                         | Symbol + verbatim snippet, line number as a hint               |
+| ACs cover only the happy path                                 | Ships something that crashes on the first odd input                             | Add a failure/edge criterion per path                          |
+| Every AC names a mechanism to add                             | All tick, gate passes, feature still does not work                              | Add a GIVEN/WHEN/THEN outcome AC at production config          |
+| Outcome proven with a lowered threshold or a stubbed recorder | Proves the feature works in a config that does not exist                        | Assert at production settings, against the real component      |
+| Bug fix with no revert-pin criterion                          | Re-introducing the defect leaves the suite green; the fix is unheld             | Require a named test that fails when the fix is reverted       |
+| Filing without searching closed issues                        | Splits evidence across duplicates; one always looks unfinished                  | Search `--state all` first; extend or link the neighbour       |
+| Title names the area (`Fix the loop`)                         | Unreadable as a queue; no triage or dedup possible from the list                | Name the defect and its consequence                            |
+| Security Implications blank or boilerplate                    | Indistinguishable from nobody having looked                                     | Name what it touches, or "none" **with the reason**            |
+| Out of Scope: "no cleanup"                                    | Builder can't tell which code is load-bearing                                   | Name the specific code and the breakage risk                   |
+| One mega-issue spanning backend + UI                          | Can't review, test, or revert independently                                     | Split on surface; link with `Depends on`                       |
+| Sub-issue linked only via body reference                      | Invisible in GitHub's UI tracker                                                | Add the native `addSubIssue` link too                          |
+| Sub-issue linked only via native link                         | Invisible to epic-body scanning scripts                                         | Add the inline `#NNN` body reference too                       |
+| Task-list checkbox in the epic list                           | Drifts — must be hand-ticked on merge, often stale                              | Use an inline `#NNN`; it auto-strikes on close                 |
+| `gh issue edit --add-parent` on gh ≤2.83                      | Silently unavailable; link never made                                           | Use the GraphQL `addSubIssue` mutation                         |
+| Trusting `--json parent` to confirm a link                    | Returns empty unreliably                                                        | Confirm via the `subIssues` GraphQL query                      |
