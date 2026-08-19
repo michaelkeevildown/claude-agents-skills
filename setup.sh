@@ -242,6 +242,9 @@ setup_project() {
 #     local divergence.
 
 PACK_DIR="${REPO_DIR}/skills/engineering"
+# Project-layer scaffold: real template files + a TSV registry, so adding a scaffolded file is a
+# markdown edit plus one row rather than a shell edit. See templates/README.md.
+TEMPLATES_DIR="${REPO_DIR}/templates"
 
 # DEPENDENCY SKILLS. The pack's skills cite these BY NAME (`create-issue` from /epic and /triage;
 # `git-workflow`, `bash-pipefail-safety` and `regression-proof-red-green` from /implement-issue and
@@ -2292,6 +2295,63 @@ _boot_has_import() {
   return 1
 }
 
+# --- project-layer scaffold (templates/FILES.tsv) ------------------------------------------------
+# Substitute {{TOKEN}} placeholders on stdin. An UNKNOWN token is left verbatim rather than blanked:
+# a typo must show up in the output, never silently delete the line it was on.
+_boot_render_template() {
+  local name="$1" today="$2" ui_ev="$3"
+  sed -e "s|{{REPO_NAME}}|${name}|g" \
+      -e "s|{{TODAY}}|${today}|g" \
+      -e "s|{{UI_EV}}|${ui_ev}|g"
+}
+
+# Walk templates/FILES.tsv and write each row whose `when` matches. Never overwrites: a destination
+# that already exists is reported as skipped, exactly like the manifest and the gate shim, so
+# bootstrap stays safe to re-run.
+_boot_scaffold_registry() {
+  local root="$1" name="$2" today="$3" dry_run="$4"
+  local registry="${TEMPLATES_DIR}/FILES.tsv"
+
+  if [ ! -f "$registry" ]; then
+    echo "    WARNING: no template registry at ${registry} - nothing scaffolded." >&2
+    return 0
+  fi
+
+  local source dest mode when summary src_path dest_path
+  while IFS="$(printf '\t')" read -r source dest mode when summary; do
+    case "$source" in ''|'#'*) continue ;; esac
+    [ -n "$dest" ] || continue
+
+    if [ "$when" = "ui" ] && [ "${BOOT_UI}" != "true" ]; then
+      continue
+    fi
+
+    src_path="${TEMPLATES_DIR}/project/${source}"
+    dest_path="${root}/${dest}"
+
+    if [ ! -f "$src_path" ]; then
+      echo "    WARNING: registry names ${source}, which is missing from templates/project - skipped." >&2
+      continue
+    fi
+    if [ -e "$dest_path" ]; then
+      echo "    ${dest} already present, untouched."
+      _boot_skipped "${dest} (already present)"
+      continue
+    fi
+    if [ "$dry_run" = "1" ]; then
+      echo "    would create ${dest} - ${summary}"
+      _boot_created "${dest}"
+      continue
+    fi
+
+    mkdir -p "$(dirname "$dest_path")"
+    _boot_render_template "$name" "$today" "${BOOT_UI_EV}" < "$src_path" > "$dest_path"
+    [ -n "$mode" ] && chmod "$mode" "$dest_path"
+    echo "    created ${dest} - ${summary}"
+    _boot_created "${dest}"
+  done < "$registry"
+}
+
 _boot_write_manifest() {
   local path="$1" name="$2" today="$3"
   local agent_file agent_name n
@@ -2490,13 +2550,19 @@ MANI4
       else
         printf '| `ui.paths` | **TODO** - which paths count as a UI diff? |\n'
       fi
-      printf '| `ui.command` | **TODO** - write `.claude/scripts/ui-gate.sh`, then bind it here |\n'
+      printf '| `ui.command` | **TODO** - wire the scaffolded `.claude/scripts/ui-gate.sh`, THEN bind it here |\n'
       printf '\nUI evidence: %s.\n\n' "${BOOT_UI_EV}"
       cat <<'MANIUI'
-Bootstrap does **not** scaffold `ui-gate.sh`. Its stdout contract (last line is the absolute
-screenshot directory, every human-readable line on stderr, nothing at all on stdout when it fails)
-cannot be guessed from a directory listing. Until `ui.command` is bound the UI gate is skipped and
-every PR body must say so.
+Bootstrap scaffolds `.claude/scripts/ui-gate.sh` **unwired**: it exits 2 (could not run) until you
+fill it in. Its stdout contract (last line is the absolute screenshot directory, every
+human-readable line on stderr, nothing at all on stdout when it fails) cannot be guessed from a
+directory listing, so the file carries the contract and a worked example rather than a guess at your
+test command.
+
+`ui.command` is deliberately left **unbound** until you wire it. That ordering matters: an unbound
+`ui.command` means the UI gate is *skipped* — the safe degrade — whereas binding it to a shim that
+still exits 2 turns every UI-touching build into a hard block. Wire the shim first, bind second, and
+until then every PR body must say the UI gate was skipped.
 
 MANIUI
     else
@@ -2957,7 +3023,7 @@ bootstrap_repo() {
   _boot_detect_ui "$root"
   _boot_detected "ui.enabled" "${BOOT_UI}" "${BOOT_UI_EV}"
   if [ "${BOOT_UI}" = "true" ]; then
-    _boot_todo "\`ui.command\` - a UI was detected (${BOOT_UI_EV}) but no \`ui-gate.sh\` is scaffolded, so the UI gate is skipped until you write one and bind it."
+    _boot_todo "\`ui.command\` - a UI was detected (${BOOT_UI_EV}) and an UNWIRED \`.claude/scripts/ui-gate.sh\` was scaffolded for you. It exits 2 until you fill it in. Bind \`ui.command\` only AFTER wiring it: binding an unwired shim turns a safe skip into a hard block on every UI build."
     if [ "${BOOT_UI_PATHS_SURE}" != "1" ]; then
       _boot_todo "\`ui.paths\` - confirm which paths count as a UI diff (guessed from the repo layout)."
     fi
@@ -3042,7 +3108,12 @@ bootstrap_repo() {
   echo ""
 
   # ---- 5. vendor --------------------------------------------------------------------------------
-  echo "--> 5. Vendoring the pack (handing off to --vendor, one implementation)"
+  # ---- 5. the project-layer scaffold (templates/FILES.tsv) --------------------------------------
+  echo "--> 5. Project-layer files (from templates/FILES.tsv)"
+  _boot_scaffold_registry "$root" "$name" "$today" "$dry_run"
+  echo ""
+
+  echo "--> 6. Vendoring the pack (handing off to --vendor, one implementation)"
   if [ "$dry_run" = "1" ] && [ ! -f "$manifest" ]; then
     echo "    NOTE: on a dry run the manifest does not exist yet, so the vendor step below reports NO"
     echo "          reviewer agents. A real run writes the manifest first and installs the ones it declares."
@@ -3055,7 +3126,7 @@ bootstrap_repo() {
   fi
   echo ""
 
-  # ---- 6. summary -------------------------------------------------------------------------------
+  # ---- 7. summary -------------------------------------------------------------------------------
   local item
   echo "==> Bootstrap summary"
   if [ "$dry_run" = "1" ]; then

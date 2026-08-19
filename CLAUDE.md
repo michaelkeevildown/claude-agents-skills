@@ -89,7 +89,7 @@ Two rules `--vendor` must never lose: it copies **per file** and never removes a
 | -------------------------- | ----------- | ----- | ------------------------------------------------------------------------------------ |
 | agent-teams                | global      | 1185  | Agent Teams workflow                                                                 |
 | react                      | frontend    | 1053  | React core patterns                                                                  |
-| implement-issue            | engineering | 1006  | Pick up a tracker issue and take it end-to-end through a proper dev lifecycle in...  |
+| implement-issue            | engineering | 1017  | Pick up a tracker issue and take it end-to-end through a proper dev lifecycle in...  |
 | langgraph                  | python      | 902   | LangGraph                                                                            |
 | testing-playwright         | frontend    | 882   | Playwright end-to-end testing                                                        |
 | material3                  | flutter     | 778   | Material 3 for Flutter                                                               |
@@ -154,6 +154,16 @@ Two rules `--vendor` must never lose: it copies **per file** and never removes a
 
 Six stack categories: `frontend`, `flutter`, `python`, `rust`, `global` (universal),
 and `engineering` (the tracker/lifecycle pack: issue authoring, epics, triage, build, gate)
+
+## Project-layer templates
+
+`setup.sh --bootstrap` scaffolds a consumer repo's **project layer** — the manifest, the gate shims,
+the review anchors, the CONTRIBUTING sections the manifest binds into. Those files live as real
+templates under [`templates/`](templates/README.md), driven by the registry
+[`templates/FILES.tsv`](templates/FILES.tsv).
+
+**To add a scaffolded file: drop a template under `templates/project/` and add one row to
+`FILES.tsv`.** No shell editing. See `templates/README.md` for the columns and the token list.
 
 ## Do NOT
 
