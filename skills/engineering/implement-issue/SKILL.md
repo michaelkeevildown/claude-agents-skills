@@ -30,6 +30,7 @@ from memory):
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `<main>`        | `repo.default_branch`                                                                                                                                                                           |
 | `<epic-branch>` | `<branch.epic_prefix>/<N>` for epic `N` — the epic integration branch                                                                                                                           |
+| `<review-base>` | the fork point a **per-sub reviewer** diffs against — **the base this branch was cut from and targets**, exactly the base "Route the argument FIRST" fixed: `origin/<epic-branch>` whenever the work sits on an epic integration branch (the epic-mode loop, or a by-number sub joining an existing `epic/<N>`), else `origin/<main>` for a genuine standalone. **Why it is not always `origin/<main>`:** a sub-branch is cut off `origin/<epic-branch>` (Epic-mode step 3), so a `<main>`-based three-dot `git diff origin/<main>...HEAD` diffs from `merge-base(origin/<main>, HEAD)` = the point the integration branch was cut, sweeping in **every sibling merged into `<epic-branch>` since** on top of this sub. Diffing against `origin/<epic-branch>` is this sub's own fork point, so it excludes them. In standalone mode the branch **is** cut from `<main>`, so the two coincide and `origin/<main>` is already correct — which is why BOTH cases must stay; never "simplify" the two specs back into a single `origin/<main>`. |
 | `<type>`        | `branch.bug_prefix` (issue labelled `labels.bug`) or `branch.feature_prefix` (`labels.enhancement`)                                                                                             |
 | `<worktree>`    | `worktree.path_template` with `<slug>` substituted (epic mode: `worktree.epic_path_template` with `<N>`)                                                                                        |
 | `<gate>`        | `gate.command` — its prerequisite is `gate.prereq`                                                                                                                                              |
@@ -650,7 +651,10 @@ relevant section over verbatim as an input in its own right:**
        gate spawns `<ui-reviewer>`) **from the
        orchestrating layer — never the implementing subagent** (it cannot spawn the reviewer, and
        self-spawning recreates the nodding loop). Hand it **five** inputs: `git diff
-origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **issue intent**
+<review-base>...HEAD` (see `<review-base>`: in epic mode this is `origin/<epic-branch>` — the
+       sub-branch's own fork point — **not** `origin/<main>`, since a sub is cut off the integration
+       branch and a `<main>`-based three-dot diff would sweep in every already-merged sibling;
+       standalone stays `origin/<main>`), the changed-files list, the **green** gate output, the **issue intent**
        (title / body / Acceptance Criteria), and the **project correctness anchors** pasted verbatim
        from the `## Correctness anchors` section of `.claude/REVIEW-ANCHORS.md` (its lens 1; see
        "Project review anchors" at the top of this step). If that file or section is absent, say so
@@ -683,7 +687,10 @@ origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **
     `when: always`) is the third independent judge: spawned **from the orchestrating layer in a fresh
     context, separate from the implementer** (never from inside the implementing subagent), on **every**
     issue once the gate is green. Hand it the issue's `## Acceptance Criteria` GIVEN/WHEN/THEN block,
-    `git diff origin/<main>...HEAD`, and the green gate output. It returns
+    `git diff <review-base>...HEAD` (see `<review-base>`: in epic mode this is `origin/<epic-branch>`,
+    the sub-branch's own fork point — **not** `origin/<main>`, else the three-dot diff sweeps in
+    already-merged siblings and it could certify an AC against a **different** sub's code; standalone
+    stays `origin/<main>`), and the green gate output. It returns
     `verdict: done | not-done | broken` (per-AC cited): **`done`** = every AC met AND gate green (the
     only verdict that permits a merge); **`not-done`** = gate green but ≥ 1 AC unmet; **`broken`** =
     gate red, a regression, or **no parseable ACs** (it never returns `done` when there's nothing to
@@ -743,7 +750,11 @@ origin/<main>...HEAD`, the changed-files list, the **green** gate output, the **
     1. **Spawn the `security-reviewer` agent** (the `reviewers[]` entry with `when: always`) **from the
        MAIN session — never the implementing subagent** (a subagent cannot spawn another agent, so a
        security review triggered from inside an implementing subagent silently never runs). Hand it
-       **four** inputs: `git diff origin/<main>...HEAD`, the changed-files list, the issue intent
+       **four** inputs: `git diff <review-base>...HEAD` (see `<review-base>`: in epic mode this is
+       `origin/<epic-branch>` — the sub-branch's own fork point — **not** `origin/<main>`, else the
+       three-dot diff sweeps in already-merged siblings, diluting the security lens and risking a FAIL
+       on a sibling's already-reviewed code; standalone stays `origin/<main>`), the changed-files
+       list, the issue intent
        (title / body / Acceptance Criteria), and the **project security anchors** pasted verbatim
        from the `## Security anchors` section of `.claude/REVIEW-ANCHORS.md`, `### <lens>` headings
        intact so every lens gets its own pointers (see "Project review anchors" at the top of this
