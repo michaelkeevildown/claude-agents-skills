@@ -1,0 +1,19 @@
+# The project-layer scaffold registry. `setup.sh --bootstrap` reads THIS FILE to decide what to
+# write into a consumer repo. To add a scaffolded file: drop the template under templates/project/
+# and add one row here. No shell editing.
+#
+# Columns are TAB-separated:
+#   source       path under templates/project/
+#   dest         path in the consumer repo, relative to its root
+#   mode         file mode to chmod after writing (e.g. 644, 755)
+#   when         always | ui           -- `ui` writes only when bootstrap detects a UI
+#   summary      one line, printed by bootstrap and used in its TODO notes
+#
+# Lines starting with # and blank lines are ignored. Existing files are NEVER overwritten; a
+# present destination is reported as skipped, exactly like the manifest and gate shim.
+#
+#source	dest	mode	when	summary
+CONTRIBUTING.md	CONTRIBUTING.md	644	always	requirement-quality checklist (CHK) + build-tier table the manifest binds to
+claude/REVIEW-ANCHORS.md	.claude/REVIEW-ANCHORS.md	644	always	project review anchors that give the vendored reviewers teeth
+claude/revert-pins/README.md	.claude/revert-pins/README.md	644	always	declared revert-pin directory + the format a pin takes
+claude/scripts/ui-gate.sh	.claude/scripts/ui-gate.sh	755	ui	UI gate shim (stdout contract: last line is the screenshot dir)
