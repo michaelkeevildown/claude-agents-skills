@@ -34,7 +34,8 @@ for doc in "${FEATURE_DIR}"/building/*.md; do
   fi
   ELAPSED=$((NOW - MOD_TIME))
   if [ "${ELAPSED}" -gt "${STUCK_THRESHOLD}" ]; then
-    TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    TITLE=$(grep -m1 '^title:' "${doc}" 2>/dev/null | sed 's/^title:[[:space:]]*//' || true)
+    [ -n "${TITLE}" ] || TITLE="$(basename "${doc}")"
     MINS=$((ELAPSED / 60))
     echo "WARN: ${TITLE} has been in building/ for ${MINS} minutes without completing." >&2
     echo "The builder may be stuck. Consider checking agent_logs/ for errors or moving the doc back to testing/ to restart." >&2
@@ -47,7 +48,8 @@ if [ "${PROJECT_STACK}" = "frontend" ] || [ "${PROJECT_STACK}" = "flutter" ]; th
   # Priority 1: Features needing E2E tests (test-writer)
   for doc in "${FEATURE_DIR}"/testing/*.md; do
     [ -f "${doc}" ] || continue
-    TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    TITLE=$(grep -m1 '^title:' "${doc}" 2>/dev/null | sed 's/^title:[[:space:]]*//' || true)
+    [ -n "${TITLE}" ] || TITLE="$(basename "${doc}")"
     if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
       echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
       continue
@@ -60,7 +62,8 @@ if [ "${PROJECT_STACK}" = "frontend" ] || [ "${PROJECT_STACK}" = "flutter" ]; th
   # Priority 2: Features ready for building
   for doc in "${FEATURE_DIR}"/ready/*.md; do
     [ -f "${doc}" ] || continue
-    TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    TITLE=$(grep -m1 '^title:' "${doc}" 2>/dev/null | sed 's/^title:[[:space:]]*//' || true)
+    [ -n "${TITLE}" ] || TITLE="$(basename "${doc}")"
     if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
       echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
       continue
@@ -79,13 +82,15 @@ else
     case "${doc}" in *.bounce.md) continue ;; esac
     BASENAME=$(basename "${doc}" .md)
     BOUNCE_FILE="${FEATURE_DIR}/testing/${BASENAME}.bounce.md"
-    TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    TITLE=$(grep -m1 '^title:' "${doc}" 2>/dev/null | sed 's/^title:[[:space:]]*//' || true)
+    [ -n "${TITLE}" ] || TITLE="$(basename "${doc}")"
     if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
       echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
       continue
     fi
     if [ -f "${BOUNCE_FILE}" ]; then
-      BOUNCE_COUNT=$(grep -m1 '^bounce-count:' "${doc}" | sed 's/^bounce-count:[[:space:]]*//')
+      BOUNCE_COUNT=$(grep -m1 '^bounce-count:' "${doc}" 2>/dev/null | sed 's/^bounce-count:[[:space:]]*//' || true)
+    [ -n "${BOUNCE_COUNT}" ] || BOUNCE_COUNT=0
       echo "BOUNCE DETECTED: ${TITLE} has defective tests (bounce-count: ${BOUNCE_COUNT:-1})" >&2
       echo "Re-invoke test-writer in fix mode: Fix defective tests per feature-docs/testing/${BASENAME}.bounce.md" >&2
     else
@@ -98,7 +103,8 @@ else
   # Priority 2: Features ready for test-writing
   for doc in "${FEATURE_DIR}"/ready/*.md; do
     [ -f "${doc}" ] || continue
-    TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+    TITLE=$(grep -m1 '^title:' "${doc}" 2>/dev/null | sed 's/^title:[[:space:]]*//' || true)
+    [ -n "${TITLE}" ] || TITLE="$(basename "${doc}")"
     if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
       echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
       continue
@@ -112,7 +118,8 @@ fi
 # Priority 3: Features waiting for review
 for doc in "${FEATURE_DIR}"/review/*.md; do
   [ -f "${doc}" ] || continue
-  TITLE=$(grep -m1 '^title:' "${doc}" | sed 's/^title:[[:space:]]*//')
+  TITLE=$(grep -m1 '^title:' "${doc}" 2>/dev/null | sed 's/^title:[[:space:]]*//' || true)
+    [ -n "${TITLE}" ] || TITLE="$(basename "${doc}")"
   if [ -f "${CHECK_DEPS}" ] && ! bash "${CHECK_DEPS}" "${doc}" "${FEATURE_DIR}" 2>/dev/null; then
     echo "SKIP: ${TITLE} is blocked by unmet dependencies" >&2
     continue
