@@ -2,6 +2,7 @@
 name: builder
 description: Implement Python features to make failing pytest tests pass. Reads test files and feature docs, writes implementation code. Never modifies tests. Triggers on build feature, implement, make tests pass, pick up building, builder.
 tools: Read, Grep, Glob, Bash, Write, Edit
+model: opus
 memory: user
 ---
 

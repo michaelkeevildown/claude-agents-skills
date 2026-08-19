@@ -2,6 +2,7 @@
 name: builder
 description: Implement frontend features from feature doc acceptance criteria. Builds first, then hands off to test-writer for E2E verification. Triggers on build feature, implement, pick up ready, pick up building, builder.
 tools: Read, Grep, Glob, Bash, Write, Edit
+model: opus
 memory: user
 ---
 

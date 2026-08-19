@@ -2,6 +2,7 @@
 name: test-writer
 description: Write failing Rust tests from feature doc acceptance criteria using cargo test. Triggers on write tests, test writer, pick up feature, failing tests, test-first.
 tools: Read, Grep, Glob, Bash, Write, Edit
+model: sonnet
 memory: user
 ---
 

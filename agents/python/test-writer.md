@@ -2,6 +2,7 @@
 name: test-writer
 description: Write failing pytest tests from feature doc acceptance criteria. Triggers on write tests, test writer, pick up feature, failing tests, test-first.
 tools: Read, Grep, Glob, Bash, Write, Edit
+model: sonnet
 memory: user
 ---
 
