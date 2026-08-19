@@ -27,6 +27,81 @@ answer is no, the issue is aspirational and will produce divergent work.
 
 Everything below exists to push issues across that line.
 
+### The bright line is behaviour — for a FIX, that is not enough
+
+"Same observable behaviour" is the right test for new capability. Dictating the
+implementation there is its own anti-pattern: it spends the builder's judgement,
+and it ages badly the moment the surrounding code moves.
+
+A **fix to a defect you have already localised is different.** Two builders can
+land identical observable behaviour through different seams, and the seam is not
+a free choice — one can be correct-but-costly, correct-but-fragile, or correct
+only until the next caller appears. If your investigation already found the exact
+call site, withholding it does not preserve the builder's judgement; it just
+makes them redo the investigation and gamble on the answer.
+
+So when the defect is localised, the issue must say **where the fix goes**:
+
+- the **function and the seam** — which parameter, which predicate, which caller
+- the **placement**, when order matters (before an expensive lookup, after a
+  cheap guard) and _why_ that position
+- the **explicit do-not-touch list** — the neighbouring call sites, guards, and
+  thresholds that must stay byte-for-byte unchanged
+- the **failure direction** — on an unreadable or error state, which way does it
+  fail, and what breaks if it fails the other way
+
+Absent that, "no ambiguity" is only true of the outcome, not of the change.
+
+### Cite code so the citation survives
+
+A bare line number rots on the next merge. Anchor on the **symbol plus a short
+verbatim snippet**, and give the line number only as a hint alongside it:
+
+> in `resolveCandidate`, immediately before the `const deps = parseDeps(body)`
+> line (~line 430)
+
+If the issue prescribes an exact code block — a declared reversion, a patch
+anchor, a find/replace — reproduce it at the **exact indentation** of the target
+file and say which file it must match. An anchor that is one space out is a
+could-not-run, not a near miss.
+
+## An issue is its body, not its comment thread
+
+Investigation lands in comments. Left there, it becomes a **second, competing
+spec**, and the builder has no way to know which one won — most will read the
+body and act on it.
+
+When a later finding supersedes the body, **rewrite the body.** Comments are for
+evidence, reproduction, and the audit trail; the body is the only normative text.
+Before filing or handing off, re-read the body against every comment and resolve
+each contradiction in the body itself.
+
+Where a comment carries evidence worth keeping — a reproduction, a measurement —
+reference it from the body rather than duplicating it, so there is one statement
+of the requirement and one place the evidence lives.
+
+## Verify what you assert — a wrong Technical Note is worse than none
+
+The builder trusts the issue. An unverified claim about how the code behaves does
+not degrade to "no information"; it actively steers the work wrong, and it steers
+it past the point where anyone re-checks.
+
+Before writing any behavioural claim into **Technical Notes** or a rationale —
+_this function is cheap_, _makes no network call_, _is cached_, _is already
+covered by that test_, _runs on every request_ — open the implementation and
+confirm it. Cheap claims are the ones to distrust most, because they are the ones
+nobody re-derives: a helper that short-circuits on a fast path may take a slow one
+in exactly the case the issue is about.
+
+Where the claim is load-bearing for the design, prove it rather than read it — run
+the function, run the test, and state what you observed. If you cannot confirm it,
+write the uncertainty into the issue ("unverified — confirm before relying on
+this") instead of asserting it flat.
+
+The same duty applies to a claim you already published: if a comment or an earlier
+body asserted something you later find false, **correct it in place**, because the
+builder will read it either way.
+
 ## Investigate from the canonical remote, not a stale checkout
 
 Every section below is only as true as the code you read to write it. In a repo
@@ -250,7 +325,16 @@ same way as every other dotted-key binding).
 ## Self-Check Before Filing
 
 - [ ] Could a second builder produce the same behaviour from these ACs alone?
+- [ ] If this is a FIX to a localised defect: does the issue name the seam, the
+      placement, the do-not-touch list, and the failure direction — so two
+      builders would change the same code, not just reach the same behaviour?
 - [ ] Does every AC name exact functions / fields / errors / return shapes?
+- [ ] Does the BODY stand alone — no comment contradicting it, every superseding
+      finding folded back in?
+- [ ] Has every behavioural claim in Technical Notes been checked against the
+      implementation (not assumed), with anything unconfirmed marked unverified?
+- [ ] Are code citations anchored on a symbol + verbatim snippet, and any exact
+      block reproduced at the target file's real indentation?
 - [ ] Are failure and edge cases covered, not just the happy path?
 - [ ] Does Out of Scope name the _specific_ temptation and its risk?
 - [ ] If a design decision was non-obvious, is the rejected alternative recorded?
@@ -261,14 +345,18 @@ same way as every other dotted-key binding).
 
 ## Anti-Patterns
 
-| Anti-Pattern                               | Why it fails                                        | Fix                                            |
-| ------------------------------------------ | --------------------------------------------------- | ---------------------------------------------- |
-| "THEN it works correctly"                  | Two builders implement two different things         | Name the exact observable result               |
-| ACs cover only the happy path              | Ships something that crashes on the first odd input | Add a failure/edge criterion per path          |
-| Out of Scope: "no cleanup"                 | Builder can't tell which code is load-bearing       | Name the specific code and the breakage risk   |
-| One mega-issue spanning backend + UI       | Can't review, test, or revert independently         | Split on surface; link with `Depends on`       |
-| Sub-issue linked only via body reference   | Invisible in GitHub's UI tracker                    | Add the native `addSubIssue` link too          |
-| Sub-issue linked only via native link      | Invisible to epic-body scanning scripts             | Add the inline `#NNN` body reference too       |
-| Task-list checkbox in the epic list        | Drifts — must be hand-ticked on merge, often stale  | Use an inline `#NNN`; it auto-strikes on close |
-| `gh issue edit --add-parent` on gh ≤2.83   | Silently unavailable; link never made               | Use the GraphQL `addSubIssue` mutation         |
-| Trusting `--json parent` to confirm a link | Returns empty unreliably                            | Confirm via the `subIssues` GraphQL query      |
+| Anti-Pattern                                | Why it fails                                                                    | Fix                                                            |
+| ------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| "THEN it works correctly"                   | Two builders implement two different things                                     | Name the exact observable result                               |
+| Fix issue names the behaviour, not the seam | Same behaviour reached via a worse call site; builder re-does the investigation | Name function, placement, do-not-touch list, failure direction |
+| A comment contradicts the body              | Two competing specs; the builder cannot tell which won                          | Rewrite the BODY; comments hold evidence only                  |
+| Unverified "this is cheap / not cached"     | Trusted and acted on; steers the fix wrong past the point anyone re-checks      | Read the implementation; prove it or mark it unverified        |
+| Citing a bare line number                   | Rots on the next merge; anchor lands in the wrong place                         | Symbol + verbatim snippet, line number as a hint               |
+| ACs cover only the happy path               | Ships something that crashes on the first odd input                             | Add a failure/edge criterion per path                          |
+| Out of Scope: "no cleanup"                  | Builder can't tell which code is load-bearing                                   | Name the specific code and the breakage risk                   |
+| One mega-issue spanning backend + UI        | Can't review, test, or revert independently                                     | Split on surface; link with `Depends on`                       |
+| Sub-issue linked only via body reference    | Invisible in GitHub's UI tracker                                                | Add the native `addSubIssue` link too                          |
+| Sub-issue linked only via native link       | Invisible to epic-body scanning scripts                                         | Add the inline `#NNN` body reference too                       |
+| Task-list checkbox in the epic list         | Drifts — must be hand-ticked on merge, often stale                              | Use an inline `#NNN`; it auto-strikes on close                 |
+| `gh issue edit --add-parent` on gh ≤2.83    | Silently unavailable; link never made                                           | Use the GraphQL `addSubIssue` mutation                         |
+| Trusting `--json parent` to confirm a link  | Returns empty unreliably                                                        | Confirm via the `subIssues` GraphQL query                      |
