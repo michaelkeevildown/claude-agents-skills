@@ -2295,6 +2295,21 @@ _boot_has_import() {
   return 1
 }
 
+# True when templates/FILES.tsv will write $1 into the consumer (respecting the `when` filter).
+# Lets the manifest bind only to files that will actually exist.
+_boot_registry_writes() {
+  local want="$1" registry="${TEMPLATES_DIR}/FILES.tsv"
+  local r_source r_dest r_mode r_when r_summary
+  [ -f "$registry" ] || return 1
+  while IFS="$(printf '\t')" read -r r_source r_dest r_mode r_when r_summary; do
+    case "$r_source" in ""|"#"*) continue ;; esac
+    [ "$r_dest" = "$want" ] || continue
+    if [ "$r_when" = "ui" ] && [ "${BOOT_UI}" != "true" ]; then return 1; fi
+    return 0
+  done < "$registry"
+  return 1
+}
+
 # --- project-layer scaffold (templates/FILES.tsv) ------------------------------------------------
 # Substitute {{TOKEN}} placeholders on stdin. An UNKNOWN token is left verbatim rather than blanked:
 # a typo must show up in the output, never silently delete the line it was on.
@@ -2536,6 +2551,46 @@ MANI4
         printf -- '- %s\n' "$gw"
       done
       printf '\n'
+    fi
+
+    # checklist/tier bind INTO the scaffolded CONTRIBUTING.md. Emitted only when that file will
+    # exist (the registry writes it, or the repo already had one) - a binding pointing at a missing
+    # file is a could-not-run, not a pass, which is worse than having no binding at all.
+    if [ -f "${root}/CONTRIBUTING.md" ] || _boot_registry_writes "CONTRIBUTING.md"; then
+      cat <<'MANICHK'
+### checklist
+
+| Key | Value |
+|---|---|
+| `checklist.path` | `CONTRIBUTING.md` |
+| `checklist.section` | `### Requirement-quality checklist (CHK)` |
+
+### tier
+
+| Key | Value |
+|---|---|
+| `tier.path` | `CONTRIBUTING.md` |
+| `tier.section` | `### Build tier — every issue declares its model AND its effort` |
+
+`checklist.section` and `tier.section` are the **literal heading text** to read from, not a URL
+slug, so renaming a heading fails loudly as "section not found" - a could-not-run - instead of
+silently resolving nowhere. Rename a heading and update the binding in the same commit.
+
+MANICHK
+    else
+      cat <<'MANINOCHK'
+### checklist
+
+Not bound: this repo has no `CONTRIBUTING.md`. `/create-issue` therefore runs its **floor-only**
+self-check and says so in the comment it posts. Write one, then bind `checklist.path` +
+`checklist.section` to its heading.
+
+### tier
+
+Not bound: no build-tier vocabulary here, so no `model:`/`effort:` label is stamped. That is a
+silent, safe degrade - never a gap to call out in an issue.
+
+MANINOCHK
     fi
 
     printf '### ui\n\n| Key | Value |\n|---|---|\n'
