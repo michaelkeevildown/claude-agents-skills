@@ -197,8 +197,15 @@ portable discipline.
      (`labels.ready` — the armed loop builds AND auto-merges an ungated green build), **host-resident**
      (left without `labels.ready`, built by explicit number on the host that owns it), **human-gated**
      (`labels.ready` + `labels.human_gate` — it is **built and auto-merged into the epic branch like
-     any sub**; the gate label instead gates the epic's **final** PR, which the owner merges), or
-     **parked** (no `labels.ready` — invisible to the loop until one is added).
+     any sub**; the gate label instead gates the epic's **final** PR, which the owner merges),
+     **owner-task** (`labels.owner_task`, `labels.ready` withheld — a manual/host-resident
+     deliverable with no automated completion signal; never picked by the loop, excluded from the
+     all-subs-in gate, but still blocks the epic's terminal DONE for as long as it stays open),
+     **deferred** (`labels.deferred` — the owner's own park lever on a sub that by design can never
+     open a PR; excluded from the all-subs-in gate, and if it's carrying `labels.ready` at the same
+     time the loop auto-unarms that label on a later fire rather than inferring the park from an
+     unmet dependency), or **parked** (no `labels.ready` — invisible to the loop until one is
+     added).
    - plus the **outcome coverage matrix** — one row per epic-level outcome, taken from the epic's own
      `## Summary`, mapped to the sub-issue(s) and the acceptance-criterion number(s) that deliver it:
      `| Epic outcome | Sub-issue | AC # |`. An **unmapped outcome is a hole in the breakdown**, not a
@@ -264,6 +271,10 @@ portable discipline.
    Apply the type + priority labels **and `labels.ready` per the approved disposition** (stamped by
    default, plus `labels.human_gate` where step 2 marked it human-gated; a host-resident or
    owner-parked sub-issue is filed WITHOUT `labels.ready`, and so is one the arm below holds back).
+   An **owner-task** or **deferred** disposition also carries its own marker label — `labels.owner_task`
+   or `labels.deferred` respectively — alongside (not instead of) that `labels.ready` call; the marker
+   label is what the loop actually reads, so a disposition named in step 2 but never stamped here is
+   still invisible to it.
    Apply the build-tier labels too, per the bindings bullet above — a deliberate `model:` + `effort:`
    pair, justified in the sub-issue's own `## Technical Notes`, when `tier` is bound; neither label
    when it isn't. Then put each sub-issue on the

@@ -2449,6 +2449,7 @@ fetch of an attachment 404s, and assuming private is the safe direction.
 | `labels.bug` | `bug` |
 | `labels.enhancement` | `enhancement` |
 | `labels.priority_order` | `[P0, P1, P2]` |
+| `labels.ultra` | `ultra` |
 
 **Assumed, not detected.** These are the pack's conventional names, not a reading of your tracker.
 Check them against `gh label list` and either create the missing ones or rename them here.
