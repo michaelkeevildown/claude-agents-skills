@@ -103,7 +103,7 @@ Two rules `--vendor` must never lose: it copies **per file** and never removes a
 | neo4j-driver-js            | frontend    | 447   | Neo4j JavaScript driver 6                                                            |
 | neo4j-cypher               | global      | 434   | Neo4j Cypher query language reference                                                |
 | neo4j-data-models          | global      | 429   | Neo4j graph data modeling patterns                                                   |
-| epic                       | engineering | 378   | Author a NEW epic (a high-level piece of functionality broken into ordered sub-is... |
+| epic                       | engineering | 389   | Author a NEW epic (a high-level piece of functionality broken into ordered sub-is... |
 | triage                     | engineering | 360   | Work up the owner's raw captures                                                     |
 | kickoff                    | engineering | 120   | Capability-audit gate before substantial new work                                    |
 | regression-proof-red-green | global      | 77    | Prove a regression test fails on pre-fix code and passes on the fix before claimi... |
